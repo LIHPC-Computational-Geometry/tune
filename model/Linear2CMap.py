@@ -1,14 +1,21 @@
+from __future__ import annotations
 import sys
-
 import numpy
 
 
 class Dart:
     def __init__(self, m, id: int):
+        """
+        A dart is defined from the mesh it belongs to, and an id, which is the index
+        in the mesh container where the dart is stored. In this container, the dart d is defined
+        by 3 fields: the id of the beta1(d), the id of beta2(d), the id of the node d is coming from
+        :param m: a mesh
+        :param id: a index, that corresponds to the location of the dart data in the mesh dart container
+        """
         self.mesh = m
         self.id = id
 
-    def get_alpha(self, i: int):
+    def get_beta(self, i: int) -> Dart:
         """
         Get the dart connected to by alpha_i
         :param i: alpha dimension
@@ -16,120 +23,141 @@ class Dart:
         """
         if i < 1 or i > 2:
             raise ValueError("Wrong alpha dimension")
-        return self.mesh.darts[self.id - 1, i - 1]
+        return Dart(self.mesh, self.mesh.darts[self.id - 1, i - 1])
 
-
-    def set_alpha(self, i: int, id_to:int):
+    def set_beta(self, i: int, dart_to: Dart) -> None:
         if i < 1 or i > 2:
             raise ValueError("Wrong alpha dimension")
-        self.mesh.darts[self.id - 1, i - 1] = id_to
+        self.mesh.darts[self.id - 1, i - 1] = dart_to.id
 
+    def get_node(self) -> Node:
+        return Node(self.mesh, self.mesh.darts[self.id - 1, 2])
 
-    def get_vertex(self):
-        return self.mesh.darts[self.id - 1, 2]
+    def set_node(self, node: Node) -> None:
+        self.mesh.darts[self.id - 1, 2] = node.id
 
-    def set_vertex(self, node_id: int):
-        self.mesh.darts[self.id - 1, 2] = node_id
 
 class Node:
-    def __init__(self, m, id: int):
+    def __init__(self, m : Mesh, id: int):
         self.mesh = m
         self.id = id
 
-    def x(self):
-        return self.mesh.vertices[self.id - 1, 0]
+    def __eq__(self, n):
+        return self.mesh == n.mesh and self.id == n.id
+    def x(self) -> float:
+        return self.mesh.nodes[self.id - 1, 0]
 
-    def y(self):
-        return self.mesh.vertices[self.id - 1, 1]
+    def y(self)-> float:
+        return self.mesh.nodes[self.id - 1, 1]
 
-    def xy(self):
-        return self.mesh.vertices[self.id - 1]
+    def xy(self)-> float:
+        return self.mesh.nodes[self.id - 1]
 
-    def set_x(self, x: float):
-        self.mesh.vertices[self.id - 1, 0] = x
+    def set_x(self, x: float) -> None:
+        self.mesh.nodes[self.id - 1, 0] = x
 
-    def set_y(self, y: float):
-        self.mesh.vertices[self.id - 1, 1] = y
+    def set_y(self, y: float) -> None:
+        self.mesh.nodes[self.id - 1, 1] = y
 
-    def set_xy(self, x: float, y: float):
+    def set_xy(self, x: float, y: float) -> None:
         self.set_x(x)
         self.set_y(y)
 
 
 class Face:
-    def __init__(self, m, d:Dart, id: int):
+    def __init__(self, m : Mesh, dart_index: int):
+        """
+        :param m: the mesh that contains the current face
+        :param dart_index: a dart index of the mesh m
+        We do not provide id for each face. A face is "fully" defined by its owning dart
+        """
         self.mesh = m
-        self.id = id
-        self.dart = d
+        self.dart_index = dart_index
+
+    def get_nodes(self) -> list[Node]:
+        start = self.get_dart()
+        l = []
+        while start.get_beta(1) != self.dart_index:
+            l.append(start.get_node())
+            start = Dart(self.mesh, start.get_beta(1))
+        return l
+
+    def get_dart(self):
+        return Dart(self.mesh, self.dart_index)
+
 
 class Mesh:
     def __init__(self):
-        self.vertices = numpy.empty((0, 2))
+        """
+        Vertices are stored in a numpy array containing coordinates (x,y)
+        Faces are stored in a numpy array of simple ids
+        Darts are stored in a numpy array, where each dart is a triplet (beta_1, beta_2, vertex_id)
+        """
+        self.nodes = numpy.empty((0, 2))
         self.faces = numpy.empty(0, dtype=int)
         self.darts = numpy.empty((0, 3), dtype=int)
 
-    def nb_vertices(self):
+    def nb_nodes(self) -> int:
         """
         :return: the number of vertices in the mesh
         """
-        #We filter the vertices having the x-coordinate equals to max float
-        return len(self.vertices[self.vertices[:,0]!= sys.float_info.max])
+        # We filter the vertices having the x-coordinate equals to max float. Sucd vertices were removed
+        return len(self.nodes[self.nodes[:, 0] != sys.float_info.max])
 
-    def nb_faces(self):
+    def nb_faces(self) -> int:
         """
            :return: the number of faces in the mesh
            """
-        # We filter the faces having the -1 value
+        # We filter the faces having the -1 value. An item with this value is a deleted face
         return len(self.faces[self.faces[:] != -1])
 
-    def add_vertex(self, x: float, y: float) -> Node:
+    def add_node(self, x: float, y: float) -> Node:
         """
         Add a vertex in the mesh
         :param x: X coordinate
         :param y: Y coordinate
-        :return: the index of the created vertex
+        :return: the created node
         """
-        self.vertices = numpy.append(self.vertices, [[x, y]], axis=0)
-        return Node(self, len(self.vertices))
+        self.nodes = numpy.append(self.nodes, [[x, y]], axis=0)
+        return Node(self, len(self.nodes))
 
-    def del_vertex(self,i:int):
+    def del_vertex(self, ni: int) -> None:
         """
-        Removes the vertex of id i. Warning all the darts that point
-        on this vertex will be invalid (but not automatically updated)
-        :param i: the vertex id
+        Removes the node ni. Warning all the darts that point
+        to this node will be invalid (but not automatically updated)
+        :param ni: a node
         """
-        ni = Node(self,i)
         ni.set_x(sys.float_info.max)
 
-    def add_triangle(self, v1: int, v2: int, v3: int) -> int:
+    def add_triangle(self, n1: Node, n2: Node, n3: Node) -> Face:
         """
-        Add a triangle defined by vertices of indices v1, v2, and v3.
-        The triangle is created in the order of v1, v2 then v3
-        An exception is raised if one of the vertices does not exist
-        :param v1: first vertex
-        :param v2: second vertex
-        :param v3: third vertex
-        :return: the dart of the triangle that connect v3 to v1
+        Add a triangle defined by nodes of indices n1, n2, and n3.
+        The triangle is created in the order of n1, n2 then n3. Internally,
+        the created triangle points on the dart that goes from n1 to n2.
+        An exception is raised if one of the nodes does not exist
+        :param n1: first node
+        :param n2: second node
+        :param n3: third node
+        :return: the id of the triangle
         """
         d1 = self.add_dart()
         d2 = self.add_dart()
         d3 = self.add_dart()
-        d1.set_alpha(1, d2.id)
-        d2.set_alpha(1, d3.id)
-        d3.set_alpha(1, d1.id)
-        d1.set_vertex(v1.id)
-        d2.set_vertex(v2.id)
-        d3.set_vertex(v3.id)
-        self.faces = numpy.append(self.faces, [d1])
-
-
-    def add_dart(self, a1: int = 0, a2: int = 0, v: int = 0) -> int:
+        d1.set_beta(1, d2)
+        d2.set_beta(1, d3)
+        d3.set_beta(1, d1)
+        d1.set_node(n1)
+        d2.set_node(n2)
+        d3.set_node(n3)
+        self.faces = numpy.append(self.faces, [d1.id])
+        return Face(self,d1.id)
+    def add_dart(self, a1: int = 0, a2: int = 0, v: int = 0) -> Dart:
         """
         This function add a dart in the mesh. It must not be used directly
         :param a1: dart index to connect by alpha1
         :param a2: dart index to connect by alpha2
-        :param v:  vertex this dart point to
-        :return: the index of the created dart
+        :param v:  vertex index this dart point to
+        :return: the created dart
         """
         self.darts = numpy.append(self.darts, [[a1, a2, v]], axis=0)
-        return Dart(self,len(self.darts))
+        return Dart(self, len(self.darts))
