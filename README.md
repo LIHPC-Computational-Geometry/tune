@@ -22,3 +22,5 @@ around *n*.
 ### Version 1 - Triangles and edge swap
 In this first version, we consider a pure triangular mesh, and we have only one 
 operation, the *edge swapping*
+
+<img src="./scheme.png" width="70%" height="70%"/>
