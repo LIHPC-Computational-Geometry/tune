@@ -14,7 +14,6 @@ node_color_normal = color4
 edge_color_select = color5
 node_color_select = color3
 
-
 class window_data:
     def __init__(self):
         self.options = pygame.HWSURFACE | pygame.DOUBLEBUF | pygame.RESIZABLE

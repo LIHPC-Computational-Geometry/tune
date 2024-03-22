@@ -39,7 +39,7 @@ class TestLinear2CMap(unittest.TestCase):
         cmap.add_triangle(n1, n2, n3)
         self.assertEqual(1, cmap.nb_faces())
 
-    def test_two_triangles(self):
+    def test_swap(self):
         cmap = Linear2CMap.Mesh()
         n00 = cmap.add_node(0, 0)
         n01 = cmap.add_node(0, 1)
@@ -59,6 +59,8 @@ class TestLinear2CMap(unittest.TestCase):
         # We sew on both directions
         d1.set_beta(2, d2)
         d2.set_beta(2, d1)
+        cmap.swap_edge(n00,n11)
+
 
 
 if __name__ == '__main__':
