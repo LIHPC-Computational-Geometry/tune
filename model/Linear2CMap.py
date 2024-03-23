@@ -7,13 +7,13 @@ Classes Dart, Node and Face must be seen as handlers on data that are stored in 
 mesh class. 
 """
 
-
 class Dart:
     def __init__(self, m, id: int):
         """
         A dart is defined from the mesh it belongs to, and an id, which is the index
         in the mesh container where the dart is stored. In this container, the dart d may be
-        defined by 4 fields:
+        defined by 5 fields:
+        - the id of the dart
         - the id of the beta1(d),
         - the id of beta2(d)
         - the id of the node d is coming from
@@ -33,34 +33,69 @@ class Dart:
         """
         if i < 1 or i > 2:
             raise ValueError("Wrong alpha dimension")
-        return Dart(self.mesh, self.mesh.darts[self.id - 1, i - 1])
+
+        if self.mesh.dart_info[self.id, i] == -1:
+            return None
+
+        return Dart(self.mesh, self.mesh.dart_info[self.id, i])
 
     def set_beta(self, i: int, dart_to: Dart) -> None:
+        """
+        Set the dart connected to by alpha_i
+        :param i: dimension of the beta function
+        :param dart_to: dart to connect to
+        :raises ValueError: if the dimension is not valid
+        """
         if i < 1 or i > 2:
             raise ValueError("Wrong alpha dimension")
-        self.mesh.darts[self.id - 1, i - 1] = dart_to.id
+        self.mesh.dart_info[self.id, i] = dart_to.id
 
     def get_node(self) -> Node:
-        node_id = self.mesh.darts[self.id - 1, 2]
+        """
+        :return: the embedded node of the dart. It is the node
+        the dart comes from
+        :raises ValueError: if there is no embedded node
+        """
+        node_id = self.mesh.dart_info[self.id, 3]
         if node_id == -1:
             raise ValueError("No associated node found")
         return Node(self.mesh, node_id)
 
     def set_node(self, node: Node) -> None:
-        self.mesh.darts[self.id - 1, 2] = node.id
+        """
+        Set the embedded node to the given value
+        :param node: the embedded node
+        """
+        self.mesh.dart_info[self.id, 3] = node.id
 
     def get_face(self) -> Face:
-        face_id = self.mesh.darts[self.id - 1, 3]
+        """
+        :return: the embedded face of the dart.
+        :raises ValueError: if there is no embedded face
+        """
+        face_id = self.mesh.dart_info[self.id, 4]
         if face_id == -1:
             raise ValueError("No associated face found")
         return Face(self.mesh, face_id)
 
     def set_face(self, face: Face) -> None:
-        self.mesh.darts[self.id - 1, 3] = face.id
+        """
+        Set the embedded face of the dart to the given value
+        :param face: the face we want embed the dart on
+        """
+        self.mesh.dart_info[self.id, 4] = face.id
 
 
 class Node:
     def __init__(self, m: Mesh, id: int):
+        """
+        A node is defined by the mesh it belongs to and its id in this
+        mesh. Node data are stored in an array owned by its mesh. A node
+        can be understood as a handler to access data in a more abstract
+        way
+        :param m: mesh the node belongs to
+        :param id: node id
+        """
         self.mesh = m
         self.id = id
 
@@ -72,6 +107,9 @@ class Node:
         Update the dart value associated with this node
         :param dart_index: the index of the dart in self.mesh
         """
+        if dart is None:
+            raise ValueError("Try to connect a node to a non-existing dart")
+
         self.mesh.nodes[self.id - 1, 2] = dart.id
 
     def get_dart(self) -> Dart:
@@ -100,15 +138,24 @@ class Node:
 class Face:
     def __init__(self, m: Mesh, id: int):
         """
-        :param m: the mesh that contains the current face
-        :param id: the face id
-        We do not provide id for each face. A face is "fully" defined by its owning dart.
-        The value self.mesh.faces[self.id - 1] is the dart corresponding to self.
+        A face is defined by the mesh it belongs to and its id in this
+        mesh. Face data are stored in an array owned by its mesh. A face
+        can be understood as a handler to access data in a more abstract
+        way
+        :param m: mesh the node belongs to
+        :param id: node id
         """
         self.mesh = m
         self.id = id
 
     def get_nodes(self) -> list[Node]:
+        """
+        Gives access to the list of nodes that bounds the faces. To get
+        this list of nodes, the algorithm starts from the dart owned by the face,
+        and traverse the face using beta_1. For each dart, we store the corresponding
+        node.
+        :return: a list of nodes
+        """
         start = self.get_dart()
         l = []
         while start.get_beta(1) != self.mesh.faces[self.id - 1]:
@@ -117,9 +164,19 @@ class Face:
         return l
 
     def get_dart(self) -> Dart:
+        """
+        Returns the unique dart of the mesh, the face point to
+        :return: a dart
+        """
         return Dart(self.mesh, self.mesh.faces[self.id - 1])
 
     def set_dart(self, dart: Dart) -> None:
+        """
+        Update the dart the face is defined by in the mesh
+        :param dart: a new dart to connect to
+        """
+        if dart is None:
+            raise ValueError("Try to connect a face to a non-existing dart")
         self.mesh.faces[self.id - 1] = dart.id
 
 
@@ -128,11 +185,48 @@ class Mesh:
         """
         Vertices are stored in a numpy array containing coordinates (x,y, dart id)
         Faces are stored in a numpy array of simple (dart ids)
+        Darts are stored in a numpy array, where each dart is a 4-tuple (id, beta_1, beta_2, vertex_id, face_id)
+        """
+        self.nodes = numpy.empty((0, 3))
+        self.faces = numpy.empty(0, dtype=int)
+        self.dart_info = numpy.empty((0, 5), dtype=int)
+
+    def __init__(self, nodes, faces):
+        """
+        Vertices are stored in a numpy array containing coordinates (x,y, dart id)
+        Faces are stored in a numpy array of simple (dart ids)
         Darts are stored in a numpy array, where each dart is a 4-tuple (beta_1, beta_2, vertex_id, face_id)
         """
         self.nodes = numpy.empty((0, 3))
         self.faces = numpy.empty(0, dtype=int)
-        self.darts = numpy.empty((0, 4), dtype=int)
+        self.dart_info = numpy.empty((0, 5), dtype=int)
+
+        for n in nodes:
+            self.add_node(n[0], n[1])
+
+        for f in faces:
+            self.add_triangle(Node(self, f[0]),
+                              Node(self, f[1]),
+                              Node(self, f[2]))
+
+        # now we 2-sew some darts to glue faces along edges
+        for d_info in self.dart_info:
+            d = Dart(self, d_info[0])
+            if d.get_beta(2) is None:
+                # d is not 2-sew, we look for a dart to connect. If we don'f find one,
+                # it means we are on the mesh boundary
+
+                d_nfrom = d.get_node()
+                d_nto = d.get_beta(1).get_node()
+
+                for d2_info in self.dart_info:
+                    d2 = Dart(self, d2_info[0])
+                    if d2.get_beta(2) is None:
+                        d2_nfrom = d2.get_node()
+                        d2_nto = d2.get_beta(1).get_node()
+                        if d_nfrom.id == d2_nto.id and d_nto.id == d2_nfrom.id:
+                            d.set_beta(2, d2)
+                            d2.set_beta(2, d)
 
     def nb_nodes(self) -> int:
         """
@@ -155,7 +249,7 @@ class Mesh:
         :param y: Y coordinate
         :return: the created node
         """
-        self.nodes = numpy.append(self.nodes, [[x, y,-1]], axis=0)
+        self.nodes = numpy.append(self.nodes, [[x, y, -1]], axis=0)
         return Node(self, len(self.nodes))
 
     def del_vertex(self, ni: int) -> None:
@@ -165,6 +259,21 @@ class Mesh:
         :param ni: a node
         """
         ni.set_x(sys.float_info.max)
+
+    def get_nodes(self):
+        l = []
+        for n in self.nodes:
+            l.append((n[0], n[1]))
+        return l
+
+    def get_edges(self):
+        l = []
+        for d in self.dart_info:
+            n1 = Dart(self, d[0]).get_node()
+            n2 = Dart(self, d[1]).get_node()
+            if (d[2] != -1 and n1.id < n2.id) or d[2] == -1:
+                l.append((n1.id, n2.id))
+        return l
 
     def add_triangle(self, n1: Node, n2: Node, n3: Node) -> Face:
         """
@@ -212,16 +321,18 @@ class Mesh:
         :param n2: Second node
         :return: the inner dart connecting n1 to n2 if it exists
         """
-        for d_info in self.darts:
+        for d_info in self.dart_info:
             d = Dart(self, d_info[0])
             d2 = d.get_beta(2)
-            if d2.id != -1:
+            if d2 is not None:
                 if d.get_node().id == n1.id and d2.get_node().id == n2.id:
                     return True, d
                 if d.get_node().id == n2.id and d2.get_node().id == n1.id:
                     return True, d2
         return False, None
 
+    def swap_edge_ids(self, id1: int, id2: int) -> bool:
+        return self.swap_edge(Node(self,id1), Node(self,id2))
     def swap_edge(self, n1: Node, n2: Node) -> bool:
         found, d = self.find_inner_edge(n1, n2)
         if not found:
@@ -238,19 +349,19 @@ class Mesh:
         F = d.get_face()
         F2 = d2.get_face()
 
-        d.set_beta(1,d211)
-        d2.set_beta(1,d11)
-        d21.set_beta(1,d2)
-        d1.set_beta(1,d)
-        d11.set_beta(1,d21)
-        d211.set_beta(1,d1)
+        d.set_beta(1, d211)
+        d2.set_beta(1, d11)
+        d21.set_beta(1, d2)
+        d1.set_beta(1, d)
+        d11.set_beta(1, d21)
+        d211.set_beta(1, d1)
 
-        if N1.get_dart().id==d.id:
+        if N1.get_dart().id == d.id:
             N1.set_dart(d21)
-        if N2.get_dart().id==d2.id:
+        if N2.get_dart().id == d2.id:
             N2.set_dart(d1)
 
-        if F.get_dart().id==d11.id:
+        if F.get_dart().id == d11.id:
             F.set_dart(d)
 
         if F2.get_dart().id == d211.id:
@@ -260,14 +371,15 @@ class Mesh:
         d2.set_node(N4)
         d211.set_face(F)
         d11.set_face(F2)
+        return True
+
     def add_dart(self, a1: int = -1, a2: int = -1, v: int = -1, f: int = -1) -> Dart:
         """
         This function add a dart in the mesh. It must not be used directly
         :param a1: dart index to connect by alpha1
         :param a2: dart index to connect by alpha2
-        :param v: vertex index this dart points to
-        :param f: face index this dart belongs to
+        :param v:  vertex index this dart point to
         :return: the created dart
         """
-        self.darts = numpy.append(self.darts, [[a1, a2, v, f]], axis=0)
-        return Dart(self, len(self.darts))
+        self.dart_info = numpy.append(self.dart_info, [[len(self.dart_info), a1, a2, v, f]], axis=0)
+        return Dart(self, len(self.dart_info) - 1)

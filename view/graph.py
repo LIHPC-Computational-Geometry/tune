@@ -9,7 +9,8 @@ node_color_select = pygame.Color(128, 128, 128)  # Grey
 
 
 class Vertex:
-    def __init__(self, x, y, value=0):
+    def __init__(self, idx, x, y, value=0):
+        self.idx = idx
         self.x = x
         self.y = y
         self.selected = False
@@ -80,15 +81,21 @@ class Edge:
 
 class Mesh:
     def __init__(self, nodes=[], edges=[]):
+        self.clear()
+        self.update(nodes, edges)
+
+    def clear(self):
         self.nodes = []
         self.edges = []
-        for n in nodes:
-            self.create_node(n[0], n[1])
+
+    def update(self,nodes,edges):
+        for idx, n in enumerate(nodes):
+            self.create_node(idx, n[0], n[1])
         for e in edges:
             self.create_edge(e[0], e[1])
 
-    def create_node(self, x: int, y:int) -> int:
-        n = Vertex(x, y)
+    def create_node(self, id: int, x: int, y:int) -> int:
+        n = Vertex(id, x, y)
         self.add_node(n)
         return len(self.nodes) - 1
 

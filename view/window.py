@@ -1,6 +1,7 @@
 import pygame
 from pygame import math
 from pygame.locals import *
+from view import graph
 import sys
 
 color1 = pygame.Color(30, 30, 30)  # Dark Grey
@@ -34,7 +35,9 @@ class window_data:
 class Game:
     win_data = window_data()
 
-    def __init__(self, mesh):
+    def __init__(self, cmap):
+        self.mesh = graph.Mesh(cmap.get_nodes(), cmap.get_edges())
+        self.model = cmap
         pygame.init()
         self.window = pygame.display.set_mode(Game.win_data.size, Game.win_data.options)
         pygame.display.set_caption('TriGame')
@@ -42,8 +45,7 @@ class Game:
         self.font = pygame.font.SysFont(None, Game.win_data.font_size)
         self.clock = pygame.time.Clock()
         self.clock.tick(60)
-        self.mesh = mesh
-        Game.win_data.scene_xmin, Game.win_data.scene_ymin, Game.win_data.scene_xmax, Game.win_data.scene_ymax = mesh.bounding_box()
+        Game.win_data.scene_xmin, Game.win_data.scene_ymin, Game.win_data.scene_xmax, Game.win_data.scene_ymax = self.mesh.bounding_box()
         Game.win_data.scene_center = math.Vector2((Game.win_data.scene_xmax + Game.win_data.scene_xmin) / 2.0,
                                                   (Game.win_data.scene_ymax + Game.win_data.scene_ymin) / 2.0)
 
@@ -80,13 +82,15 @@ class Game:
                 already_selected = False
                 for e in self.mesh.edges:
                     if e.collidepoint(x, y, self.win_data) and not already_selected:
-                        e.switch_selection()
+                        if self.model.swap_edge_ids(e.start.idx, e.end.idx):
+                            self.mesh.clear()
+                            self.mesh.update(self.model.get_nodes(),self.model.get_edges())
                         already_selected = True
 
     def run(self):
+        print("TriGame is  starting!!")
         while True:
             self.control_events()
+            self.window.fill((255, 255, 255))
             self.draw()
             pygame.display.flip()
-            self.clock.tick(60)
-        print("TriGame is  starting!!")

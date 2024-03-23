@@ -23,4 +23,10 @@ around *n*.
 In this first version, we consider a pure triangular mesh, and we have only one 
 operation, the *edge swapping*
 
+
+## CMap design choices
+1. Each node and each face knows/stores the id of a dart
+2. Each dart stores the id of the node and the face it belongs to, plus
+the id of the dart reached by beta1 and beta2. 
+
 <img src="./scheme.png" width="70%" height="70%"/>
