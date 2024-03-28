@@ -1,32 +1,11 @@
-# Topologic UntaNgling mEsher
+# Topologic UntaNgling 2D mEsher
 
 The aim of this project is to provide an environment to implement 
 Reinforcement Learning algorithms that aim to topologically
 modify a 2D mesh. More specifically, we implement the work of 
 *A. Narayanana*, *Y. Pan*, and *P.-O. Persson*, which is described 
 in "**Learning topological operations on meshes with application to 
-block decomposition of polygons**" (see [paper]()).
+block decomposition of polygons**" (see [arxiv article](https://arxiv.org/pdf/2309.06484.pdf)
+and [presentation](http://tetrahedronvii.cimne.com/slides/Persson.pdf)).
 
-## Incremental game design
-In order to learn how to modify a 2D mesh, we first implement a 2D game
-that works on pure triangular meshes. Starting from a 2D mesh, the goal 
-of the player is to modify the mesh by applying topological operations 
-in order to improve the **mesh quality**. Here the quality is defined 
-on topological criteria only. More precisely, we consider the degree 
-of nodes. The degree of a node is defined as its number of adjacent 
-faces. Ideally:
-- The degree of an inner node is 6,
-- The degree of a boundary node *n* depends on the local geometry 
-around *n*.
-
-### Version 1 - Triangles and edge swap
-In this first version, we consider a pure triangular mesh, and we have only one 
-operation, the *edge swapping*
-
-
-## CMap design choices
-1. Each node and each face knows/stores the id of a dart
-2. Each dart stores the id of the node and the face it belongs to, plus
-the id of the dart reached by beta1 and beta2. 
-
-<img src="./scheme.png" width="70%" height="70%"/>
+#### See the documentation website for more details: https://lihpc-computational-geometry.github.io/tune/
