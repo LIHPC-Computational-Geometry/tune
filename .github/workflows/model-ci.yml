@@ -23,7 +23,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install flake8 pytest numpy coverage
+        pip install flake8 pytest numpy codacy-coverage
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
     - name: Lint with flake8
       run: |
@@ -36,5 +36,4 @@ jobs:
         export PYTHONPATH=$PYTHONPATH:${{ github.workspace }}/model 
         export CODACY_PROJECT_TOKEN=415b2bbec50546f7a061cbc88fe3bdef
         coverage run --source=. -m pytest
-        bash <(curl -Ls https://coverage.codacy.com/get.sh) coverage report --source=.
-
+        bash <(curl -Ls https://coverage.codacy.com/get.sh) report -r cobertura.xml 
