@@ -181,17 +181,8 @@ class Face:
 
 
 class Mesh:
-    def __init__(self):
-        """
-        Vertices are stored in a numpy array containing coordinates (x,y, dart id)
-        Faces are stored in a numpy array of simple (dart ids)
-        Darts are stored in a numpy array, where each dart is a 4-tuple (id, beta_1, beta_2, vertex_id, face_id)
-        """
-        self.nodes = numpy.empty((0, 3))
-        self.faces = numpy.empty(0, dtype=int)
-        self.dart_info = numpy.empty((0, 5), dtype=int)
 
-    def __init__(self, nodes, faces):
+    def __init__(self, nodes=[], faces=[]):
         """
         Vertices are stored in a numpy array containing coordinates (x,y, dart id)
         Faces are stored in a numpy array of simple (dart ids)
