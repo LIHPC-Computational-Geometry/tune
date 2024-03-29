@@ -331,9 +331,10 @@ class Mesh:
                     return True, d2
         return False, None
 
-    def swap_edge_ids(self, id1: int, id2: int) -> bool:
-        return self.swap_edge(Node(self,id1), Node(self,id2))
-    def swap_edge(self, n1: Node, n2: Node) -> bool:
+    def flip_edge_ids(self, id1: int, id2: int) -> bool:
+        return self.flip_edge(Node(self,id1), Node(self,id2))
+
+    def flip_edge(self, n1: Node, n2: Node) -> bool:
         found, d = self.find_inner_edge(n1, n2)
         if not found:
             return False

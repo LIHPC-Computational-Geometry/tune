@@ -82,10 +82,13 @@ class Game:
                 already_selected = False
                 for e in self.mesh.edges:
                     if e.collidepoint(x, y, self.win_data) and not already_selected:
-                        if self.model.swap_edge_ids(e.start.idx, e.end.idx):
-                            self.mesh.clear()
-                            self.mesh.update(self.model.get_nodes(),self.model.get_edges())
-                        already_selected = True
+                        if pygame.key.get_pressed()[pygame.K_f]:
+                            if self.model.flip_edge_ids(e.start.idx, e.end.idx):
+                                self.mesh.clear()
+                                self.mesh.update(self.model.get_nodes(),self.model.get_edges())
+                                already_selected = True
+                        else:
+                            print("Action not yet implemented")
 
     def run(self):
         print("TriGame is  starting!!")
