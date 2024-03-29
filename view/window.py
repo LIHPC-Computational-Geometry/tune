@@ -15,6 +15,7 @@ node_color_normal = color4
 edge_color_select = color5
 node_color_select = color3
 
+
 class window_data:
     def __init__(self):
         self.options = pygame.HWSURFACE | pygame.DOUBLEBUF | pygame.RESIZABLE
@@ -36,7 +37,7 @@ class Game:
     win_data = window_data()
 
     def __init__(self, cmap):
-        self.mesh = graph.Mesh(cmap.get_nodes(), cmap.get_edges())
+        self.graph = graph.Graph(cmap.get_nodes(), cmap.get_edges())
         self.model = cmap
         pygame.init()
         self.window = pygame.display.set_mode(Game.win_data.size, Game.win_data.options)
@@ -45,14 +46,14 @@ class Game:
         self.font = pygame.font.SysFont(None, Game.win_data.font_size)
         self.clock = pygame.time.Clock()
         self.clock.tick(60)
-        Game.win_data.scene_xmin, Game.win_data.scene_ymin, Game.win_data.scene_xmax, Game.win_data.scene_ymax = self.mesh.bounding_box()
+        Game.win_data.scene_xmin, Game.win_data.scene_ymin, Game.win_data.scene_xmax, Game.win_data.scene_ymax = self.graph.bounding_box()
         Game.win_data.scene_center = math.Vector2((Game.win_data.scene_xmax + Game.win_data.scene_xmin) / 2.0,
                                                   (Game.win_data.scene_ymax + Game.win_data.scene_ymin) / 2.0)
 
     def draw(self):
-        for e in self.mesh.edges:
+        for e in self.graph.edges:
             e.draw(self.window, Game.win_data)
-        for n in self.mesh.nodes:
+        for n in self.graph.vertices:
             n.draw(self.window, self.font, Game.win_data)
 
     def control_events(self):
@@ -80,18 +81,19 @@ class Game:
                 x, y = pygame.mouse.get_pos()
                 # only edges can be selected, and just one at a time
                 already_selected = False
-                for e in self.mesh.edges:
-                    if e.collidepoint(x, y, self.win_data) and not already_selected:
+                for e in self.graph.edges:
+                    if e.collide_point(x, y, self.win_data) and not already_selected:
                         if pygame.key.get_pressed()[pygame.K_f]:
                             if self.model.flip_edge_ids(e.start.idx, e.end.idx):
-                                self.mesh.clear()
-                                self.mesh.update(self.model.get_nodes(),self.model.get_edges())
+                                self.graph.clear()
+                                self.graph.update(self.model.get_nodes(), self.model.get_edges())
                                 already_selected = True
                         else:
                             print("Action not yet implemented")
 
     def run(self):
         print("TriGame is  starting!!")
+        print("- Press f and the mouse button to flip an edge")
         while True:
             self.control_events()
             self.window.fill((255, 255, 255))

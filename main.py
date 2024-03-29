@@ -12,14 +12,6 @@ if __name__ == '__main__':
     else:
         f = open(sys.argv[1])
         json_mesh = json.load(f)
-        nodes = json_mesh['nodes']
-        faces = json_mesh['faces']
-        print("Nodes: " + str(nodes))
-        print("Faces: " + str(faces))
-
-        cmap = model.Linear2CMap.Mesh(nodes, faces)
-
-        #TODO Remove the mesh from the main.
-        # The game is built from the cmap directly
+        cmap = model.Linear2CMap.Mesh(json_mesh['nodes'], json_mesh['faces'])
         g = Game(cmap)
         g.run()
