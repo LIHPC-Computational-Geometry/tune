@@ -3,9 +3,9 @@ import sys
 from pygame import math
 
 edge_color_normal = pygame.Color(30, 30, 30)  # Dark Grey
-node_color_normal = pygame.Color(255, 0, 0)  # Red
+vertex_color_normal = pygame.Color(255, 0, 0)  # Red
 edge_color_select = pygame.Color(0, 255, 0)  # Green
-node_color_select = pygame.Color(128, 128, 128)  # Grey
+vertex_color_select = pygame.Color(128, 128, 128)  # Grey
 
 
 class Vertex:
@@ -14,20 +14,20 @@ class Vertex:
         self.x = x
         self.y = y
         self.selected = False
-        self.color = node_color_normal
+        self.color = vertex_color_normal
         self.obj = None
         self.value = value
 
     def switch_selection(self):
         if self.selected:
             self.selected = False
-            self.color = node_color_normal
+            self.color = vertex_color_normal
         else:
             self.selected = True
-            self.color = node_color_select
+            self.color = vertex_color_select
 
-    def collidepoint(self, x, y):
-        return self.obj.collidepoint(x, y)
+    def collide_point(self, x, y):
+        return self.obj.collide_point(x, y)
 
     def draw(self, window, font, w_data):
         x = w_data.center.x + w_data.stretch * (self.x - w_data.scene_center.x)
@@ -36,7 +36,8 @@ class Vertex:
                                       (x, y),
                                       w_data.node_size, 0)
         text = font.render(str(self.value), True, (255, 255, 255))
-        window.blit(text, text.get_rect(center=(x,y)))
+        window.blit(text, text.get_rect(center=(x, y)))
+
 
 class Edge:
 
@@ -67,7 +68,7 @@ class Edge:
             return True
         return False
 
-    def collidepoint(self, x, y, w_data):
+    def collide_point(self, x, y, w_data):
         return self.distance_point(math.Vector2(x, y), w_data)
 
     def draw(self, window, w_data):
@@ -79,36 +80,36 @@ class Edge:
                                     w_data.edge_thickness)
 
 
-class Mesh:
-    def __init__(self, nodes=[], edges=[]):
+class Graph:
+    def __init__(self, vertices=[], edges=[]):
         self.clear()
-        self.update(nodes, edges)
+        self.update(vertices, edges)
 
     def clear(self):
-        self.nodes = []
+        self.vertices = []
         self.edges = []
 
-    def update(self,nodes,edges):
-        for idx, n in enumerate(nodes):
-            self.create_node(idx, n[0], n[1])
+    def update(self, vertices, edges):
+        for idx, n in enumerate(vertices):
+            self.create_vertex(idx, n[0], n[1])
         for e in edges:
             self.create_edge(e[0], e[1])
 
-    def create_node(self, id: int, x: int, y:int) -> int:
-        n = Vertex(id, x, y)
-        self.add_node(n)
-        return len(self.nodes) - 1
+    def create_vertex(self, id: int, x: int, y: int) -> int:
+        v = Vertex(id, x, y)
+        self.add_vertex(v)
+        return len(self.vertices) - 1
 
-    def create_edge(self, i1:int, i2:int) -> int:
-        n1 = self.nodes[i1]
-        n2 = self.nodes[i2]
+    def create_edge(self, i1: int, i2: int) -> int:
+        n1 = self.vertices[i1]
+        n2 = self.vertices[i2]
         n1.value += 1
         n2.value += 1
         self.add_edge(Edge(n1, n2))
         return len(self.edges) - 1
 
-    def add_node(self, n:Vertex) -> None:
-        self.nodes.append(n)
+    def add_vertex(self, n: Vertex) -> None:
+        self.vertices.append(n)
 
     def add_edge(self, e):
         self.edges.append(e)
@@ -118,14 +119,13 @@ class Mesh:
         y_min = sys.float_info.max
         x_max = sys.float_info.min
         y_max = sys.float_info.min
-        for n in self.nodes:
-            if n.x < x_min:
-                x_min = n.x
-            elif n.x > x_max:
-                x_max = n.x
-            if n.y < y_min:
-                y_min = n.y
-            elif n.y > y_max:
-                y_max = n.y
+        for v in self.vertices:
+            if v.x < x_min:
+                x_min = v.x
+            elif v.x > x_max:
+                x_max = v.x
+            if v.y < y_min:
+                y_min = v.y
+            elif v.y > y_max:
+                y_max = v.y
         return x_min, y_min, x_max, y_max
-
