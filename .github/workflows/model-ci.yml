@@ -15,9 +15,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@main
     - name: Set up Python 3.10
-      uses: actions/setup-python@v3
+      uses: actions/setup-python@main
       with:
         python-version: "3.10"
     - name: Install dependencies
@@ -36,4 +36,4 @@ jobs:
         export PYTHONPATH=$PYTHONPATH:${{ github.workspace }}/model 
         coverage run -m unittest
     - name: Upload Coverage to Codecov
-      uses: codecov/codecov-action@v2
+      uses: codecov/codecov-action@vmain
