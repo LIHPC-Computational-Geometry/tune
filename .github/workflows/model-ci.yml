@@ -34,6 +34,11 @@ jobs:
     - name: Test with pytest
       run: |
         export PYTHONPATH=$PYTHONPATH:${{ github.workspace }}/model 
-        export CODACY_PROJECT_TOKEN=415b2bbec50546f7a061cbc88fe3bdef
         coverage run --source=. -m pytest
-        bash <(curl -Ls https://coverage.codacy.com/get.sh) report -r cobertura.xml 
+        coverage xml -o cobertura.xml
+    - name: Run codacy-coverage-reporter
+      uses: codacy/codacy-coverage-reporter-action@v1
+      with:
+        project-token: 415b2bbec50546f7a061cbc88fe3bdef 
+        #${{ secrets.CODACY_PROJECT_TOKEN }}
+        coverage-reports: ${{ github.workspace }} 
