@@ -1,5 +1,7 @@
 # Topologic UntaNgling 2D mEsher
 
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/415b2bbec50546f7a061cbc88fe3bdef)](https://app.codacy.com/gh/LIHPC-Computational-Geometry/tune?utm_source=github.com&utm_medium=referral&utm_content=LIHPC-Computational-Geometry/tune&utm_campaign=Badge_Grade)
+
 The aim of this project is to provide an environment to implement 
 Reinforcement Learning algorithms that aim to topologically
 modify a 2D mesh. More specifically, we implement the work of 
