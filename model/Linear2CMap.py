@@ -185,7 +185,7 @@ class Mesh:
         """
         Vertices are stored in a numpy array containing coordinates (x,y, dart id)
         Faces are stored in a numpy array of simple (dart ids)
-        Darts are stored in a numpy array, where each dart is a 4-tuple (id, beta_1, beta_2, vertex_id, face_id)
+        Darts are stored in a numpy array, where each dart is a 5-tuple (id, beta_1, beta_2, vertex_id, face_id)
         """
         self.nodes = numpy.empty((0, 3))
         self.faces = numpy.empty(0, dtype=int)
@@ -195,7 +195,7 @@ class Mesh:
         """
         Vertices are stored in a numpy array containing coordinates (x,y, dart id)
         Faces are stored in a numpy array of simple (dart ids)
-        Darts are stored in a numpy array, where each dart is a 4-tuple (beta_1, beta_2, vertex_id, face_id)
+        Darts are stored in a numpy array, where each dart is a 5-tuple (id, beta_1, beta_2, vertex_id, face_id)
         """
         self.nodes = numpy.empty((0, 3))
         self.faces = numpy.empty(0, dtype=int)
@@ -372,6 +372,63 @@ class Mesh:
         d2.set_node(N4)
         d211.set_face(F)
         d11.set_face(F2)
+        return True
+
+    def set_face_beta2(self, f: Face, darts: (Dart)):
+        """
+        Set beta2 relation between darts and face darts when possible
+        :param f: the face
+        :param darts: to darts to try to connect by beta2
+        """
+        df_current = f.get_dart()
+        end = False
+        while not end:
+            nf_start = df_current.get_node()
+            nf_end = df_current.get_beta(1).get_node()
+
+            for d in darts:
+                nd_start = d.get_node()
+                nd_end = d.get_beta(1).get_node()
+                if nf_start == nd_end and nf_end == nd_start:
+                    d.set_beta(2, df_current)
+                    df_current.set_beta(2, d)
+
+            df_current = df_current.get_beta(1)
+            end = (df_current.id != f.get_dart().id)
+
+    def split_edge_ids(self, id1: int, id2: int) -> bool:
+        return self.split_edge(Node(self,id1), Node(self,id2))
+
+    def split_edge(self, n1: Node, n2: Node) -> bool:
+        found, d = self.find_inner_edge(n1, n2)
+        if not found:
+            return False
+        d2 = d.get_beta(2)
+        d1 = d.get_beta(1)
+        d11 = d1.get_beta(1)
+        d21 = d2.get_beta(1)
+        d211 = d21.get_beta(1)
+        N1 = d.get_node()
+        N2 = d2.get_node()
+        N3 = d11.get_node()
+        N4 = d211.get_node()
+        F = d.get_face()
+        F2 = d2.get_face()
+
+        # create a new node in the middle of [n1, n2]
+        N5 = self.add_node( (N1.x() + N2.x()) / 2, (N1.y() + N2.y()) / 2)
+
+        # modify existing triangles
+        d1.set_node(N5)
+        d21.set_node(N5)
+
+        # create 2 new triangles
+        F3 = self.add_triangle(N5, N1, N2)
+        F4 = self.add_triangle(N5, N3, N4)
+
+        # update beta2 relations
+        self.set_face_beta2(F3, (d, d21))
+        self.set_face_beta2(F4, (d1, d2))
         return True
 
     def add_dart(self, a1: int = -1, a2: int = -1, v: int = -1, f: int = -1) -> Dart:

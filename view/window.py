@@ -87,6 +87,11 @@ class Game:
                                 self.mesh.clear()
                                 self.mesh.update(self.model.get_nodes(),self.model.get_edges())
                                 already_selected = True
+                        elif pygame.key.get_pressed()[pygame.K_s]:
+                            if self.model.split_edge_ids(e.start.idx, e.end.idx):
+                                self.mesh.clear()
+                                self.mesh.update(self.model.get_nodes(),self.model.get_edges())
+                                already_selected = True
                         else:
                             print("Action not yet implemented")
 
