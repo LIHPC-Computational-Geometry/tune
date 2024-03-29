@@ -13,9 +13,9 @@ faces. Ideally:
 - The degree of a boundary node *n* depends on the local geometry 
 around *n*.
 
-### Version 1 - Triangles and edge swap
+### Version 1 - Triangles and edge flip
 In this first version, we consider a pure triangular mesh, and we have only one 
-operation, the *edge swapping*
+operation, the *edge flipping*
 
 
 ## CMap design choices
