@@ -36,4 +36,4 @@ jobs:
         export PYTHONPATH=$PYTHONPATH:${{ github.workspace }}/model 
         coverage run -m unittest
     - name: Upload Coverage to Codecov
-      uses: codecov/codecov-action@vmain
+      uses: codecov/codecov-action@main
