@@ -412,17 +412,18 @@ class Mesh:
         N2 = d2.get_node()
         N3 = d11.get_node()
         N4 = d211.get_node()
-        F = d.get_face()
-        F2 = d2.get_face()
 
         # create a new node in the middle of [n1, n2]
         N5 = self.add_node( (N1.x() + N2.x()) / 2, (N1.y() + N2.y()) / 2)
 
         # modify existing triangles
+        print("Avant modif triangle")
+        print(self.nodes)
         d1.set_node(N5)
         d21.set_node(N5)
 
         # create 2 new triangles
+        print("Avant ajout de triangles")
         F3 = self.add_triangle(N5, N1, N2)
         F4 = self.add_triangle(N5, N3, N4)
 

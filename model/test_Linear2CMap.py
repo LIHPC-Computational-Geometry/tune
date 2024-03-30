@@ -60,6 +60,32 @@ class TestLinear2CMap(unittest.TestCase):
         d2.set_beta(2, d1)
         cmap.flip_edge(n00,n11)
 
+    def test_split(self):
+        cmap = Linear2CMap.Mesh()
+        n1 = cmap.add_node(0, 1)
+        n2 = cmap.add_node(1, 1)
+        n3 = cmap.add_node(1, 0)
+        n4 = cmap.add_node(0, 0)
+        t1 = cmap.add_triangle(n3, n4, n1)
+        t2 = cmap.add_triangle(n3, n1, n2)
+
+        d1 = t1.get_dart()
+        # d1 goes from n3 to n4
+        self.assertEqual(d1.get_node(), n3)
+        d3 = d1.get_beta(1).get_beta(1)
+        # d3 goes from n1 to n3
+        self.assertEqual(d1.get_node(), n1)
+
+        d4 = t2.get_dart()
+        # d4 goes from n3 to n1
+        self.assertEqual(d4.get_node(), n3)
+        self.assertEqual(2, cmap.nb_faces())
+
+        # We sew on both directions
+        d3.set_beta(2, d4)
+        d4.set_beta(2, d3)
+
+        cmap.split_edge(n1,n3)
 
 
 if __name__ == '__main__':
