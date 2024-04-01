@@ -1,5 +1,7 @@
 import unittest
 import Linear2CMap
+import json
+
 
 class TestLinear2CMap(unittest.TestCase):
 
@@ -16,8 +18,6 @@ class TestLinear2CMap(unittest.TestCase):
         self.assertEqual(1, cmap.nb_nodes())
         self.assertEqual(1.1, n.x())
         self.assertEqual(2.3, n.y())
-        self.assertEqual(1.1, n.xy()[0])
-        self.assertEqual(2.3, n.xy()[1])
         n.set_x(3)
         self.assertEqual(3, n.x())
         n2 = cmap.add_node(1, 23)
@@ -44,22 +44,25 @@ class TestLinear2CMap(unittest.TestCase):
         n01 = cmap.add_node(0, 1)
         n10 = cmap.add_node(1, 0)
         n11 = cmap.add_node(1, 1)
+
         t1 = cmap.add_triangle(n00, n10, n11)
         t2 = cmap.add_triangle(n00, n11, n01)
+
         d1 = t1.get_dart()
         # d1 goes from n00 to n10
         self.assertEqual(d1.get_node(), n00)
         d1 = d1.get_beta(1).get_beta(1)
         # now d1 goes from n11 to n00
         self.assertEqual(d1.get_node(), n11)
+
         d2 = t2.get_dart()  # goes from n00 to n11
         self.assertEqual(d2.get_node(), n00)
-        self.assertEqual(2, cmap.nb_faces())
         # We sew on both directions
         d1.set_beta(2, d2)
         d2.set_beta(2, d1)
-        cmap.flip_edge(n00,n11)
-
+        cmap.flip_edge(n00, n11)
+        self.assertEqual(2, cmap.nb_faces())
+        self.assertEqual(4, cmap.nb_nodes())
 
 
 if __name__ == '__main__':

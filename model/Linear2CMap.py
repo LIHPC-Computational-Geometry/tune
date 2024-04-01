@@ -99,8 +99,14 @@ class Node:
         self.mesh = m
         self.id = id
 
-    def __eq__(self, n):
-        return self.mesh == n.mesh and self.id == n.id
+    def __eq__(self, a_node: Node) -> bool:
+        """
+        Equality operator between two nodes. It is only based on the mesh and node info and
+        not on the node coordinate
+        :param a_node: another node
+        :return: true if the nodes are equal, false otherwise
+        """
+        return self.mesh == a_node.mesh and self.id == a_node.id
 
     def set_dart(self, dart: Dart) -> None:
         """
@@ -110,27 +116,49 @@ class Node:
         if dart is None:
             raise ValueError("Try to connect a node to a non-existing dart")
 
-        self.mesh.nodes[self.id - 1, 2] = dart.id
+        self.mesh.nodes[self.id, 2] = dart.id
 
     def get_dart(self) -> Dart:
-        return Dart(self.mesh, self.mesh.nodes[self.id - 1, 2])
+        """
+        Get the dart value associated with this node
+        :return: a dart
+        """
+        return Dart(self.mesh, self.mesh.nodes[self.id, 2])
 
     def x(self) -> float:
-        return self.mesh.nodes[self.id - 1, 0]
+        """
+        Return the x coordinate of this node
+        :return: the x coordinate of this node
+        """
+        return self.mesh.nodes[self.id, 0]
 
     def y(self) -> float:
-        return self.mesh.nodes[self.id - 1, 1]
-
-    def xy(self) -> float:
-        return self.mesh.nodes[self.id - 1]
+        """
+        Return the y coordinate of this node
+        :return: the y coordinate of this node
+        """
+        return self.mesh.nodes[self.id, 1]
 
     def set_x(self, x: float) -> None:
-        self.mesh.nodes[self.id - 1, 0] = x
+        """
+        Set the x coordinate of this node
+        :param x: a float value
+        """
+        self.mesh.nodes[self.id, 0] = x
 
     def set_y(self, y: float) -> None:
-        self.mesh.nodes[self.id - 1, 1] = y
+        """
+        Set the y coordinate of this node
+        :param y: a float value
+        """
+        self.mesh.nodes[self.id, 1] = y
 
     def set_xy(self, x: float, y: float) -> None:
+        """
+        Set the node coordinates
+        :param x: new x coordinate value
+        :param y: new y coordinate value
+        """
         self.set_x(x)
         self.set_y(y)
 
@@ -143,7 +171,7 @@ class Face:
         can be understood as a handler to access data in a more abstract
         way
         :param m: mesh the node belongs to
-        :param id: node id
+        :param id: face id
         """
         self.mesh = m
         self.id = id
@@ -168,7 +196,7 @@ class Face:
         Returns the unique dart of the mesh, the face point to
         :return: a dart
         """
-        return Dart(self.mesh, self.mesh.faces[self.id - 1])
+        return Dart(self.mesh, self.mesh.faces[self.id])
 
     def set_dart(self, dart: Dart) -> None:
         """
@@ -177,7 +205,7 @@ class Face:
         """
         if dart is None:
             raise ValueError("Try to connect a face to a non-existing dart")
-        self.mesh.faces[self.id - 1] = dart.id
+        self.mesh.faces[self.id] = dart.id
 
 
 class Mesh:
@@ -186,7 +214,7 @@ class Mesh:
         """
         Vertices are stored in a numpy array containing coordinates (x,y, dart id)
         Faces are stored in a numpy array of simple (dart ids)
-        Darts are stored in a numpy array, where each dart is a 4-tuple (beta_1, beta_2, vertex_id, face_id)
+        Darts are stored in a numpy array, where each dart is a 5-tuple (dart id, beta_1, beta_2, vertex_id, face_id)
         """
         self.nodes = numpy.empty((0, 3))
         self.faces = numpy.empty(0, dtype=int)
@@ -241,7 +269,7 @@ class Mesh:
         :return: the created node
         """
         self.nodes = numpy.append(self.nodes, [[x, y, -1]], axis=0)
-        return Node(self, len(self.nodes))
+        return Node(self, len(self.nodes) - 1)
 
     def del_vertex(self, ni: int) -> None:
         """
@@ -251,26 +279,34 @@ class Mesh:
         """
         ni.set_x(sys.float_info.max)
 
-    def get_nodes(self):
-        l = []
+    def get_nodes_coordinates(self):
+        """
+        Build a list containing the coordinates of the all the mesh nodes
+        :return: a list of coordinates (x,y)
+        """
+        node_list = []
         for n in self.nodes:
-            l.append((n[0], n[1]))
-        return l
+            node_list.append((n[0], n[1]))
+        return node_list
 
     def get_edges(self):
-        l = []
+        """
+        Build a list containing the coordinates of the all the mesh nodes
+        :return: a list of coordinates (x,y)
+        """
+        edge_list = []
         for d in self.dart_info:
             n1 = Dart(self, d[0]).get_node()
             n2 = Dart(self, d[1]).get_node()
             if (d[2] != -1 and n1.id < n2.id) or d[2] == -1:
-                l.append((n1.id, n2.id))
-        return l
+                edge_list.append((n1.id, n2.id))
+        return edge_list
 
     def add_triangle(self, n1: Node, n2: Node, n3: Node) -> Face:
         """
         Add a triangle defined by nodes of indices n1, n2, and n3.
         The triangle is created in the order of n1, n2 then n3. Internally,
-        the created triangle points on the dart that goes from n1 to n2.
+        the created triangle points to the dart that goes from n1 to n2.
         An exception is raised if one of the nodes does not exist
         :param n1: first node
         :param n2: second node
@@ -295,7 +331,7 @@ class Mesh:
         n3.set_dart(d3)
 
         self.faces = numpy.append(self.faces, [d1.id])
-        tri = Face(self, len(self.faces))
+        tri = Face(self, len(self.faces)-1)
 
         d1.set_face(tri)
         d2.set_face(tri)
@@ -323,7 +359,7 @@ class Mesh:
         return False, None
 
     def flip_edge_ids(self, id1: int, id2: int) -> bool:
-        return self.flip_edge(Node(self,id1), Node(self,id2))
+        return self.flip_edge(Node(self, id1), Node(self, id2))
 
     def flip_edge(self, n1: Node, n2: Node) -> bool:
         found, d = self.find_inner_edge(n1, n2)
@@ -334,12 +370,12 @@ class Mesh:
         d11 = d1.get_beta(1)
         d21 = d2.get_beta(1)
         d211 = d21.get_beta(1)
-        N1 = d.get_node()
-        N2 = d2.get_node()
-        N3 = d11.get_node()
-        N4 = d211.get_node()
-        F = d.get_face()
-        F2 = d2.get_face()
+        n1 = d.get_node()
+        n2 = d2.get_node()
+        n3 = d11.get_node()
+        n4 = d211.get_node()
+        f1 = d.get_face()
+        f2 = d2.get_face()
 
         d.set_beta(1, d211)
         d2.set_beta(1, d11)
@@ -348,21 +384,21 @@ class Mesh:
         d11.set_beta(1, d21)
         d211.set_beta(1, d1)
 
-        if N1.get_dart().id == d.id:
-            N1.set_dart(d21)
-        if N2.get_dart().id == d2.id:
-            N2.set_dart(d1)
+        if n1.get_dart().id == d.id:
+            n1.set_dart(d21)
+        if n2.get_dart().id == d2.id:
+            n2.set_dart(d1)
 
-        if F.get_dart().id == d11.id:
-            F.set_dart(d)
+        if f1.get_dart().id == d11.id:
+            f1.set_dart(d)
 
-        if F2.get_dart().id == d211.id:
-            F2.set_dart(d2)
+        if f2.get_dart().id == d211.id:
+            f2.set_dart(d2)
 
-        d.set_node(N3)
-        d2.set_node(N4)
-        d211.set_face(F)
-        d11.set_face(F2)
+        d.set_node(n3)
+        d2.set_node(n4)
+        d211.set_face(f1)
+        d11.set_face(f2)
         return True
 
     def add_dart(self, a1: int = -1, a2: int = -1, v: int = -1, f: int = -1) -> Dart:
