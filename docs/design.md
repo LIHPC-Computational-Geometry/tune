@@ -1,11 +1,10 @@
-# Design principles
+# What to do in this project?
 
-
-## Incremental game design
+# Triangular mesh adaptation
 In order to learn how to modify a 2D mesh, we first implement a 2D game
 that works on pure triangular meshes. Starting from a 2D mesh, the goal 
 of the player is to modify the mesh by applying topological operations 
-in order to improve the **mesh quality**. Here the quality is defined 
+in order to improve the **mesh quality**. Here the quality is based 
 on topological criteria only. More precisely, we consider the degree 
 of nodes. The degree of a node is defined as its number of adjacent 
 faces. Ideally:
@@ -14,13 +13,9 @@ faces. Ideally:
 around *n*.
 
 ### Version 1 - Triangles and edge flip
-In this first version, we consider a pure triangular mesh, and we have only one 
-operation, the *edge flipping*
+In the first version, we have only one 
+operation - the *edge flipping* - and we provide triangular meshes for which we know
+what the best solution is. The aim of the intelligent agent we develop is to build this best 
+solution in a mininum number of movements.
 
 
-## CMap design choices
-1. Each node and each face knows/stores the id of a dart
-2. Each dart stores the id of the node and the face it belongs to, plus
-the id of the dart reached by beta1 and beta2. 
-
-<img src="img/scheme.png" width="70%" height="70%"/>
