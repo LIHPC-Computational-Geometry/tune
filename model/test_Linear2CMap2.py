@@ -18,8 +18,8 @@ class TestLinear2CMap(unittest.TestCase):
         n2 = cmap.add_node(1, 0)
         cmap.add_triangle(n2, n0, n1)
 
-        self.assertEquals(json_cmap.nodes, cmap.nodes)
-        self.assertEquals(json_cmap.dart_info, cmap.dart_info)
+        self.assertEqual(json_cmap.nodes.all(), cmap.nodes.all())
+        self.assertEqual(json_cmap.dart_info.all(), cmap.dart_info.all())
 
 if __name__ == '__main__':
     unittest.main()
