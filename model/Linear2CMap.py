@@ -25,6 +25,13 @@ class Dart:
         self.mesh = m
         self.id = id
 
+    def __eq__(self, a_dart: Dart) -> bool:
+        """
+        Equality operator between two darts. It is only based on the mesh and dart info
+        :param a_dart: another dart
+        :return: true if the darts are equal, false otherwise
+        """
+        return self.mesh == a_dart.mesh and self.id == a_dart.id
     def get_beta(self, i: int) -> Dart:
         """
         Get the dart connected to by alpha_i
@@ -185,11 +192,16 @@ class Face:
         :return: a list of nodes
         """
         start = self.get_dart()
-        l = []
-        while start.get_beta(1) != self.mesh.faces[self.id - 1]:
-            l.append(start.get_node())
-            start = Dart(self.mesh, start.get_beta(1))
-        return l
+        nodes_list = []
+        do_loop = False
+        while not do_loop:
+            nodes_list.append(start.get_node())
+            if start.get_beta(1) == self.get_dart():
+                do_loop = True
+            start = start.get_beta(1)
+
+
+        return nodes_list
 
     def get_dart(self) -> Dart:
         """
@@ -338,6 +350,48 @@ class Mesh:
         d3.set_face(tri)
 
         return tri
+    def add_quad(self, n1: Node, n2: Node, n3: Node, n4: Node) -> Face:
+        """
+        Add a quad defined by nodes of indices n1, n2, n3 and n4.
+        The quad is created in the order of n1, n2, n3 then n4. Internally,
+        the created quad points to the dart that goes from n1 to n2.
+        An exception is raised if one of the nodes does not exist
+        :param n1: first node
+        :param n2: second node
+        :param n3: third node
+        :param n4: fourth node
+        :return: the id of the quad
+        """
+        # create darts
+        d1 = self.add_dart()
+        d2 = self.add_dart()
+        d3 = self.add_dart()
+        d4 = self.add_dart()
+
+        d1.set_beta(1, d2)
+        d2.set_beta(1, d3)
+        d3.set_beta(1, d4)
+        d4.set_beta(1, d1)
+
+        d1.set_node(n1)
+        d2.set_node(n2)
+        d3.set_node(n3)
+        d4.set_node(n4)
+
+        n1.set_dart(d1)
+        n2.set_dart(d2)
+        n3.set_dart(d3)
+        n4.set_dart(d4)
+
+        self.faces = numpy.append(self.faces, [d1.id])
+        quad = Face(self, len(self.faces)-1)
+
+        d1.set_face(quad)
+        d2.set_face(quad)
+        d3.set_face(quad)
+        d4.set_face(quad)
+
+        return quad
 
     def find_inner_edge(self, n1: Node, n2: Node) -> (bool, Dart):
         """
