@@ -236,9 +236,18 @@ class Mesh:
             self.add_node(n[0], n[1])
 
         for f in faces:
-            self.add_triangle(Node(self, f[0]),
+            if len(f) == 3:
+                self.add_triangle(Node(self, f[0]),
+                                  Node(self, f[1]),
+                                  Node(self, f[2]))
+
+            elif len(f) == 4:
+                self.add_quad(Node(self, f[0]),
                               Node(self, f[1]),
-                              Node(self, f[2]))
+                              Node(self, f[2]),
+                              Node(self, f[3]))
+            else:
+                raise ValueError("Only triangles and quads are supported")
 
         # now we 2-sew some darts to glue faces along edges
         for d_info in self.dart_info:
