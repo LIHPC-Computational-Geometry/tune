@@ -8,3 +8,6 @@ in "**Learning topological operations on meshes with application to
 block decomposition of polygons**" (see [arxiv article](https://arxiv.org/pdf/2309.06484.pdf)
 and [presentation](http://tetrahedronvii.cimne.com/slides/Persson.pdf)).
 
+## Useful tools for developing in TUNE
+In order to develop in this project, please take a look to useful software we use on the 
+[development tools page](dev/tools.md).
