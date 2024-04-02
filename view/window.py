@@ -37,7 +37,7 @@ class Game:
     win_data = window_data()
 
     def __init__(self, cmap):
-        self.graph = graph.Graph(cmap.get_nodes(), cmap.get_edges())
+        self.graph = graph.Graph(cmap.get_nodes_coordinates(), cmap.get_edges())
         self.model = cmap
         pygame.init()
         self.window = pygame.display.set_mode(Game.win_data.size, Game.win_data.options)
@@ -86,12 +86,12 @@ class Game:
                         if pygame.key.get_pressed()[pygame.K_f]:
                             if self.model.flip_edge_ids(e.start.idx, e.end.idx):
                                 self.graph.clear()
-                                self.graph.update(self.model.get_nodes(),self.model.get_edges())
+                                self.graph.update(self.model.get_nodes_coordinates(), self.model.get_edges())
                                 already_selected = True
                         elif pygame.key.get_pressed()[pygame.K_s]:
                             if self.model.split_edge_ids(e.start.idx, e.end.idx):
                                 self.graph.clear()
-                                self.graph.update(self.model.get_nodes(),self.model.get_edges())
+                                self.graph.update(self.model.get_nodes_coordinates(),self.model.get_edges())
 
     def run(self):
         print("TriGame is  starting!!")
