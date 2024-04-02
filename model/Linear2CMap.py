@@ -31,6 +31,7 @@ class Dart:
         :return: true if the darts are equal, false otherwise
         """
         return self.mesh == a_dart.mesh and self.id == a_dart.id
+
     def get_beta(self, i: int) -> Dart:
         """
         Get the dart connected to by alpha_i
@@ -357,6 +358,7 @@ class Mesh:
         d3.set_face(tri)
 
         return tri
+
     def add_quad(self, n1: Node, n2: Node, n3: Node, n4: Node) -> Face:
         """
         Add a quad defined by nodes of indices n1, n2, n3 and n4.
@@ -482,7 +484,7 @@ class Mesh:
                     df_current.set_beta(2, d)
 
             df_current = df_current.get_beta(1)
-            end = (df_current.id != f.get_dart().id)
+            end = (df_current.id == f.get_dart().id)
 
     def split_edge_ids(self, id1: int, id2: int) -> bool:
         return self.split_edge(Node(self,id1), Node(self,id2))
@@ -505,19 +507,16 @@ class Mesh:
         N5 = self.add_node( (N1.x() + N2.x()) / 2, (N1.y() + N2.y()) / 2)
 
         # modify existing triangles
-        print("Avant modif triangle")
-        print(self.nodes)
         d1.set_node(N5)
         d21.set_node(N5)
 
         # create 2 new triangles
-        print("Avant ajout de triangles")
-        F3 = self.add_triangle(N5, N1, N2)
-        F4 = self.add_triangle(N5, N3, N4)
+        F3 = self.add_triangle(N2, N3, N5)
+        F4 = self.add_triangle(N5, N1, N4)
 
         # update beta2 relations
-        self.set_face_beta2(F3, (d, d21))
-        self.set_face_beta2(F4, (d1, d2))
+        self.set_face_beta2(F3, (d1, d2))
+        self.set_face_beta2(F4, (d, d21))
         return True
 
     def add_dart(self, a1: int = -1, a2: int = -1, v: int = -1, f: int = -1) -> Dart:

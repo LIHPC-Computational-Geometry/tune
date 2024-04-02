@@ -1,6 +1,6 @@
 import unittest
 import Linear2CMap
-import json
+import numpy.testing
 
 
 class TestLinear2CMap(unittest.TestCase):
@@ -43,6 +43,24 @@ class TestLinear2CMap(unittest.TestCase):
         self.assertEqual(n1, nodes_of_t[0])
         self.assertEqual(n2, nodes_of_t[1])
         self.assertEqual(n3, nodes_of_t[2])
+
+    def test_json(self):
+        # mesh with one triangle in json
+        json_mesh = {
+            "nodes": [[0.0, 1.0], [1.0, 1.0], [1.0, 0.0]],
+            "faces": [[2, 0, 1]]
+        }
+        json_cmap = Linear2CMap.Mesh(json_mesh['nodes'], json_mesh['faces'])
+
+        # same mesh programmatically
+        cmap = Linear2CMap.Mesh()
+        n0 = cmap.add_node(0, 1)
+        n1 = cmap.add_node(1, 1)
+        n2 = cmap.add_node(1, 0)
+        cmap.add_triangle(n2, n0, n1)
+
+        numpy.testing.assert_array_equal(json_cmap.nodes, cmap.nodes)
+        numpy.testing.assert_array_equal(json_cmap.dart_info, cmap.dart_info)
 
     def test_single_quad(self):
         cmap = Linear2CMap.Mesh()
@@ -110,7 +128,7 @@ class TestLinear2CMap(unittest.TestCase):
         d1.set_beta(2, d2)
         d2.set_beta(2, d1)
 
-        cmap.flip_edge(n00, n11)
+        cmap.split_edge(n00, n11)
 
 if __name__ == '__main__':
     unittest.main()
