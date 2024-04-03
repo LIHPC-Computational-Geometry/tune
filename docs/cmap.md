@@ -12,7 +12,7 @@ direction (see bottom left).
 the bottom right, we can see those oriented edges (or darts), which are duplicated for edges that are
 shared by two faces (inner edges).
 
-<img src="img/split-model.png"/>
+<img src="img/test_Linear2CMap_flip.png"/>
 
 The full 2-C-map is depicted below
 

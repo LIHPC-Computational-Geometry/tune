@@ -88,12 +88,16 @@ class Game:
                                 self.graph.clear()
                                 self.graph.update(self.model.get_nodes_coordinates(), self.model.get_edges())
                                 already_selected = True
-                        else:
-                            print("Action not yet implemented")
+                        elif pygame.key.get_pressed()[pygame.K_s]:
+                            if self.model.split_edge_ids(e.start.idx, e.end.idx):
+                                self.graph.clear()
+                                self.graph.update(self.model.get_nodes_coordinates(),self.model.get_edges())
+                                already_selected = True
 
     def run(self):
         print("TriGame is  starting!!")
         print("- Press f and the mouse button to flip an edge")
+        print("- Press s and the mouse button to split an edge")
         while True:
             self.control_events()
             self.window.fill((255, 255, 255))
