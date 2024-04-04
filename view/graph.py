@@ -64,7 +64,12 @@ class Edge:
         nv = pygame.math.Vector2(y1 - y2, x2 - x1)
         lp = pygame.math.Vector2(x1, y1)
         p = pygame.math.Vector2(pt)
-        if abs(nv.normalize().dot(p - lp)) < w_data.edge_picking_pixel_tolerance:
+        xy = pygame.math.Vector2(x2 - x1, y2 - y1)
+        # distance from the straight line represented by the edge
+        distance_ok = abs(nv.normalize().dot(p - lp)) < w_data.edge_picking_pixel_tolerance
+        # on the segment ?
+        segment_ok = xy.normalize().dot(p - lp) < xy.length()
+        if distance_ok and segment_ok:
             return True
         return False
 
