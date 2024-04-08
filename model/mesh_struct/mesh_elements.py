@@ -90,7 +90,8 @@ class Dart:
 
 class Node:
     _Dart_type: type = None
-    def __init__(self, m: Mesh, id: int):
+
+    def __init__(self, m, id: int):
         """
         A node is defined by the mesh_struct it belongs to and its id in this
         mesh_struct. Node data are stored in an array owned by its mesh_struct. A node
@@ -168,7 +169,7 @@ class Node:
 
 class Face:
     _Dart_type: type = None
-    def __init__(self, m: Mesh, id: int):
+    def __init__(self, m, id: int):
         """
         A face is defined by the mesh_struct it belongs to and its id in this
         mesh_struct. Face data are stored in an array owned by its mesh_struct. A face

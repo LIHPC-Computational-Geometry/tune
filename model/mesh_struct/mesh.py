@@ -2,11 +2,11 @@ from __future__ import annotations
 import sys
 import numpy
 
-from model.mesh_struct.mesh_elements import *
+from model.mesh_struct.mesh_elements import Dart, Node, Face
 
 """
 Classes Dart, Node and Face must be seen as handlers on data that are stored in the
-mesh_struct class. 
+Mesh class. 
 """
 
 
@@ -43,21 +43,21 @@ class Mesh:
 
     def nb_nodes(self) -> int:
         """
-        :return: the number of vertices in the mesh_struct
+        :return: the number of vertices in the mesh
         """
         # We filter the vertices having the x-coordinate equals to max float. Such vertices were removed
         return len(self.nodes[self.nodes[:, 0] != sys.float_info.max])
 
     def nb_faces(self) -> int:
         """
-           :return: the number of faces in the mesh_struct
+           :return: the number of faces in the mesh
            """
         # We filter the faces having the -1 value. An item with this value is a deleted face
         return len(self.faces[self.faces[:] != -1])
 
     def add_node(self, x: float, y: float) -> Node:
         """
-        Add a vertex in the mesh_struct, this node is not connected to a dart here
+        Add a vertex in the mesh, this node is not connected to a dart here
         :param x: X coordinate
         :param y: Y coordinate
         :return: the created node
@@ -75,7 +75,7 @@ class Mesh:
 
     def get_nodes_coordinates(self):
         """
-        Build a list containing the coordinates of the all the mesh_struct nodes
+        Build a list containing the coordinates of the all the mesh nodes
         :return: a list of coordinates (x,y)
         """
         node_list = []
@@ -85,7 +85,7 @@ class Mesh:
 
     def get_edges(self):
         """
-        Build a list containing the coordinates of the all the mesh_struct nodes
+        Build a list containing the coordinates of the all the mesh nodes
         :return: a list of coordinates (x,y)
         """
         edge_list = []

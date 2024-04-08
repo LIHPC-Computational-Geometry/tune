@@ -130,5 +130,6 @@ class TestLinear2CMap(unittest.TestCase):
 
         cmap.split_edge(n00, n11)
 
+
 if __name__ == '__main__':
     unittest.main()
