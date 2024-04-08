@@ -33,7 +33,7 @@ jobs:
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Test with pytest
       run: |
-        export PYTHONPATH=$PYTHONPATH:${{ github.workspace }}/model 
+        export PYTHONPATH=$PYTHONPATH:${{ github.workspace }}/model:${{ github.workspace }}/view
         coverage run --source=. -m pytest
         coverage xml -o cobertura.xml
     - name: Run codacy-coverage-reporter
