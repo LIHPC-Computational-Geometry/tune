@@ -2,7 +2,7 @@ import unittest
 from pygame import math
 from graph import Edge
 
-class TestMain(unittest.TestCase):
+class TestGraph(unittest.TestCase):
 
     def test_Edge_collide_point(self):
         tolerance = 0.0001
