@@ -48,6 +48,21 @@ class Edge:
         self.color = edge_color_normal
         self.obj = None
 
+    # static method to facilitate unit test
+    @staticmethod
+    def is_pt_on_segment(x1, y1, x2, y2, pt, tolerance) -> bool:
+        nv = pygame.math.Vector2(y1 - y2, x2 - x1)
+        lp = pygame.math.Vector2(x1, y1)
+        p = pygame.math.Vector2(pt)
+        xy = pygame.math.Vector2(x2 - x1, y2 - y1)
+        # distance from the straight line represented by the edge
+        distance_ok = abs(nv.normalize().dot(p - lp)) < tolerance
+        # on the segment ?
+        segment_ok = xy.normalize().dot(p - lp) < xy.length()
+        if distance_ok and segment_ok:
+            return True
+        return False
+
     def switch_selection(self):
         if self.selected:
             self.selected = False
@@ -61,12 +76,7 @@ class Edge:
         y1 = w_data.center.y - w_data.stretch * (self.start.y - w_data.scene_center.y)
         x2 = w_data.center.x + w_data.stretch * (self.end.x - w_data.scene_center.x)
         y2 = w_data.center.y - w_data.stretch * (self.end.y - w_data.scene_center.y)
-        nv = pygame.math.Vector2(y1 - y2, x2 - x1)
-        lp = pygame.math.Vector2(x1, y1)
-        p = pygame.math.Vector2(pt)
-        if abs(nv.normalize().dot(p - lp)) < w_data.edge_picking_pixel_tolerance:
-            return True
-        return False
+        return Edge.is_pt_on_segment(x1, y1, x2, y2, pt, w_data.edge_picking_pixel_tolerance)
 
     def collide_point(self, x, y, w_data):
         return self.distance_point(math.Vector2(x, y), w_data)
