@@ -93,7 +93,7 @@ class Dart:
 class Node:
     _mesh_type: type = None
 
-    def __init__(self, m: _mesh_type, id: int):
+    def __init__(self, m: _mesh_type, node_id: int):
         """
         A node is defined by the mesh_struct it belongs to and its id in this
         mesh_struct. Node data are stored in an array owned by its mesh_struct. A node
@@ -103,7 +103,7 @@ class Node:
         :param id: node id
         """
         self.mesh = m
-        self.id = id
+        self.id = node_id
 
     def __eq__(self, a_node: Node) -> bool:
         """
@@ -172,7 +172,7 @@ class Node:
 class Face:
     _mesh_type: type = None
 
-    def __init__(self, m: _mesh_type, id: int):
+    def __init__(self, m: _mesh_type, face_id: int):
         """
         A face is defined by the mesh_struct it belongs to and its id in this
         mesh_struct. Face data are stored in an array owned by its mesh_struct. A face
@@ -182,7 +182,7 @@ class Face:
         :param id: face id
         """
         self.mesh = m
-        self.id = id
+        self.id = face_id
 
     def get_nodes(self) -> list[Node]:
         """
