@@ -1,0 +1,14 @@
+[run]
+omit =
+    # omit github workflow
+    .github/*
+    # omit everything in /usr
+    /usr/*
+    # omit the test source files, which are here to cover the code and avoid regression
+    */test_*.py
+    # omit non-python files
+    README.md
+    *.json
+    *.yml
+    */__init__.py
+
