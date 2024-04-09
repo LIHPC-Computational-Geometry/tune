@@ -2,7 +2,7 @@ from view.window import Game
 
 import sys
 import json
-import model.mesh_struct.mesh as mesh
+from model.mesh_struct.mesh import Mesh
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
@@ -12,6 +12,6 @@ if __name__ == '__main__':
     else:
         f = open(sys.argv[1])
         json_mesh = json.load(f)
-        cmap = mesh.Mesh(json_mesh['nodes'], json_mesh['faces'])
+        cmap = Mesh(json_mesh['nodes'], json_mesh['faces'])
         g = Game(cmap)
         g.run()

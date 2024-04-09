@@ -2,7 +2,9 @@ from __future__ import annotations
 
 
 class Dart:
-    def __init__(self, m, id: int):
+    _mesh_type: type = None
+
+    def __init__(self, m: _mesh_type, dart_id: int):
         """
         A dart is defined from the mesh_struct it belongs to, and an id, which is the index
         in the mesh_struct container where the dart is stored. In this container, the dart d may be
@@ -17,7 +19,7 @@ class Dart:
         :param id: a index, that corresponds to the location of the dart data in the mesh_struct dart container
         """
         self.mesh = m
-        self.id = id
+        self.id = dart_id
 
     def __eq__(self, a_dart: Dart) -> bool:
         """
@@ -89,9 +91,9 @@ class Dart:
 
 
 class Node:
-    _Dart_type: type = None
+    _mesh_type: type = None
 
-    def __init__(self, m, id: int):
+    def __init__(self, m: _mesh_type, id: int):
         """
         A node is defined by the mesh_struct it belongs to and its id in this
         mesh_struct. Node data are stored in an array owned by its mesh_struct. A node
@@ -168,8 +170,9 @@ class Node:
 
 
 class Face:
-    _Dart_type: type = None
-    def __init__(self, m, id: int):
+    _mesh_type: type = None
+
+    def __init__(self, m: _mesh_type, id: int):
         """
         A face is defined by the mesh_struct it belongs to and its id in this
         mesh_struct. Face data are stored in an array owned by its mesh_struct. A face

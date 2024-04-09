@@ -244,7 +244,7 @@ class Mesh:
         d11.set_face(f2)
         return True
 
-    def set_face_beta2(self, f: Face, darts: (Dart)):
+    def set_face_beta2(self, f: Face, darts: list[Dart]) -> None:
         """
         Set beta2 relation between darts and face darts when possible
         :param f: the face
@@ -310,3 +310,7 @@ class Mesh:
         self.dart_info = numpy.append(self.dart_info, [[len(self.dart_info), a1, a2, v, f]], axis=0)
         return Dart(self, len(self.dart_info) - 1)
 
+
+Dart._mesh_type = Mesh
+Node._mesh_type = Mesh
+Face.mesh_type = Mesh
