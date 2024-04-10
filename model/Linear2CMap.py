@@ -6,6 +6,8 @@ import numpy
 Classes Dart, Node and Face must be seen as handlers on data that are stored in the
 mesh class. 
 """
+
+
 class Dart:
     def __init__(self, m, id: int):
         """
