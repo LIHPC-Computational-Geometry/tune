@@ -1,5 +1,5 @@
 import unittest
-import Linear2CMap
+import model.Linear2CMap as Linear2CMap
 import numpy.testing
 
 

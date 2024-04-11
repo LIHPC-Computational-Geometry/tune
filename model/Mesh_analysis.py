@@ -1,7 +1,7 @@
 from math import sqrt, degrees
 import numpy as np
 
-from Linear2CMap import Node, Dart, Mesh
+from model.Linear2CMap import Node, Dart, Mesh
 
 
 def global_score(m: Mesh) -> (int, int):
@@ -9,15 +9,19 @@ def global_score(m: Mesh) -> (int, int):
     Calculate the overall mesh score. The mesh cannot achieve a better score than the ideal one.
     And the current score is the mesh score.
     :param m: the mesh to be analyzed
-    :return: two return values: the current mesh score and the ideal mesh score
+    :return: three return values: a list of the nodes score, the current mesh score and the ideal mesh score
     """
     mesh_ideal_score = 0
     mesh_score = 0
-    for node in m.nodes:
+    nodes_score = []
+    for i in range(len(m.nodes)):
+        n_id = i
+        node = Node(m, n_id)
         n_score = score_calculation(node)
+        nodes_score.append(n_score)
         mesh_ideal_score += n_score
         mesh_score += abs(n_score)
-    return mesh_score, mesh_ideal_score
+    return nodes_score, mesh_score, mesh_ideal_score
 
 
 def score_calculation(n: Node) -> int:
@@ -31,7 +35,7 @@ def score_calculation(n: Node) -> int:
     boundary_darts = []
     for d in adj_darts_list:
         d_twin = d.get_beta(2)
-        if d_twin not in adj_darts_list:
+        if d_twin is None:
             adjacency += 1
             boundary_darts.append(d)
         else:
@@ -60,11 +64,10 @@ def get_angle(d1: Dart, d2: Dart, n: Node) -> float:
         A = n
         B = d1.get_beta(1).get_node()
         C = d2.get_node()
-        if d2.get_beta(1).get_node() != A:
-            raise ValueError("Angle error")
+
     else:
         A = n
-        B = d1.get_beta(1).get_node()
+        B = d2.get_beta(1).get_node()
         C = d1.get_node()
         if d2.get_node() != A:
             raise ValueError("Angle error")
@@ -98,12 +101,13 @@ def adjacent_darts(n: Node) -> list[Dart]:
     :return: the list of adjacent darts
     """
     adj_darts = []
-    for d in n.mesh.dart_info:
-        d_nfrom = d.node
+    for d_info in n.mesh.dart_info:
+        d = Dart(n.mesh, d_info[0])
+        d_nfrom = d.get_node()
         d_nto = d.get_beta(1)
         if d_nfrom == n:
             adj_darts.append(d)
-        if d_nto.node == n:
-            adj_darts.append(d_nto)
+        if d_nto.get_node() == n:
+            adj_darts.append(d)
     return adj_darts
 
