@@ -301,29 +301,6 @@ class Mesh:
         """
         ni.set_x(sys.float_info.max)
 
-    def get_nodes_coordinates(self):
-        """
-        Build a list containing the coordinates of the all the mesh nodes
-        :return: a list of coordinates (x,y)
-        """
-        node_list = []
-        for n in self.nodes:
-            node_list.append((n[0], n[1]))
-        return node_list
-
-    def get_edges(self):
-        """
-        Build a list containing the coordinates of the all the mesh nodes
-        :return: a list of coordinates (x,y)
-        """
-        edge_list = []
-        for d in self.dart_info:
-            n1 = Dart(self, d[0]).get_node()
-            n2 = Dart(self, d[1]).get_node()
-            if (d[2] != -1 and n1.id < n2.id) or d[2] == -1:
-                edge_list.append((n1.id, n2.id))
-        return edge_list
-
     def add_triangle(self, n1: Node, n2: Node, n3: Node) -> Face:
         """
         Add a triangle defined by nodes of indices n1, n2, and n3.

@@ -6,6 +6,8 @@ edge_color_normal = pygame.Color(30, 30, 30)  # Dark Grey
 vertex_color_normal = pygame.Color(255, 0, 0)  # Red
 edge_color_select = pygame.Color(0, 255, 0)  # Green
 vertex_color_select = pygame.Color(128, 128, 128)  # Grey
+positive_irregularity_color = pygame.Color(255, 0, 255)
+negative_irregularity_color = pygame.Color(0, 0, 255)
 
 
 class Vertex:
@@ -16,7 +18,7 @@ class Vertex:
         self.selected = False
         self.color = vertex_color_normal
         self.obj = None
-        self.value = value
+        self.value = round(value,0)
 
     def switch_selection(self):
         if self.selected:
@@ -32,11 +34,19 @@ class Vertex:
     def draw(self, window, font, w_data):
         x = w_data.center.x + w_data.stretch * (self.x - w_data.scene_center.x)
         y = w_data.center.y - w_data.stretch * (self.y - w_data.scene_center.y)
-        self.obj = pygame.draw.circle(window, self.color,
-                                      (x, y),
-                                      w_data.node_size, 0)
-        text = font.render(str(self.value), True, (255, 255, 255))
-        window.blit(text, text.get_rect(center=(x, y)))
+        if self.value != 0 :
+            if self.value > 0:
+                self.obj = pygame.draw.circle(window, positive_irregularity_color,
+                                          (x, y),
+                                          15, 15)
+                text = font.render(str(self.value), True, (255, 255, 255))
+                self.blit = window.blit(text, text.get_rect(center=(x, y)))
+            else:
+                self.obj = pygame.draw.circle(window, negative_irregularity_color,
+                                              (x, y),
+                                              15, 15)
+                text = font.render(str(self.value), True, (255, 255, 255))
+                self.blit = window.blit(text, text.get_rect(center=(x, y)))
 
 
 class Edge:
@@ -91,30 +101,30 @@ class Edge:
 
 
 class Graph:
-    def __init__(self, vertices=[], edges=[]):
+    def __init__(self, vertices=[], edges=[], scores=[]):
         self.clear()
-        self.update(vertices, edges)
+        self.update(vertices, edges, scores)
 
     def clear(self):
         self.vertices = []
         self.edges = []
 
-    def update(self, vertices, edges):
+    def update(self, vertices, edges, scores):
         for idx, n in enumerate(vertices):
-            self.create_vertex(idx, n[0], n[1])
+            nodes_scores= scores[0]
+            n_value = nodes_scores[idx]
+            self.create_vertex(idx, n[0], n[1], n_value)
         for e in edges:
             self.create_edge(e[0], e[1])
 
-    def create_vertex(self, id: int, x: int, y: int) -> int:
-        v = Vertex(id, x, y)
+    def create_vertex(self, id: int, x: int, y: int, n_value) -> int:
+        v = Vertex(id, x, y, n_value)
         self.add_vertex(v)
         return len(self.vertices) - 1
 
     def create_edge(self, i1: int, i2: int) -> int:
         n1 = self.vertices[i1]
         n2 = self.vertices[i2]
-        n1.value += 1
-        n2.value += 1
         self.add_edge(Edge(n1, n2))
         return len(self.edges) - 1
 
