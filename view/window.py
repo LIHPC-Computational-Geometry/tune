@@ -38,7 +38,7 @@ class Game:
     win_data = window_data()
 
     def __init__(self, cmap, mesh_disp: MeshDisplay):
-        scores = [mesh_disp.get_nodes_score(), mesh_disp.get_mesh_score(), mesh_disp.get_ideal_mesh_score()]
+        scores = mesh_disp.get_scores()
         self.graph = graph.Graph(mesh_disp.get_nodes_coordinates(), mesh_disp.get_edges(), scores)
         self.model = cmap
         self.mesh_disp = mesh_disp

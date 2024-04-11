@@ -29,14 +29,10 @@ class MeshDisplay:
                 edge_list.append((n1_id, n2_id))
         return edge_list
 
-    def get_nodes_score(self):
+    def get_scores(self):
+        """
+        Calculates the irregularities of each node and the real and ideal score of the mesh
+        :return: a list of three elements (nodes_score, mesh_score, ideal_mesh_score)
+        """
         scores = global_score(self.mesh)
-        return scores[0]
-
-    def get_mesh_score(self):
-        scores = global_score(self.mesh)
-        return scores[1]
-
-    def get_ideal_mesh_score(self):
-        scores = global_score(self.mesh)
-        return scores[2]
+        return scores
