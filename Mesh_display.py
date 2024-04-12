@@ -1,4 +1,4 @@
-from model.Linear2CMap import Mesh
+from model.mesh_struct.mesh import Mesh
 from model.Mesh_analysis import global_score
 
 

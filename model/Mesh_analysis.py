@@ -1,8 +1,8 @@
 from math import sqrt, degrees
 import numpy as np
 
-from model.Linear2CMap import Node, Dart, Mesh
-
+from model.mesh_struct.mesh_elements import Dart, Node
+from model.mesh_struct.mesh import Mesh
 
 def global_score(m: Mesh) -> (int, int):
     """
@@ -33,16 +33,17 @@ def score_calculation(n: Node) -> int:
     adj_darts_list = adjacent_darts(n)
     adjacency = 0
     boundary_darts = []
+    b = on_boundary(n)
     for d in adj_darts_list:
         d_twin = d.get_beta(2)
-        if d_twin is None:
+        if d_twin is None and b:
             adjacency += 1
             boundary_darts.append(d)
         else:
             adjacency += 0.5
-    if boundary_darts:
-        if len(boundary_darts) != 2:
-            raise ValueError("Boundary error")
+    if len(boundary_darts) >= 2:
+        if not b:
+            raise ValueError("Not on boundary")
         angle = get_angle(boundary_darts[0], boundary_darts[1], n)
         ideal_adjacency = max(round(angle/60)+1, 2)
     else:

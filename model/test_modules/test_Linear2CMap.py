@@ -1,17 +1,17 @@
 import unittest
-import model.Linear2CMap as Linear2CMap
+import model.mesh_struct.mesh as mesh
 import numpy.testing
 
 
 class TestLinear2CMap(unittest.TestCase):
 
     def test_empty_mesh(self):
-        cmap = Linear2CMap.Mesh()
+        cmap = mesh.Mesh()
         self.assertEqual(0, cmap.nb_nodes())
         self.assertEqual(0, cmap.nb_faces())
 
     def test_nodes(self):
-        cmap = Linear2CMap.Mesh()
+        cmap = mesh.Mesh()
         self.assertEqual(0, cmap.nb_nodes())
 
         n = cmap.add_node(1.1, 2.3)
@@ -20,6 +20,11 @@ class TestLinear2CMap(unittest.TestCase):
         self.assertEqual(2.3, n.y())
         n.set_x(3)
         self.assertEqual(3, n.x())
+        n.set_y(4)
+        self.assertEqual(4, n.y())
+        n.set_xy(5, 6)
+        self.assertEqual(5, n.x())
+        self.assertEqual(6, n.y())
         n2 = cmap.add_node(1, 23)
         n3 = cmap.add_node(3, 1)
         self.assertEqual(3, cmap.nb_nodes())
@@ -31,7 +36,7 @@ class TestLinear2CMap(unittest.TestCase):
         self.assertEqual(0, cmap.nb_nodes())
 
     def test_single_triangle(self):
-        cmap = Linear2CMap.Mesh()
+        cmap = mesh.Mesh()
         n1 = cmap.add_node(0, 0)
         n2 = cmap.add_node(0, 1)
         n3 = cmap.add_node(1, 0)
@@ -50,10 +55,10 @@ class TestLinear2CMap(unittest.TestCase):
             "nodes": [[0.0, 1.0], [1.0, 1.0], [1.0, 0.0]],
             "faces": [[2, 0, 1]]
         }
-        json_cmap = Linear2CMap.Mesh(json_mesh['nodes'], json_mesh['faces'])
+        json_cmap = mesh.Mesh(json_mesh['nodes'], json_mesh['faces'])
 
         # same mesh programmatically
-        cmap = Linear2CMap.Mesh()
+        cmap = mesh.Mesh()
         n0 = cmap.add_node(0, 1)
         n1 = cmap.add_node(1, 1)
         n2 = cmap.add_node(1, 0)
@@ -63,7 +68,7 @@ class TestLinear2CMap(unittest.TestCase):
         numpy.testing.assert_array_equal(json_cmap.dart_info, cmap.dart_info)
 
     def test_single_quad(self):
-        cmap = Linear2CMap.Mesh()
+        cmap = mesh.Mesh()
         n1 = cmap.add_node(0, 0)
         n2 = cmap.add_node(0, 1)
         n3 = cmap.add_node(1, 1)
@@ -79,7 +84,7 @@ class TestLinear2CMap(unittest.TestCase):
         self.assertEqual(n4, nodes_of_t[3])
 
     def test_flip(self):
-        cmap = Linear2CMap.Mesh()
+        cmap = mesh.Mesh()
         n00 = cmap.add_node(0, 0)
         n01 = cmap.add_node(0, 1)
         n10 = cmap.add_node(1, 0)
@@ -106,7 +111,7 @@ class TestLinear2CMap(unittest.TestCase):
         self.assertEqual(4, cmap.nb_nodes())
 
     def test_split(self):
-        cmap = Linear2CMap.Mesh()
+        cmap = mesh.Mesh()
         n00 = cmap.add_node(0, 0)
         n01 = cmap.add_node(0, 1)
         n10 = cmap.add_node(1, 0)
@@ -129,6 +134,7 @@ class TestLinear2CMap(unittest.TestCase):
         d2.set_beta(2, d1)
 
         cmap.split_edge(n00, n11)
+
 
 if __name__ == '__main__':
     unittest.main()

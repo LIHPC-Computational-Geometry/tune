@@ -89,12 +89,12 @@ class Game:
                         if pygame.key.get_pressed()[pygame.K_f]:
                             if self.model.flip_edge_ids(e.start.idx, e.end.idx):
                                 self.graph.clear()
-                                self.graph.update(self.mesh_disp.get_nodes_coordinates(), self.mesh_disp.get_edges())
+                                self.graph.update(self.mesh_disp.get_nodes_coordinates(), self.mesh_disp.get_edges(), self.mesh_disp.get_scores())
                                 already_selected = True
                         elif pygame.key.get_pressed()[pygame.K_s]:
                             if self.model.split_edge_ids(e.start.idx, e.end.idx):
                                 self.graph.clear()
-                                self.graph.update(self.mesh_disp.get_nodes_coordinates(),self.mesh_disp.get_edges())
+                                self.graph.update(self.mesh_disp.get_nodes_coordinates(),self.mesh_disp.get_edges(), self.mesh_disp.get_scores())
                                 already_selected = True
 
     def run(self):

@@ -3,8 +3,8 @@ from view.window import Game
 
 import sys
 import json
-import model.Linear2CMap
-import Mesh_display
+from model.mesh_struct.mesh import Mesh
+from Mesh_display import MeshDisplay
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
@@ -14,7 +14,7 @@ if __name__ == '__main__':
     else:
         f = open(sys.argv[1])
         json_mesh = json.load(f)
-        cmap = model.Linear2CMap.Mesh(json_mesh['nodes'], json_mesh['faces'])
+        cmap = Mesh(json_mesh['nodes'], json_mesh['faces'])
         mesh_disp = MeshDisplay(cmap)
         g = Game(cmap, mesh_disp)
         g.run()
