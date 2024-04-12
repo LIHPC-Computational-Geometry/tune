@@ -7,7 +7,7 @@ import json
 class TestMeshAnalysis(unittest.TestCase):
 
     def test_mesh_global_score(self):
-        cmap = open_json_file("reg_mesh.json")
+        cmap = open_json_file('reg_mesh.json')
         nodes_score, mesh_score, mesh_ideal_score = Mesh_analysis.global_score(cmap)
         self.assertEqual((0,0), (mesh_score,mesh_ideal_score) )  # add assertion here
 
