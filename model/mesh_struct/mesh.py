@@ -266,6 +266,8 @@ class Mesh:
         # modify existing triangles
         d1.set_node(N5)
         d21.set_node(N5)
+        d.set_beta(1, d1)
+        d2.set_beta(1, d21)
 
         # create 2 new triangles
         F3 = self.add_triangle(N2, N3, N5)
@@ -273,7 +275,13 @@ class Mesh:
 
         # update beta2 relations
         self.set_face_beta2(F3, (d1, d2))
+        d2b2 = d2.get_beta(2)
+        d2b21 = d2b2.get_beta(1)
+        self.set_beta2(d2b21)
         self.set_face_beta2(F4, (d, d21))
+        db2 = d.get_beta(2)
+        db21 = db2.get_beta(1)
+        self.set_beta2(db21)
         return True
 
     def add_dart(self, a1: int = -1, a2: int = -1, v: int = -1, f: int = -1) -> Dart:
@@ -286,3 +294,15 @@ class Mesh:
         """
         self.dart_info = numpy.append(self.dart_info, [[len(self.dart_info), a1, a2, v, f]], axis=0)
         return Dart(self, len(self.dart_info) - 1)
+
+    def set_beta2(self, dart: Dart) -> None:
+        dart_nfrom = dart.get_node()
+        dart_nto = dart.get_beta(1)
+        for d_info in dart.mesh.dart_info:
+            d = Dart(dart.mesh, d_info[0])
+            d_nfrom = d.get_node()
+            d_nto = d.get_beta(1)
+            if d_nfrom == dart_nto.get_node() and d_nto.get_node() == dart_nfrom :
+                d.set_beta(2, dart)
+                dart.set_beta(2, d)
+

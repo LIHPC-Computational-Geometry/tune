@@ -32,8 +32,8 @@ def score_calculation(n: Node) -> int:
     """
     adj_darts_list = adjacent_darts(n)
     adjacency = 0
-    boundary_darts = []
     b = on_boundary(n)
+    boundary_darts = []
     for d in adj_darts_list:
         d_twin = d.get_beta(2)
         if d_twin is None and b:
@@ -42,8 +42,8 @@ def score_calculation(n: Node) -> int:
         else:
             adjacency += 0.5
     if len(boundary_darts) >= 2:
-        if not b:
-            raise ValueError("Not on boundary")
+        if len(boundary_darts) > 3:
+            raise ValueError("Boundary error")
         angle = get_angle(boundary_darts[0], boundary_darts[1], n)
         ideal_adjacency = max(round(angle/60)+1, 2)
     else:

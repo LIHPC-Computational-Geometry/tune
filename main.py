@@ -1,10 +1,10 @@
-from Mesh_display import MeshDisplay
 from view.window import Game
+from model.mesh_struct.mesh import Mesh
+from Mesh_display import MeshDisplay
 
 import sys
 import json
-from model.mesh_struct.mesh import Mesh
-from Mesh_display import MeshDisplay
+
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
