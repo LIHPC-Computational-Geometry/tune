@@ -1,6 +1,6 @@
 from view.window import Game
 from model.mesh_struct.mesh import Mesh
-from Mesh_display import MeshDisplay
+from mesh_display import MeshDisplay
 
 import sys
 import json

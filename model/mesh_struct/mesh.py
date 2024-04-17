@@ -296,6 +296,10 @@ class Mesh:
         return Dart(self, len(self.dart_info) - 1)
 
     def set_beta2(self, dart: Dart) -> None:
+        """
+        Search for a dart to connect with beta2 relation when possible.
+        :param dart: the dart to connect with a beta2 relation
+        """
         dart_nfrom = dart.get_node()
         dart_nto = dart.get_beta(1)
         for d_info in dart.mesh.dart_info:

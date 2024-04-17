@@ -1,5 +1,5 @@
 from model.mesh_struct.mesh import Mesh
-from model.Mesh_analysis import global_score
+from model.mesh_analysis import global_score
 
 
 class MeshDisplay:

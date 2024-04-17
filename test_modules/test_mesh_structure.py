@@ -3,7 +3,7 @@ import model.mesh_struct.mesh as mesh
 import numpy.testing
 
 
-class TestLinear2CMap(unittest.TestCase):
+class TestMeshStructure(unittest.TestCase):
 
     def test_empty_mesh(self):
         cmap = mesh.Mesh()

@@ -2,7 +2,7 @@ import pygame
 from pygame import math
 from pygame.locals import *
 from view import graph
-from Mesh_display import MeshDisplay
+from mesh_display import MeshDisplay
 import sys
 
 color1 = pygame.Color(30, 30, 30)  # Dark Grey

@@ -4,6 +4,7 @@ import numpy as np
 from model.mesh_struct.mesh_elements import Dart, Node
 from model.mesh_struct.mesh import Mesh
 
+
 def global_score(m: Mesh) -> (int, int):
     """
     Calculate the overall mesh score. The mesh cannot achieve a better score than the ideal one.
