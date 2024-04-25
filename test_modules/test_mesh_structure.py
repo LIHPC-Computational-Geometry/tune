@@ -3,7 +3,7 @@ import model.mesh_struct.mesh as mesh
 import numpy.testing
 
 
-class TestLinear2CMap(unittest.TestCase):
+class TestMeshStructure(unittest.TestCase):
 
     def test_empty_mesh(self):
         cmap = mesh.Mesh()
@@ -50,14 +50,14 @@ class TestLinear2CMap(unittest.TestCase):
         self.assertEqual(n3, nodes_of_t[2])
 
     def test_json(self):
-        # mesh_struct with one triangle in json
+        # mesh with one triangle in json
         json_mesh = {
             "nodes": [[0.0, 1.0], [1.0, 1.0], [1.0, 0.0]],
             "faces": [[2, 0, 1]]
         }
         json_cmap = mesh.Mesh(json_mesh['nodes'], json_mesh['faces'])
 
-        # same mesh_struct programmatically
+        # same mesh programmatically
         cmap = mesh.Mesh()
         n0 = cmap.add_node(0, 1)
         n1 = cmap.add_node(1, 1)

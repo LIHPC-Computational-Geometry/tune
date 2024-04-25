@@ -1,8 +1,10 @@
 from view.window import Game
+from model.mesh_struct.mesh import Mesh
+from mesh_display import MeshDisplay
 
 import sys
 import json
-from model.mesh_struct.mesh import Mesh
+
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
@@ -13,5 +15,6 @@ if __name__ == '__main__':
         f = open(sys.argv[1])
         json_mesh = json.load(f)
         cmap = Mesh(json_mesh['nodes'], json_mesh['faces'])
-        g = Game(cmap)
+        mesh_disp = MeshDisplay(cmap)
+        g = Game(cmap, mesh_disp)
         g.run()

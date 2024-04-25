@@ -73,29 +73,6 @@ class Mesh:
         """
         ni.set_x(sys.float_info.max)
 
-    def get_nodes_coordinates(self):
-        """
-        Build a list containing the coordinates of the all the mesh nodes
-        :return: a list of coordinates (x,y)
-        """
-        node_list = []
-        for n in self.nodes:
-            node_list.append((n[0], n[1]))
-        return node_list
-
-    def get_edges(self):
-        """
-        Build a list containing the coordinates of the all the mesh nodes
-        :return: a list of coordinates (x,y)
-        """
-        edge_list = []
-        for d in self.dart_info:
-            n1 = Dart(self, d[0]).get_node()
-            n2 = Dart(self, d[1]).get_node()
-            if (d[2] != -1 and n1.id < n2.id) or d[2] == -1:
-                edge_list.append((n1.id, n2.id))
-        return edge_list
-
     def add_triangle(self, n1: Node, n2: Node, n3: Node) -> Face:
         """
         Add a triangle defined by nodes of indices n1, n2, and n3.
@@ -185,7 +162,7 @@ class Mesh:
     def find_inner_edge(self, n1: Node, n2: Node) -> (bool, Dart):
         """
         Try and find the edge connecting n1 and n2. If the edge does
-        not exist, or is on the mesh_struct boundary, it returns False. Else
+        not exist, or is on the mesh boundary, it returns False. Else
         it returns True and the dart coming from n1 and pointing to n2
         :param n1: First node
         :param n2: Second node
@@ -289,6 +266,8 @@ class Mesh:
         # modify existing triangles
         d1.set_node(N5)
         d21.set_node(N5)
+        d.set_beta(1, d1)
+        d2.set_beta(1, d21)
 
         # create 2 new triangles
         F3 = self.add_triangle(N2, N3, N5)
@@ -296,12 +275,18 @@ class Mesh:
 
         # update beta2 relations
         self.set_face_beta2(F3, (d1, d2))
+        d2b2 = d2.get_beta(2)
+        d2b21 = d2b2.get_beta(1)
+        self.set_beta2(d2b21)
         self.set_face_beta2(F4, (d, d21))
+        db2 = d.get_beta(2)
+        db21 = db2.get_beta(1)
+        self.set_beta2(db21)
         return True
 
     def add_dart(self, a1: int = -1, a2: int = -1, v: int = -1, f: int = -1) -> Dart:
         """
-        This function add a dart in the mesh_struct. It must not be used directly
+        This function add a dart in the mesh. It must not be used directly
         :param a1: dart index to connect by alpha1
         :param a2: dart index to connect by alpha2
         :param v:  vertex index this dart point to
@@ -310,7 +295,18 @@ class Mesh:
         self.dart_info = numpy.append(self.dart_info, [[len(self.dart_info), a1, a2, v, f]], axis=0)
         return Dart(self, len(self.dart_info) - 1)
 
+    def set_beta2(self, dart: Dart) -> None:
+        """
+        Search for a dart to connect with beta2 relation when possible.
+        :param dart: the dart to connect with a beta2 relation
+        """
+        dart_nfrom = dart.get_node()
+        dart_nto = dart.get_beta(1)
+        for d_info in dart.mesh.dart_info:
+            d = Dart(dart.mesh, d_info[0])
+            d_nfrom = d.get_node()
+            d_nto = d.get_beta(1)
+            if d_nfrom == dart_nto.get_node() and d_nto.get_node() == dart_nfrom :
+                d.set_beta(2, dart)
+                dart.set_beta(2, d)
 
-Dart._mesh_type = Mesh
-Node._mesh_type = Mesh
-Face.mesh_type = Mesh

@@ -2,6 +2,7 @@ import pygame
 from pygame import math
 from pygame.locals import *
 from view import graph
+from mesh_display import MeshDisplay
 import sys
 
 color1 = pygame.Color(30, 30, 30)  # Dark Grey
@@ -27,7 +28,7 @@ class window_data:
         self.scene_xmax = 250
         self.scene_ymin = -250
         self.scene_ymax = 250
-        self.node_size = 10
+        self.node_size = 15
         self.edge_thickness = 2
         self.font_size = 25
         self.edge_picking_pixel_tolerance = 5
@@ -36,9 +37,11 @@ class window_data:
 class Game:
     win_data = window_data()
 
-    def __init__(self, cmap):
-        self.graph = graph.Graph(cmap.get_nodes_coordinates(), cmap.get_edges())
+    def __init__(self, cmap, mesh_disp: MeshDisplay):
+        scores = mesh_disp.get_scores()
+        self.graph = graph.Graph(mesh_disp.get_nodes_coordinates(), mesh_disp.get_edges(), scores)
         self.model = cmap
+        self.mesh_disp = mesh_disp
         pygame.init()
         self.window = pygame.display.set_mode(Game.win_data.size, Game.win_data.options)
         pygame.display.set_caption('TriGame')
@@ -86,12 +89,12 @@ class Game:
                         if pygame.key.get_pressed()[pygame.K_f]:
                             if self.model.flip_edge_ids(e.start.idx, e.end.idx):
                                 self.graph.clear()
-                                self.graph.update(self.model.get_nodes_coordinates(), self.model.get_edges())
+                                self.graph.update(self.mesh_disp.get_nodes_coordinates(), self.mesh_disp.get_edges(), self.mesh_disp.get_scores())
                                 already_selected = True
                         elif pygame.key.get_pressed()[pygame.K_s]:
                             if self.model.split_edge_ids(e.start.idx, e.end.idx):
                                 self.graph.clear()
-                                self.graph.update(self.model.get_nodes_coordinates(),self.model.get_edges())
+                                self.graph.update(self.mesh_disp.get_nodes_coordinates(),self.mesh_disp.get_edges(), self.mesh_disp.get_scores())
                                 already_selected = True
 
     def run(self):
