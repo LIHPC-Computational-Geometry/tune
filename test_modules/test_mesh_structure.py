@@ -2,6 +2,8 @@ import unittest
 import model.mesh_struct.mesh as mesh
 import numpy.testing
 
+from actions.triangular_actions import split_edge, flip_edge
+
 
 class TestMeshStructure(unittest.TestCase):
 
@@ -106,7 +108,7 @@ class TestMeshStructure(unittest.TestCase):
         d1.set_beta(2, d2)
         d2.set_beta(2, d1)
 
-        cmap.flip_edge(n00, n11)
+        flip_edge(cmap, n00, n11)
         self.assertEqual(2, cmap.nb_faces())
         self.assertEqual(4, cmap.nb_nodes())
 
@@ -133,7 +135,7 @@ class TestMeshStructure(unittest.TestCase):
         d1.set_beta(2, d2)
         d2.set_beta(2, d1)
 
-        cmap.split_edge(n00, n11)
+        split_edge(cmap, n00, n11)
 
 
 if __name__ == '__main__':
