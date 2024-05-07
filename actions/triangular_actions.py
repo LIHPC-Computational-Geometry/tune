@@ -13,7 +13,6 @@ def flip_edge(mesh: Mesh, n1: Node, n2: Node) -> True:
     found, d = mesh.find_inner_edge(n1, n2)
     if not found:
         return False
-    
     d2, d1, d11, d21, d211, n1, n2, n3, n4 = active_triangles(mesh, d)
 
     test_degree(n3)
