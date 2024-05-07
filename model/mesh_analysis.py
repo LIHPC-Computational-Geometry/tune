@@ -31,18 +31,14 @@ def score_calculation(n: Node) -> int:
     :param n: a node in the mesh.
     :return: the irregularity of the node
     """
-    adj_darts_list = adjacent_darts(n)
-    adjacency = 0
-    b = on_boundary(n)
-    boundary_darts = []
-    for d in adj_darts_list:
-        d_twin = d.get_beta(2)
-        if d_twin is None and b:
-            adjacency += 1
-            boundary_darts.append(d)
-        else:
-            adjacency += 0.5
-    if len(boundary_darts) >= 2:
+    adjacency = degree(n)
+    if on_boundary(n):
+        adj_darts_list = adjacent_darts(n)
+        boundary_darts = []
+        for d in adj_darts_list:
+            d_twin = d.get_beta(2)
+            if d_twin is None:
+                boundary_darts.append(d)
         if len(boundary_darts) > 3:
             raise ValueError("Boundary error")
         angle = get_angle(boundary_darts[0], boundary_darts[1], n)
@@ -113,3 +109,23 @@ def adjacent_darts(n: Node) -> list[Dart]:
             adj_darts.append(d)
     return adj_darts
 
+
+def degree(n: Node) -> int:
+    """
+    Function to calculate the degree of a node in the mesh.
+    :param n: a node in the mesh.
+    :return: the degree of the node
+    """
+    adj_darts_list = adjacent_darts(n)
+    adjacency = 0
+    b = on_boundary(n)
+    boundary_darts = []
+    for d in adj_darts_list:
+        d_twin = d.get_beta(2)
+        if d_twin is None and b:
+            adjacency += 1
+            boundary_darts.append(d)
+        else:
+            adjacency += 0.5
+
+    return adjacency

@@ -1,6 +1,7 @@
 import unittest
 from model.mesh_struct.mesh import Mesh
 import model.mesh_analysis as Mesh_analysis
+from actions.triangular_actions import split_edge_ids
 
 
 class TestMeshAnalysis(unittest.TestCase):
@@ -22,7 +23,6 @@ class TestMeshAnalysis(unittest.TestCase):
         cmap = Mesh(nodes,faces)
         nodes_score, mesh_score, mesh_ideal_score = Mesh_analysis.global_score(cmap)
         self.assertEqual((6, -2), (mesh_score,mesh_ideal_score) )  # add assertion here
-        
 
     def test_mesh_bad_score(self):
         nodes = [[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0], [2.0, 0.0]]
@@ -35,8 +35,8 @@ class TestMeshAnalysis(unittest.TestCase):
         nodes = [[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0], [2.0, 0.0]]
         faces = [[0, 1, 2], [0, 2, 3], [1, 4, 2]]
         cmap = Mesh(nodes, faces)
-        cmap.split_edge_ids(0,2)
-        cmap.split_edge_ids(1, 2)
+        split_edge_ids(cmap, 0, 2)
+        split_edge_ids(cmap, 1, 2)
         nodes_score, mesh_score, mesh_ideal_score = Mesh_analysis.global_score(cmap)
         self.assertEqual((5, 1), (mesh_score, mesh_ideal_score))
 
