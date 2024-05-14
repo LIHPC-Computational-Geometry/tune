@@ -3,6 +3,7 @@ from pygame import math
 from pygame.locals import *
 from view import graph
 from mesh_display import MeshDisplay
+from actions.triangular_actions import split_edge_ids, flip_edge_ids
 import sys
 
 color1 = pygame.Color(30, 30, 30)  # Dark Grey
@@ -87,12 +88,12 @@ class Game:
                 for e in self.graph.edges:
                     if e.collide_point(x, y, self.win_data) and not already_selected:
                         if pygame.key.get_pressed()[pygame.K_f]:
-                            if self.model.flip_edge_ids(e.start.idx, e.end.idx):
+                            if flip_edge_ids(self.model, e.start.idx, e.end.idx):
                                 self.graph.clear()
                                 self.graph.update(self.mesh_disp.get_nodes_coordinates(), self.mesh_disp.get_edges(), self.mesh_disp.get_scores())
                                 already_selected = True
                         elif pygame.key.get_pressed()[pygame.K_s]:
-                            if self.model.split_edge_ids(e.start.idx, e.end.idx):
+                            if split_edge_ids(self.model, e.start.idx, e.end.idx):
                                 self.graph.clear()
                                 self.graph.update(self.mesh_disp.get_nodes_coordinates(),self.mesh_disp.get_edges(), self.mesh_disp.get_scores())
                                 already_selected = True
