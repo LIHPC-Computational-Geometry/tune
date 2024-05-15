@@ -9,12 +9,13 @@ import json
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
 
-    cmap = random_mesh(30)
-    mesh_disp = MeshDisplay(cmap)
-    g = Game(cmap, mesh_disp)
-    g.run()
-
-
+    if len(sys.argv) != 2:
+        print("Usage: main.py <nb_nodes_of_the_mesh>")
+    else:
+        cmap = random_mesh(int(sys.argv[1]))
+        mesh_disp = MeshDisplay(cmap)
+        g = Game(cmap, mesh_disp)
+        g.run()
 
 
 """

@@ -25,6 +25,9 @@ def regular_mesh(num_nodes_max: int) -> Mesh:
     while dart_id < len(mesh.dart_info):
         d_info = mesh.dart_info[dart_id]
         d = Dart(mesh, d_info[0])
+        A = d.get_node()
+        d1 = d.get_beta(1)
+        B = d1.get_node()
         x_C, y_C = find_opposite_node(d)
 
         # Search if the node C already exist in the actual mesh
