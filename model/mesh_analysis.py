@@ -1,4 +1,4 @@
-from math import sqrt, degrees
+from math import sqrt, degrees, radians, cos, sin
 import numpy as np
 
 from model.mesh_struct.mesh_elements import Dart, Node
@@ -48,7 +48,7 @@ def get_angle(d1: Dart, d2: Dart, n: Node) -> float:
     :param d1: the first boundary dart.
     :param d2: the second boundary dart.
     :param n: the boundary node
-    :return:
+    :return: the angle (degrees)
     """
     if d1.get_node() == n:
         A = n
@@ -71,6 +71,11 @@ def get_angle(d1: Dart, d2: Dart, n: Node) -> float:
 
 
 def get_boundary_angle(n: Node) -> float:
+    """
+    Calculate the boundary angle of a node in the mesh.
+    :param n: a boundary node
+    :return: the boundary angle (degrees)
+    """
     adj_darts_list = adjacent_darts(n)
     boundary_darts = []
     for d in adj_darts_list:
@@ -132,11 +137,15 @@ def degree(n: Node) -> int:
             boundary_darts.append(d)
         else:
             adjacency += 0.5
-
     return adjacency
 
 
 def get_boundary_darts(m: Mesh) -> list[Dart]:
+    """
+    Find all boundary darts
+    :param m: a mesh
+    :return: a list of all boundary darts
+    """
     boundary_darts = []
     for d_info in m.dart_info:
         d = Dart(m, d_info[0])
@@ -147,6 +156,11 @@ def get_boundary_darts(m: Mesh) -> list[Dart]:
 
 
 def get_boundary_nodes(m: Mesh) -> list[Node]:
+    """
+    Find all boundary nodes
+    :param m: a mesh
+    :return: a list of all boundary nodes
+    """
     boundary_nodes = []
     nb_nodes = len(m.nodes)
     for n_id in range(0, nb_nodes):
@@ -154,3 +168,25 @@ def get_boundary_nodes(m: Mesh) -> list[Node]:
         if on_boundary(n):
             boundary_nodes.append(n)
     return boundary_nodes
+
+
+def find_opposite_node(d: Dart) -> (int, int):
+    """
+    Find the coordinates of the vertex opposite in the adjacent triangle
+    :param d: a dart
+    :return: (X Coordinate, Y Coordinate)
+    """
+    A = d.get_node()
+    d1 = d.get_beta(1)
+    B = d1.get_node()
+
+    vect_AB = (B.x() - A.x(), B.y() - A.y())
+
+    angle_rot = radians(300)
+    x_AC = round(vect_AB[0] * cos(angle_rot) - vect_AB[1] * sin(angle_rot), 2)
+    y_AC = round(vect_AB[1] * cos(angle_rot) + vect_AB[0] * sin(angle_rot), 2)
+
+    x_C = A.x() + x_AC
+    y_C = A.y() + y_AC
+
+    return x_C, y_C
