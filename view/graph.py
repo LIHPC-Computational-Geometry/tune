@@ -68,7 +68,7 @@ class Edge:
         # distance from the straight line represented by the edge
         distance_ok = abs(nv.normalize().dot(p - lp)) < tolerance
         # on the segment ?
-        segment_ok = xy.normalize().dot(p - lp) < xy.length()
+        segment_ok = (0 <= xy.normalize().dot(p - lp)) and (xy.normalize().dot(p - lp) <= xy.length())
         if distance_ok and segment_ok:
             return True
         return False
@@ -140,12 +140,8 @@ class Graph:
         x_max = sys.float_info.min
         y_max = sys.float_info.min
         for v in self.vertices:
-            if v.x < x_min:
-                x_min = v.x
-            elif v.x > x_max:
-                x_max = v.x
-            if v.y < y_min:
-                y_min = v.y
-            elif v.y > y_max:
-                y_max = v.y
+            x_min = min(v.x, x_min)
+            y_min = min(v.y, y_min)
+            x_max = max(v.x, x_max)
+            y_max = max(v.y, y_max)
         return x_min, y_min, x_max, y_max
