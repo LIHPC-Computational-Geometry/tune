@@ -137,6 +137,7 @@ def degree(n: Node) -> int:
             boundary_darts.append(d)
         else:
             adjacency += 0.5
+
     return adjacency
 
 
