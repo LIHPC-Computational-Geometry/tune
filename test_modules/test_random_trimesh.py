@@ -1,9 +1,5 @@
 import unittest
-import model.mesh_struct.mesh as mesh
-import numpy.testing
 from model.random_trimesh import regular_mesh, random_mesh
-
-from actions.triangular_actions import split_edge, flip_edge
 
 
 class TestRandomTrimesh(unittest.TestCase):
