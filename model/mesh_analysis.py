@@ -1,4 +1,4 @@
-from math import sqrt, degrees
+from math import sqrt, degrees, radians, cos, sin
 import numpy as np
 
 from model.mesh_struct.mesh_elements import Dart, Node
@@ -33,15 +33,7 @@ def score_calculation(n: Node) -> int:
     """
     adjacency = degree(n)
     if on_boundary(n):
-        adj_darts_list = adjacent_darts(n)
-        boundary_darts = []
-        for d in adj_darts_list:
-            d_twin = d.get_beta(2)
-            if d_twin is None:
-                boundary_darts.append(d)
-        if len(boundary_darts) > 3:
-            raise ValueError("Boundary error")
-        angle = get_angle(boundary_darts[0], boundary_darts[1], n)
+        angle = get_boundary_angle(n)
         ideal_adjacency = max(round(angle/60)+1, 2)
     else:
         ideal_adjacency = 360/60
@@ -56,7 +48,7 @@ def get_angle(d1: Dart, d2: Dart, n: Node) -> float:
     :param d1: the first boundary dart.
     :param d2: the second boundary dart.
     :param n: the boundary node
-    :return:
+    :return: the angle (degrees)
     """
     if d1.get_node() == n:
         A = n
@@ -76,6 +68,24 @@ def get_angle(d1: Dart, d2: Dart, n: Node) -> float:
     dist_AC = sqrt(vect_AC[0]**2 + vect_AC[1]**2)
     angle = np.arccos(np.dot(vect_AB, vect_AC)/(dist_AB*dist_AC))
     return degrees(angle)
+
+
+def get_boundary_angle(n: Node) -> float:
+    """
+    Calculate the boundary angle of a node in the mesh.
+    :param n: a boundary node
+    :return: the boundary angle (degrees)
+    """
+    adj_darts_list = adjacent_darts(n)
+    boundary_darts = []
+    for d in adj_darts_list:
+        d_twin = d.get_beta(2)
+        if d_twin is None:
+            boundary_darts.append(d)
+    if len(boundary_darts) > 3:
+        raise ValueError("Boundary error")
+    angle = get_angle(boundary_darts[0], boundary_darts[1], n)
+    return angle
 
 
 def on_boundary(n: Node) -> bool:
@@ -129,3 +139,55 @@ def degree(n: Node) -> int:
             adjacency += 0.5
 
     return adjacency
+
+
+def get_boundary_darts(m: Mesh) -> list[Dart]:
+    """
+    Find all boundary darts
+    :param m: a mesh
+    :return: a list of all boundary darts
+    """
+    boundary_darts = []
+    for d_info in m.dart_info:
+        d = Dart(m, d_info[0])
+        d_twin = d.get_beta(2)
+        if d_twin is None :
+            boundary_darts.append(d)
+    return boundary_darts
+
+
+def get_boundary_nodes(m: Mesh) -> list[Node]:
+    """
+    Find all boundary nodes
+    :param m: a mesh
+    :return: a list of all boundary nodes
+    """
+    boundary_nodes = []
+    nb_nodes = len(m.nodes)
+    for n_id in range(0, nb_nodes):
+        n = Node(m, n_id)
+        if on_boundary(n):
+            boundary_nodes.append(n)
+    return boundary_nodes
+
+
+def find_opposite_node(d: Dart) -> (int, int):
+    """
+    Find the coordinates of the vertex opposite in the adjacent triangle
+    :param d: a dart
+    :return: (X Coordinate, Y Coordinate)
+    """
+    A = d.get_node()
+    d1 = d.get_beta(1)
+    B = d1.get_node()
+
+    vect_AB = (B.x() - A.x(), B.y() - A.y())
+
+    angle_rot = radians(300)
+    x_AC = round(vect_AB[0] * cos(angle_rot) - vect_AB[1] * sin(angle_rot), 2)
+    y_AC = round(vect_AB[1] * cos(angle_rot) + vect_AB[0] * sin(angle_rot), 2)
+
+    x_C = A.x() + x_AC
+    y_C = A.y() + y_AC
+
+    return x_C, y_C
