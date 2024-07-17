@@ -23,9 +23,10 @@ if __name__ == '__main__':
     if len(sys.argv) != 2:
         print("Usage: main.py <mesh_file.json>")
     else:
-        f = open(sys.argv[1])
-        json_mesh = json.load(f)
-        cmap = Mesh(json_mesh['nodes'], json_mesh['faces'])
+        #f = open(sys.argv[1])
+        #json_mesh = json.load(f)
+        #cmap = Mesh(json_mesh['nodes'], json_mesh['faces'])
+        cmap = regular_mesh(int(sys.argv[1]))
         mesh_disp = MeshDisplay(cmap)
         g = Game(cmap, mesh_disp)
         g.run()
