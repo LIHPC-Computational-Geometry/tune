@@ -4,6 +4,7 @@ import torch.nn as nn
 from torch.distributed.argparse_util import env
 from torch.optim import Adam
 from torch.distributions import Categorical
+from model.mesh_analysis import isValidAction
 
 ACTION_UP = 0
 ACTION_DOWN = 1
@@ -49,6 +50,14 @@ class Actor(nn.Module):
             action = dist.sample()
             action = action.tolist()
             dart_id = dart_indices[action]
+            i = 0
+            while not isValidAction(state, dart_id) and i<10:
+                pmf = self.forward(X)
+                dist = Categorical(pmf)
+                action = dist.sample()
+                action = action.tolist()
+                dart_id = dart_indices[action]
+                i += 1
         return action, dart_id
 
     def forward(self, x):
@@ -108,5 +117,3 @@ class Critic(nn.Module):
         critic_loss = torch.stack(critic_loss).sum()
         critic_loss.backward()
         self.optimizer.step()
-
-

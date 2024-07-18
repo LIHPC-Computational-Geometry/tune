@@ -207,3 +207,42 @@ def node_in_mesh(mesh: Mesh, x: float, y: float) -> (bool, int):
             return True, n_id
         n_id = n_id + 1
     return False, None
+
+
+def isValidAction(mesh, dart_id: int) -> bool:
+    d = Dart(mesh, dart_id)
+    boundary_darts = get_boundary_darts(mesh)
+    if d in boundary_darts or not isFlipOk(d):
+        return False
+    else:
+        return True
+
+
+def notAligned(x1: float, y1: float, x2: float, y2: float, x3: float, y3: float) -> bool:
+    """
+    Function to verify 3 points are not aligned.
+    :param x1, y1: first point coordinates:
+    :param x2, y2: second point coordinates:
+    :param x3, y3: third point coordinates:
+    :return: True if not aligned, False otherwise
+    """
+    # Calcul du déterminant
+    det = x1 * (y2 - y3) + x2 * (y3 - y1) + x3 * (y1 - y2)
+    if det == 0:
+        return False
+    else:
+        return True
+
+
+def isFlipOk(d:Dart) -> bool:
+    d1=d.get_beta(1)
+    d11=d1.get_beta(1)
+    A = d11.get_node()
+    B = d1.get_node()
+    d2=d.get_beta(2)
+    d21=d2.get_beta(1)
+    d211=d21.get_beta(1)
+    C = d211.get_node()
+    D = d.get_node()
+    if notAligned(A.x(), A.y(), B.x(), B.y(), C.x(), C.y()) and notAligned(A.x(), A.y(), D.x(), D.y(), C.x(), C.y()):
+        return True

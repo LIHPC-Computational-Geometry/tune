@@ -11,7 +11,7 @@ import json
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    nb_episodes = 10
+    nb_episodes = 500
     runs = 1
     alpha = 0.0001
     gamma = 0.9
@@ -19,13 +19,10 @@ if __name__ == '__main__':
     feature = 0
     norm = True
 
-    mesh = TM.regular_mesh(9)
-    flip_edge_ids(mesh, 0, 3)
-    flip_edge_ids(mesh, 0, 2)
-    flip_edge_ids(mesh, 1, 4)
+    mesh = TM.random_mesh(14)
     mesh_disp = MeshDisplay(mesh)
-    g = Game(mesh, mesh_disp)
-    g.run()
+    #g = Game(mesh, mesh_disp)
+    #g.run()
 
     env = TriMesh(mesh, feature)
 

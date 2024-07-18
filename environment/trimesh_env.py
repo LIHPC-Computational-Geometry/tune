@@ -3,7 +3,7 @@ import features.conv as FT
 from model.mesh_analysis import global_score
 from model.mesh_struct.mesh_elements import Dart
 from actions.triangular_actions import flip_edge, flip_edge_ids
-from model.random_trimesh import regular_mesh
+from model.random_trimesh import regular_mesh, random_mesh
 
 # possible actions
 FLIP = 0
@@ -25,10 +25,7 @@ class TriMesh:
         self.reward = 0
         self.steps = 0
         self.terminal = False
-        self.mesh = regular_mesh(9)
-        flip_edge_ids(self.mesh, 0,3)
-        flip_edge_ids(self.mesh, 0,2)
-        flip_edge_ids(self.mesh, 1, 4)
+        self.mesh = random_mesh(14)
         self.nodes_scores = global_score(self.mesh)[0]
         self.ideal_score = global_score(self.mesh)[2]
 
@@ -44,7 +41,7 @@ class TriMesh:
         next_nodes_score, next_mesh_score, next_mesh_ideal_score = global_score(self.mesh)
         self.nodes_scores = next_nodes_score
         self.reward = mesh_score - next_mesh_score
-        if self.steps >= 20 or next_mesh_score == mesh_ideal_score:
+        if self.steps >= 50 or next_mesh_score == mesh_ideal_score:
             self.terminal = True
 
     def get_x(self, s, a):

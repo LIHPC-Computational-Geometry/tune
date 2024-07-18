@@ -1,7 +1,7 @@
 import numpy as np
 from actions.triangular_actions import flip_edge_ids
 from model.mesh_struct.mesh_elements import Face, Dart, Node
-from model.mesh_analysis import find_opposite_node, node_in_mesh, score_calculation
+from model.mesh_analysis import find_opposite_node, node_in_mesh, isValidAction
 
 FLIP = 0
 
@@ -22,11 +22,8 @@ def get_x(state, a, env, feat):
 def get_x_global_4(env):
     """
     Get the feature vector of the state-action pair
-    :param norm: True if the feature vector is normalized
-    :param state: the state
-    :param a: the action
-    :return: the feature vector
     :param env: The environment
+    :return: the feature vector
     """
 
     mesh = env.mesh
@@ -62,16 +59,21 @@ def get_x_global_4(env):
         if found:
             template[d_info[0], 5] = env.nodes_scores[n_id]
 
-
-    score_sum = np.zeros(size)
+    dart_to_delete = []
+    dart_ids = []
     for i in range(size):
-        score_sum[i] = np.sum(abs(template[i, :]))
-
+        d = Dart(mesh, i)
+        if not isValidAction(mesh, d.id):
+            dart_to_delete.append(i)
+        else :
+            dart_ids.append(i)
+    valid_template = np.delete(template, dart_to_delete, axis=0)
+    score_sum = np.sum(np.abs(valid_template), axis=1)
     indices_top_10 = np.argsort(score_sum)[-10:][::-1]
-
-    X = template[indices_top_10, :]
+    valid_dart_ids = [dart_ids[i] for i in indices_top_10]
+    X = valid_template[indices_top_10, :]
     X = X.flatten()
-    return X, indices_top_10
+    return X, valid_dart_ids
 
     """
     if X.std() != 0.0:
