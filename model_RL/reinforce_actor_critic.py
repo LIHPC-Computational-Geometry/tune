@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 from tqdm import tqdm
-from RL_model.actor_critic import NaNExceptionActor, NaNExceptionCritic
+from model_RL.actor_critic import NaNExceptionActor, NaNExceptionCritic
 
 
 def reinforce_actor_critic(actor, critic, env, nb_episodes):
@@ -14,7 +14,6 @@ def reinforce_actor_critic(actor, critic, env, nb_episodes):
     :return: rewards, policy
     """
     rewards = []
-    visit_count = np.zeros(env.size)
     try:
         for ep in tqdm(range(nb_episodes)):
             env.reset()
@@ -25,11 +24,10 @@ def reinforce_actor_critic(actor, critic, env, nb_episodes):
             critic_loss = []
 
             while True:
-                state = env.state
-                visit_count[state] += 1
+                state = env.mesh
                 action = actor.select_action(state)
                 env.step(action)
-                next_state = env.state
+                next_state = env.mesh
                 R = env.reward
                 ep_reward += env.reward
                 trajectory.append((state, action, env.reward))
@@ -45,7 +43,6 @@ def reinforce_actor_critic(actor, critic, env, nb_episodes):
                 actor_loss.append(actor.update(delta.detach(), I, state, action))
                 I = 0.9*I
                 if env.terminal:
-                    visit_count[state] += 1
                     break
             critic.learn(critic_loss)
             actor.learn(actor_loss)
@@ -56,5 +53,4 @@ def reinforce_actor_critic(actor, critic, env, nb_episodes):
     except NaNExceptionCritic as e:
         print("NaN Exception on Critic Network")
         return None, None, None
-
-    return rewards, actor, visit_count
+    return rewards, actor

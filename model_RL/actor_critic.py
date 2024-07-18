@@ -38,22 +38,18 @@ class Actor(nn.Module):
 
     def select_action(self, state):
         if np.random.rand() <= 0.1:
-            X, indices_faces = self.env.get_x(state, None)
-            action = np.random.randint(20)
-            face_id = int(action / 4)
-            face_id = indices_faces[face_id]
-            action = [action % 4, face_id, action]
+            X, dart_indices = self.env.get_x(state, None)
+            action = np.random.randint(10)
+            dart_id = dart_indices[action]
         else:
-            X, indices_faces = self.env.get_x(state, None)
+            X, dart_indices = self.env.get_x(state, None)
             X = torch.tensor(X, dtype=torch.float32)
             pmf = self.forward(X)
             dist = Categorical(pmf)
             action = dist.sample()
             action = action.tolist()
-            face_id = int(action/4)
-            face_id = indices_faces[face_id]
-            action = [action % 4, face_id, action]
-        return action
+            dart_id = dart_indices[action]
+        return action, dart_id
 
     def forward(self, x):
         x = torch.relu(self.fc1(x))
@@ -72,7 +68,7 @@ class Actor(nn.Module):
     def update(self, delta, I, state, action):
         X, indices_faces = self.env.get_x(state, None)
         X = torch.tensor(X, dtype=torch.float32)
-        action = torch.tensor(action[2], dtype=torch.int64)
+        action = torch.tensor(action[0], dtype=torch.int64)
         pmf = self.forward(X)
         log_prob = torch.log(pmf[action])
         actor_loss = -log_prob * delta * I

@@ -3,7 +3,7 @@ import numpy as np
 
 from model.mesh_struct.mesh_elements import Dart, Node
 from model.mesh_struct.mesh import Mesh
-from model.mesh_analysis import find_opposite_node
+from model.mesh_analysis import find_opposite_node, node_in_mesh
 from actions.triangular_actions import flip_edge_ids
 
 
@@ -75,22 +75,6 @@ def mesh_shuffle(mesh: Mesh) -> Mesh:
         if i1 != i2:
             flip_edge_ids(mesh, i1, i2)
     return mesh
-
-
-def node_in_mesh(mesh: Mesh, x: float, y: float) -> (bool, int):
-    """
-    Search if the node of coordinate (x, y) is inside the mesh.
-    :param mesh: the mesh to work with
-    :param x: X coordinate
-    :param y: Y coordinate
-    :return: a boolean indicating if the node is inside the mesh and the id of the node if it is.
-    """
-    n_id = 0
-    for n in mesh.nodes:
-        if abs(x - n[0]) <= 0.1 and abs(y - n[1]) <= 0.1:
-            return True, n_id
-        n_id = n_id + 1
-    return False, None
 
 
 

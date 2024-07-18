@@ -113,9 +113,9 @@ def adjacent_darts(n: Node) -> list[Dart]:
         d = Dart(n.mesh, d_info[0])
         d_nfrom = d.get_node()
         d_nto = d.get_beta(1)
-        if d_nfrom == n:
+        if d_nfrom == n and d not in adj_darts:
             adj_darts.append(d)
-        if d_nto.get_node() == n:
+        if d_nto.get_node() == n and d not in adj_darts:
             adj_darts.append(d)
     return adj_darts
 
@@ -137,7 +137,8 @@ def degree(n: Node) -> int:
             boundary_darts.append(d)
         else:
             adjacency += 0.5
-
+    if adjacency != int(adjacency):
+        raise ValueError("Adjacency error")
     return adjacency
 
 
@@ -191,3 +192,18 @@ def find_opposite_node(d: Dart) -> (int, int):
     y_C = A.y() + y_AC
 
     return x_C, y_C
+
+def node_in_mesh(mesh: Mesh, x: float, y: float) -> (bool, int):
+    """
+    Search if the node of coordinate (x, y) is inside the mesh.
+    :param mesh: the mesh to work with
+    :param x: X coordinate
+    :param y: Y coordinate
+    :return: a boolean indicating if the node is inside the mesh and the id of the node if it is.
+    """
+    n_id = 0
+    for n in mesh.nodes:
+        if abs(x - n[0]) <= 0.1 and abs(y - n[1]) <= 0.1:
+            return True, n_id
+        n_id = n_id + 1
+    return False, None
