@@ -1,7 +1,7 @@
 import numpy as np
 from actions.triangular_actions import flip_edge_ids
 from model.mesh_struct.mesh_elements import Face, Dart, Node
-from model.mesh_analysis import find_opposite_node, node_in_mesh, isValidAction
+from model.mesh_analysis import find_template_opposite_node, node_in_mesh, isValidAction
 
 FLIP = 0
 
@@ -46,17 +46,14 @@ def get_x_global_4(env):
 
         #template niveau 2
 
-        x_D, y_D = find_opposite_node(d)
-        found, n_id = node_in_mesh(mesh, x_D, y_D)
-        if found:
+        n_id = find_template_opposite_node(d)
+        if n_id is not None:
             template[d_info[0], 3] = env.nodes_scores[n_id]
-        x_E, y_E = find_opposite_node(d1)
-        found, n_id = node_in_mesh(mesh, x_E, y_E)
-        if found:
+        n_id = find_template_opposite_node(d1)
+        if n_id is not None:
             template[d_info[0], 4] = env.nodes_scores[n_id]
-        x_F, y_F = find_opposite_node(d11)
-        found, n_id = node_in_mesh(mesh, x_F, y_F)
-        if found:
+        n_id = find_template_opposite_node(d11)
+        if n_id is not None:
             template[d_info[0], 5] = env.nodes_scores[n_id]
 
     dart_to_delete = []
@@ -69,7 +66,7 @@ def get_x_global_4(env):
             dart_ids.append(i)
     valid_template = np.delete(template, dart_to_delete, axis=0)
     score_sum = np.sum(np.abs(valid_template), axis=1)
-    indices_top_10 = np.argsort(score_sum)[-10:][::-1]
+    indices_top_10 = np.argsort(score_sum)[-5:][::-1]
     valid_dart_ids = [dart_ids[i] for i in indices_top_10]
     X = valid_template[indices_top_10, :]
     X = X.flatten()

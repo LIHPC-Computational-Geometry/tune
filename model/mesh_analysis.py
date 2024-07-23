@@ -1,4 +1,4 @@
-from math import sqrt, degrees, radians, cos, sin
+from math import sqrt, degrees, radians, cos, sin, acos
 import numpy as np
 
 from model.mesh_struct.mesh_elements import Dart, Node
@@ -193,6 +193,23 @@ def find_opposite_node(d: Dart) -> (int, int):
 
     return x_C, y_C
 
+def find_template_opposite_node(d: Dart) -> (int):
+    """
+    Find the the vertex opposite in the adjacent triangle
+    :param d: a dart
+    :return: the node found
+    """
+
+    d2 = d.get_beta(2)
+    if d2 is not None:
+        d21 = d2.get_beta(1)
+        d211 = d21.get_beta(1)
+        node_opposite = d211.get_node()
+        return node_opposite.id
+    else:
+        return None
+
+
 def node_in_mesh(mesh: Mesh, x: float, y: float) -> (bool, int):
     """
     Search if the node of coordinate (x, y) is inside the mesh.
@@ -218,23 +235,63 @@ def isValidAction(mesh, dart_id: int) -> bool:
         return True
 
 
-def notAligned(x1: float, y1: float, x2: float, y2: float, x3: float, y3: float) -> bool:
+def notAlignedAndNotObtuse(x1: float, y1: float, x2: float, y2: float, x3: float, y3: float) -> bool:
     """
-    Function to verify 3 points are not aligned.
-    :param x1, y1: first point coordinates:
-    :param x2, y2: second point coordinates:
-    :param x3, y3: third point coordinates:
+    Function to verify 3 points are not aligned and not obtuse.
+    :param x1, y1: first point coordinates A:
+    :param x2, y2: second point coordinates B:
+    :param x3, y3: third point coordinates C:
     :return: True if not aligned, False otherwise
     """
     # Calcul du déterminant
     det = x1 * (y2 - y3) + x2 * (y3 - y1) + x3 * (y1 - y2)
-    if det == 0:
+
+    BAx, BAy = x1 - x2, y1 - y2
+    BCx, BCy = x3 - x2, y3 - y2
+
+    cos_ABC = (BAx * BCx + BAy * BCy) / (sqrt(BAx ** 2 + BAy ** 2) * sqrt(BCx ** 2 + BCy ** 2))
+
+    rad = acos(cos_ABC)
+    deg = degrees(rad)
+
+    if det == 0 or deg > 180:
+        return False
+    else:
+        return True
+
+def get_angle_by_coord(x1: float, y1: float, x2: float, y2: float, x3:float, y3:float) -> float:
+    BAx, BAy = x1 - x2, y1 - y2
+    BCx, BCy = x3 - x2, y3 - y2
+
+    cos_ABC = (BAx * BCx + BAy * BCy) / (sqrt(BAx ** 2 + BAy ** 2) * sqrt(BCx ** 2 + BCy ** 2))
+
+    rad = acos(cos_ABC)
+    deg = degrees(rad)
+    return deg
+
+
+def isFlipOk(d:Dart) -> bool:
+    d1 = d.get_beta(1)
+    d11 = d1.get_beta(1)
+    A = d.get_node()
+    B = d1.get_node()
+    C = d11.get_node()
+    d2 = d.get_beta(2)
+    d21 = d2.get_beta(1)
+    d211 = d21.get_beta(1)
+    D = d211.get_node()
+
+    # Calcul angle at d limits
+    angle_B = get_angle_by_coord(A.x(), A.y(), B.x(), B.y(), C.x(), C.y()) + get_angle_by_coord(A.x(), A.y(), B.x(), B.y(), D.x(), D.y())
+    angle_A = get_angle_by_coord(B.x(), B.y(), A.x(), A.y(), C.x(), C.y()) + get_angle_by_coord(B.x(), B.y(), A.x(), A.y(), D.x(), D.y())
+
+    if angle_B >= 180 or angle_A >= 180:
         return False
     else:
         return True
 
 
-def isFlipOk(d:Dart) -> bool:
+def isTFlipOk(d:Dart) -> bool:
     d1=d.get_beta(1)
     d11=d1.get_beta(1)
     A = d11.get_node()
@@ -244,5 +301,5 @@ def isFlipOk(d:Dart) -> bool:
     d211=d21.get_beta(1)
     C = d211.get_node()
     D = d.get_node()
-    if notAligned(A.x(), A.y(), B.x(), B.y(), C.x(), C.y()) and notAligned(A.x(), A.y(), D.x(), D.y(), C.x(), C.y()):
+    if notAlignedAndNotObtuse(A.x(), A.y(), B.x(), B.y(), C.x(), C.y()) and notAlignedAndNotObtuse(A.x(), A.y(), D.x(), D.y(), C.x(), C.y()):
         return True

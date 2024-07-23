@@ -14,6 +14,7 @@ def reinforce_actor_critic(actor, critic, env, nb_episodes):
     :return: rewards, policy
     """
     rewards = []
+    wins = []
     try:
         for ep in tqdm(range(nb_episodes)):
             env.reset()
@@ -43,14 +44,18 @@ def reinforce_actor_critic(actor, critic, env, nb_episodes):
                 actor_loss.append(actor.update(delta.detach(), I, state, action))
                 I = 0.9*I
                 if env.terminal:
+                    if env.won:
+                        wins.append(1)
+                    else:
+                        wins.append(0)
                     break
             critic.learn(critic_loss)
             actor.learn(actor_loss)
             rewards.append(ep_reward)
     except NaNExceptionActor as e:
         print("NaN Exception on Actor Network")
-        return None, None, None
+        return None, None
     except NaNExceptionCritic as e:
         print("NaN Exception on Critic Network")
-        return None, None, None
-    return rewards, actor
+        return None, None
+    return rewards, actor, wins

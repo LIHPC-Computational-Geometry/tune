@@ -20,14 +20,16 @@ class TriMesh:
         self.ideal_score = global_score(self.mesh)[2]
         self.terminal = False
         self.feat = 0
+        self.won = 0
 
     def reset(self):
         self.reward = 0
         self.steps = 0
         self.terminal = False
-        self.mesh = random_mesh(14)
+        self.mesh = random_mesh(12)
         self.nodes_scores = global_score(self.mesh)[0]
         self.ideal_score = global_score(self.mesh)[2]
+        self.won = 0
 
     def step(self, action):
         dart_id = action[1]
@@ -40,8 +42,10 @@ class TriMesh:
         self.steps += 1
         next_nodes_score, next_mesh_score, next_mesh_ideal_score = global_score(self.mesh)
         self.nodes_scores = next_nodes_score
-        self.reward = mesh_score - next_mesh_score
-        if self.steps >= 50 or next_mesh_score == mesh_ideal_score:
+        self.reward = (mesh_score - next_mesh_score)*10
+        if self.steps >= 15 or next_mesh_score == mesh_ideal_score:
+            if next_mesh_score == mesh_ideal_score:
+                self.won = True
             self.terminal = True
 
     def get_x(self, s, a):

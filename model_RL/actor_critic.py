@@ -6,11 +6,6 @@ from torch.optim import Adam
 from torch.distributions import Categorical
 from model.mesh_analysis import isValidAction
 
-ACTION_UP = 0
-ACTION_DOWN = 1
-ACTION_LEFT = 2
-ACTION_RIGHT = 3
-
 
 class NaNExceptionActor(Exception):
     pass
@@ -40,7 +35,7 @@ class Actor(nn.Module):
     def select_action(self, state):
         if np.random.rand() <= 0.1:
             X, dart_indices = self.env.get_x(state, None)
-            action = np.random.randint(10)
+            action = np.random.randint(5)
             dart_id = dart_indices[action]
         else:
             X, dart_indices = self.env.get_x(state, None)
