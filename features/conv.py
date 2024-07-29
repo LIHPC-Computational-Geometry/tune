@@ -1,7 +1,7 @@
 import numpy as np
 from actions.triangular_actions import flip_edge_ids
 from model.mesh_struct.mesh_elements import Face, Dart, Node
-from model.mesh_analysis import find_template_opposite_node, node_in_mesh, isValidAction
+from model.mesh_analysis import find_template_opposite_node, node_in_mesh, isValidAction, global_score
 
 FLIP = 0
 
@@ -16,17 +16,18 @@ def get_x(state, a, env, feat):
     :return: the feature vector
     """
     if feat == GLOBAL:
-        return get_x_global_4(env)
+        return get_x_global_4(env, state)
 
 
-def get_x_global_4(env):
+def get_x_global_4(env, state):
     """
     Get the feature vector of the state-action pair
     :param env: The environment
     :return: the feature vector
     """
 
-    mesh = env.mesh
+    mesh = state
+    nodes_scores = global_score(mesh)[0]
     size = env.size
     template = np.zeros((size, 6))
 
@@ -40,21 +41,21 @@ def get_x_global_4(env):
         C = d11.get_node()
 
         #Template niveau 1
-        template[d_info[0], 0] = env.nodes_scores[C.id]
-        template[d_info[0], 1] = env.nodes_scores[A.id]
-        template[d_info[0], 2] = env.nodes_scores[B.id]
+        template[d_info[0], 0] = nodes_scores[C.id]
+        template[d_info[0], 1] = nodes_scores[A.id]
+        template[d_info[0], 2] = nodes_scores[B.id]
 
         #template niveau 2
 
         n_id = find_template_opposite_node(d)
         if n_id is not None:
-            template[d_info[0], 3] = env.nodes_scores[n_id]
+            template[d_info[0], 3] = nodes_scores[n_id]
         n_id = find_template_opposite_node(d1)
         if n_id is not None:
-            template[d_info[0], 4] = env.nodes_scores[n_id]
+            template[d_info[0], 4] = nodes_scores[n_id]
         n_id = find_template_opposite_node(d11)
         if n_id is not None:
-            template[d_info[0], 5] = env.nodes_scores[n_id]
+            template[d_info[0], 5] = nodes_scores[n_id]
 
     dart_to_delete = []
     dart_ids = []

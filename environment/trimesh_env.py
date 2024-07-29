@@ -43,7 +43,7 @@ class TriMesh:
         next_nodes_score, next_mesh_score, next_mesh_ideal_score = global_score(self.mesh)
         self.nodes_scores = next_nodes_score
         self.reward = (mesh_score - next_mesh_score)*10
-        if self.steps >= 15 or next_mesh_score == mesh_ideal_score:
+        if self.steps >= 30 or next_mesh_score == mesh_ideal_score:
             if next_mesh_score == mesh_ideal_score:
                 self.won = True
             self.terminal = True

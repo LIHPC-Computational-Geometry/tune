@@ -1,6 +1,6 @@
 from view.window import Game
 from environment.trimesh_env import TriMesh
-from model_RL.actor_critic import Actor, Critic
+from model_RL.actor_critic_epoch import Actor, Critic
 from model_RL.nnPolicy import NNPolicy
 from plots.create_plots import plot_average_learning_process
 from mesh_display import MeshDisplay
@@ -30,7 +30,7 @@ if __name__ == '__main__':
     # Choix de la politique Actor Critic
     actor = Actor(env, 30, 5, lr=0.0001)
     critic = Critic(30, lr=0.0001)
-    policy = NNPolicy(env, 30, 64,5, 0.9, lr=0.0001)
+    #policy = NNPolicy(env, 30, 64,5, 0.9, lr=0.0001)
 
     plot_average_learning_process(runs, actor, critic, env, nb_episodes, alpha)
 

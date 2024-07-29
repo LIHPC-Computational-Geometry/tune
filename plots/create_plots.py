@@ -1,4 +1,4 @@
-from model_RL.reinforce_actor_critic import reinforce_actor_critic
+from model_RL.reinforce_actor_critic_SAC import reinforce_actor_critic
 from model_RL.reinforce import reinforce
 from model_RL.actor_critic import Actor, Critic
 
@@ -23,7 +23,7 @@ def plot_average_learning_process(runs: int, actor, critic, env, nb_episodes, al
         if critic is not None:
             critic.reset(env)
         actor.reset(env)
-        rewards, policy_trained, win = reinforce_actor_critic(actor, critic, env, nb_episodes)
+        rewards, policy_trained, win = reinforce_actor_critic(actor, critic, env, 1, 5)
         if rewards is None:
             real_runs -= 1
         else:
