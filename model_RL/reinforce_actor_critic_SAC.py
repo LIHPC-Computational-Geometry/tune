@@ -5,7 +5,7 @@ from model_RL.actor_critic import NaNExceptionActor, NaNExceptionCritic
 import random
 
 
-def reinforce_actor_critic(actor, critic, env, epochs, batch_size=5, steps_per_epoch=500):
+def reinforce_actor_critic(actor, critic, env, epochs, batch_size=32, steps_per_epoch=4000):
     """
     Reinforce algorithm to train the policy
     :param actor: Actor network
@@ -17,8 +17,8 @@ def reinforce_actor_critic(actor, critic, env, epochs, batch_size=5, steps_per_e
     rewards = []
     wins = []
     total_steps = steps_per_epoch * epochs
-    update_after = 100
-    update_every = 8
+    update_after = 400
+    update_every = 25
     env.reset()
     trajectory = []
     rollouts = []
@@ -27,9 +27,7 @@ def reinforce_actor_critic(actor, critic, env, epochs, batch_size=5, steps_per_e
     try:
         for t in tqdm(range(total_steps)):
             state = env.mesh
-            action = actor.select_action(state)
-            log_prob = action[2]
-            action = action[:2]
+            action = actor.select_action(state) # action= [action, dart_id]
             env.step(action)
             next_state = env.mesh
             R = env.reward
@@ -39,17 +37,17 @@ def reinforce_actor_critic(actor, critic, env, epochs, batch_size=5, steps_per_e
                 #rollouts.append(trajectory)
                 if env.won:
                     wins.append(1)
-                    rollouts.append((state, action, R, next_state, I, log_prob, True))
+                    rollouts.append((state, action, R, next_state, I, True))
                 else:
                     wins.append(0)
-                    rollouts.append((state, action, R, next_state, I, log_prob, False))
+                    rollouts.append((state, action, R, next_state, I, False))
                 env.reset()
                 trajectory = []
                 ep_reward = 0
                 I = 1
 
             else :
-                rollouts.append((state, action, R, next_state, I, log_prob, False))
+                rollouts.append((state, action, R, next_state, I, False))
             I = 0.9 * I
 
             if t >= update_after and t % update_every == 0:
@@ -60,15 +58,16 @@ def reinforce_actor_critic(actor, critic, env, epochs, batch_size=5, steps_per_e
                     actor_loss = []
 
                     critic.optimizer.zero_grad()
-                    for i, (s, a, r, next_s, I, log_prob, done) in enumerate(batch, 1):
-                        with torch.no_grad():
-                            X, indices_faces = env.get_x(s, None)
-                            X = torch.tensor(X, dtype=torch.float32)
-                            next_X, next_indices_faces = env.get_x(next_s, None)
-                            next_X = torch.tensor(next_X, dtype=torch.float32)
-                            value = critic(X)
-                            next_value = torch.tensor(0.0, dtype=torch.float32) if done else critic(next_X)
-                            delta = r + 0.9 * next_value - value
+                    for i, (s, a, r, next_s, I, done) in enumerate(batch, 1):
+                        X, indices_faces = env.get_x(s, None)
+                        X = torch.tensor(X, dtype=torch.float32)
+                        next_X, next_indices_faces = env.get_x(next_s, None)
+                        next_X = torch.tensor(next_X, dtype=torch.float32)
+                        value = critic(X)
+                        pmf = actor.forward(X)
+                        log_prob = torch.log(pmf[a[0]])
+                        next_value = torch.tensor(0.0, dtype=torch.float32) if done else critic(next_X)
+                        delta = r + 0.9 * next_value - value
                         critic_loss.append(critic.update(delta.detach(), value))
                         actor_loss.append(-log_prob * delta.detach() * I)
                     actor_loss = torch.stack(actor_loss).sum()

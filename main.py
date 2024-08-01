@@ -9,11 +9,10 @@ from actions.triangular_actions import flip_edge_ids
 import sys
 import json
 
-
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
     nb_episodes = 1000
-    runs = 10
+    runs = 5
     alpha = 0.0001
     gamma = 0.9
     baseline = False
@@ -32,7 +31,7 @@ if __name__ == '__main__':
     critic = Critic(30, lr=0.0001)
     #policy = NNPolicy(env, 30, 64,5, 0.9, lr=0.0001)
 
-    plot_average_learning_process(runs, actor, critic, env, nb_episodes, alpha)
+    plot_average_learning_process(runs, actor, critic, env, alpha)
 
     """
     if len(sys.argv) != 2:
