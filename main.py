@@ -1,6 +1,6 @@
 from view.window import Game
 from environment.trimesh_env import TriMesh
-from model_RL.actor_critic_epoch import Actor, Critic
+from model_RL.actor_critic import Actor, Critic
 from model_RL.nnPolicy import NNPolicy
 from plots.create_plots import plot_average_learning_process
 from mesh_display import MeshDisplay
