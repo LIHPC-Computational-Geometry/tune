@@ -3,7 +3,7 @@ import copy
 import torch
 import random
 from tqdm import tqdm
-from model_RL.actor_critic_epoch import NaNExceptionActor, NaNExceptionCritic
+from model_RL.actor_critic import NaNExceptionActor, NaNExceptionCritic
 
 
 def train(env, actor, critic, rollouts, dataset, nb_epochs, batch_size):
@@ -31,7 +31,7 @@ def train(env, actor, critic, rollouts, dataset, nb_epochs, batch_size):
                 critic_loss.append(critic.update(delta.detach(), value))
                 actor_loss.append(-log_prob * delta.detach() * I)
             actor_loss = torch.stack(actor_loss).sum()
-            critic_loss = torch.stack(critic_loss).sum()
+            #critic_loss = torch.stack(critic_loss).sum()
             critic_loss.backward()
             critic.optimizer.step()
             for p in critic.parameters():
@@ -58,11 +58,10 @@ def reinforce_actor_critic(actor, critic, env):
     rewards = []
     wins = []
     len_ep = []
-    nb_samples = 0
-    nb_iterations = 10
+    nb_iterations = 2
     nb_epochs = 5
-    nb_episodes_per_rollout = 50
-    batch_size = 32
+    nb_episodes_per_rollout = 100
+    batch_size = 64
     training_set = []
 
     try:
@@ -105,8 +104,8 @@ def reinforce_actor_critic(actor, critic, env):
 
     except NaNExceptionActor as e:
         print("NaN Exception on Actor Network")
-        return None, None
+        return None, None, None, None
     except NaNExceptionCritic as e:
         print("NaN Exception on Critic Network")
-        return None, None
+        return None, None, None, None
     return rewards, actor, wins, len_ep

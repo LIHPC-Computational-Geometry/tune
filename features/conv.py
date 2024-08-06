@@ -28,7 +28,7 @@ def get_x_global_4(env, state):
 
     mesh = state
     nodes_scores = global_score(mesh)[0]
-    size = env.size
+    size = len(mesh.dart_info)
     template = np.zeros((size, 6))
 
     for d_info in mesh.dart_info:

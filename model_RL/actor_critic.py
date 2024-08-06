@@ -16,7 +16,7 @@ class NaNExceptionCritic(Exception):
 
 
 class Actor(nn.Module):
-    def __init__(self, env, input_dim, output_dim, lr=0.0001):
+    def __init__(self, env, input_dim, output_dim, lr=0.0001, eps=0):
         super(Actor, self).__init__()
         self.fc1 = nn.Linear(input_dim, 64)
         self.fc2 = nn.Linear(64, 64)
@@ -25,6 +25,7 @@ class Actor(nn.Module):
         self.gamma = 0.9
         self.optimizer = Adam(self.parameters(), lr=lr, weight_decay=0.01)
         self.env = env
+        self.eps = eps
 
     def reset(self, env=None):
         self.fc1.reset_parameters()
@@ -33,7 +34,8 @@ class Actor(nn.Module):
         self.optimizer = Adam(self.parameters(), lr=self.optimizer.defaults['lr'], weight_decay=self.optimizer.defaults['weight_decay'])
 
     def select_action(self, state):
-        if np.random.rand() <= 0.1:
+
+        if np.random.rand() < self.eps:
             X, dart_indices = self.env.get_x(state, None)
             action = np.random.randint(5)
             dart_id = dart_indices[action]
@@ -46,7 +48,7 @@ class Actor(nn.Module):
             action = action.tolist()
             dart_id = dart_indices[action]
             i = 0
-            while not isValidAction(state, dart_id) and i<10:
+            while not isValidAction(state, dart_id) and i < 10:
                 pmf = self.forward(X)
                 dist = Categorical(pmf)
                 action = dist.sample()
@@ -76,11 +78,11 @@ class Actor(nn.Module):
         pmf = self.forward(X)
         log_prob = torch.log(pmf[action])
         actor_loss = -log_prob * delta * I
+        actor_loss = torch.stack(actor_loss).sum()
         return actor_loss
 
     def learn(self, actor_loss ):
         self.optimizer.zero_grad()
-        actor_loss = torch.stack(actor_loss).sum()
         actor_loss.backward()
         self.optimizer.step()
 
@@ -105,10 +107,10 @@ class Critic(nn.Module):
 
     def update(self, delta, value):
         critic_loss = delta * value
+        critic_loss = torch.stack(critic_loss).sum()
         return critic_loss
 
-    def learn(self, critic_loss ):
+    def learn(self, critic_loss):
         self.optimizer.zero_grad()
-        critic_loss = torch.stack(critic_loss).sum()
         critic_loss.backward()
         self.optimizer.step()

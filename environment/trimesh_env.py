@@ -3,16 +3,16 @@ import features.conv as FT
 from model.mesh_analysis import global_score
 from model.mesh_struct.mesh_elements import Dart
 from actions.triangular_actions import flip_edge, flip_edge_ids
-from model.random_trimesh import regular_mesh, random_mesh
+from model.random_trimesh import regular_mesh, random_flip_mesh
 
 # possible actions
 FLIP = 0
 
 
 class TriMesh:
-    def __init__(self, mesh, feat):
-        self.mesh = mesh
-        self.size = len(mesh.dart_info)
+    def __init__(self, mesh_size, feat):
+        self.mesh = random_flip_mesh(mesh_size)
+        self.size = len(self.mesh.dart_info)
         self.actions = np.array([FLIP])
         self.reward = 0
         self.steps = 0
@@ -26,7 +26,8 @@ class TriMesh:
         self.reward = 0
         self.steps = 0
         self.terminal = False
-        self.mesh = random_mesh(12)
+        self.mesh = random_flip_mesh(12)
+        self.size = len(self.mesh.dart_info)
         self.nodes_scores = global_score(self.mesh)[0]
         self.ideal_score = global_score(self.mesh)[2]
         self.won = 0

@@ -38,11 +38,10 @@ class Actor(nn.Module):
         pmf = self.forward(X)
         dist = Categorical(pmf)
         action = dist.sample()
-        log_prob = torch.log(pmf[action])
         action = action.tolist()
         dart_id = dart_indices[action]
         i = 0
-        while not isValidAction(state, dart_id) and i<10:
+        while not isValidAction(state, dart_id) and i < 10:
             pmf = self.forward(X)
             dist = Categorical(pmf)
             action = dist.sample()
