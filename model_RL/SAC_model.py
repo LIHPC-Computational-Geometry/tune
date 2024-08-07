@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 from tqdm import tqdm
-from model_RL.actor_critic import NaNExceptionActor, NaNExceptionCritic
+from model_RL.actor_critic_networks import NaNExceptionActor, NaNExceptionCritic
 import random
 
 

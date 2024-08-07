@@ -10,8 +10,9 @@ FLIP = 0
 
 
 class TriMesh:
-    def __init__(self, mesh_size, feat):
-        self.mesh = random_flip_mesh(mesh_size)
+    def __init__(self, mesh=None, mesh_size=None):
+        self.mesh = mesh if mesh is not None else random_flip_mesh(mesh_size)
+        self.mesh_size = len(self.mesh.nodes)
         self.size = len(self.mesh.dart_info)
         self.actions = np.array([FLIP])
         self.reward = 0
@@ -22,11 +23,11 @@ class TriMesh:
         self.feat = 0
         self.won = 0
 
-    def reset(self):
+    def reset(self, mesh=None):
         self.reward = 0
         self.steps = 0
         self.terminal = False
-        self.mesh = random_flip_mesh(12)
+        self.mesh = mesh if mesh is not None else random_flip_mesh(self.mesh_size)
         self.size = len(self.mesh.dart_info)
         self.nodes_scores = global_score(self.mesh)[0]
         self.ideal_score = global_score(self.mesh)[2]
@@ -44,7 +45,7 @@ class TriMesh:
         next_nodes_score, next_mesh_score, next_mesh_ideal_score = global_score(self.mesh)
         self.nodes_scores = next_nodes_score
         self.reward = (mesh_score - next_mesh_score)*10
-        if self.steps >= 50 or next_mesh_score == mesh_ideal_score:
+        if self.steps >= 30 or next_mesh_score == mesh_ideal_score:
             if next_mesh_score == mesh_ideal_score:
                 self.won = True
             self.terminal = True

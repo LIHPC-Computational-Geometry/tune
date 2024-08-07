@@ -42,4 +42,4 @@ def reinforce(policy, env, nb_episodes, baseline=False):
         print("NaN exception occurred")
         return None, None, None
 
-    return rewards, policy, wins
+    return policy, rewards, wins
