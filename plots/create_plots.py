@@ -15,22 +15,22 @@ PARTIAL = 1
 
 def plot_test(rewards, wins, steps):
     nb_episodes = len(rewards)
-
+    cat = [i for i in range(nb_episodes)]
     fig = plt.figure(figsize=(10, 6))
     plt.subplot(3, 1, 1)  # 3 lignes, 1 colonne, graphique 1
-    plt.plot(rewards, label='avg_rewards')
+    plt.bar(cat, rewards, label='avg_rewards')
     plt.title('Average rewards on test data')
     plt.legend()
 
     # Ajouter le deuxième sous-graphe
     plt.subplot(3, 1, 2)  # 3 lignes, 1 colonne, graphique 2
-    plt.plot( wins, label='avg_wins', color='orange')
+    plt.bar(cat, wins, label='avg_wins', color='orange')
     plt.title('Average wins on test data')
     plt.legend()
 
     # Ajouter le troisième sous-graphe
     plt.subplot(3, 1, 3)  # 3 lignes, 1 colonne, graphique 3
-    plt.plot(steps, label='avg_steps', color='green')
+    plt.bar(cat, steps, label='avg_steps', color='green')
     plt.title('average length of episodes on test data')
     plt.legend()
     # Ajuster l'espacement entre les sous-graphes

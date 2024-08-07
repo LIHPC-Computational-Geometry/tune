@@ -8,15 +8,15 @@ from model.random_trimesh import regular_mesh, random_flip_mesh
 # possible actions
 FLIP = 0
 
-
 class TriMesh:
-    def __init__(self, mesh=None, mesh_size=None):
+    def __init__(self, mesh=None, mesh_size=None, max_steps=50):
         self.mesh = mesh if mesh is not None else random_flip_mesh(mesh_size)
         self.mesh_size = len(self.mesh.nodes)
         self.size = len(self.mesh.dart_info)
         self.actions = np.array([FLIP])
         self.reward = 0
         self.steps = 0
+        self.max_steps = max_steps
         self.nodes_scores = global_score(self.mesh)[0]
         self.ideal_score = global_score(self.mesh)[2]
         self.terminal = False
@@ -45,7 +45,7 @@ class TriMesh:
         next_nodes_score, next_mesh_score, next_mesh_ideal_score = global_score(self.mesh)
         self.nodes_scores = next_nodes_score
         self.reward = (mesh_score - next_mesh_score)*10
-        if self.steps >= 30 or next_mesh_score == mesh_ideal_score:
+        if self.steps >= self.max_steps or next_mesh_score == mesh_ideal_score:
             if next_mesh_score == mesh_ideal_score:
                 self.won = True
             self.terminal = True
