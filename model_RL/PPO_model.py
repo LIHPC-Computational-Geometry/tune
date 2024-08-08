@@ -1,6 +1,5 @@
-from model_RL.actor_critic_networks import NaNExceptionActor, NaNExceptionCritic, Actor, Critic
+from model_RL.utilities.actor_critic_networks import NaNExceptionActor, NaNExceptionCritic, Actor, Critic
 
-import numpy as np
 import copy
 import torch
 import random

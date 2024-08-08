@@ -1,14 +1,24 @@
 import matplotlib.pyplot as plt
 from model.mesh_struct.mesh_elements import Dart
+from model.mesh_struct.mesh import Mesh
 import numpy as np
 
 
-def plot_mesh(mesh):
+def plot_mesh(mesh: Mesh) -> None:
+    """
+    Plot a mesh using matplotlib
+    :param mesh: a Mesh
+    """
     fig, ax = plt.subplots()
-    subplot_mesh(mesh, ax)
+    subplot_mesh(mesh)
     plt.show()
 
-def subplot_mesh(mesh, ax):
+
+def subplot_mesh(mesh: Mesh) -> None:
+    """
+    Plot a mesh using matplotlib for subplots with many meshes
+    :param mesh: a Mesh
+    """
     faces = mesh.faces
     nodes = mesh.nodes
     nodes = np.array([list[:2] for list in nodes])
@@ -31,19 +41,24 @@ def subplot_mesh(mesh, ax):
     plt.grid(False)
     plt.axis('off')
 
-def plot_dataset(dataset):
+
+def plot_dataset(dataset: list[Mesh]) -> None:
+    """
+    Plot all the meshes of a dataset with subplot.
+    :param dataset: a list with all the meshes
+    """
     nb_mesh = len(dataset)
     sqrt_mesh = np.sqrt(nb_mesh)
-    if sqrt_mesh%2 == 0:
-        nb_lignes = int(sqrt_mesh)
-        nb_colonnes = int(sqrt_mesh)
-    else :
-        nb_lignes = int(sqrt_mesh)
-        nb_colonnes = int(sqrt_mesh) +1
-    fig, ax = plt.subplots(nb_lignes, nb_colonnes)
+    if sqrt_mesh % 2 == 0:
+        nb_lines = int(sqrt_mesh)
+        nb_columns = int(sqrt_mesh)
+    else:
+        nb_lines = int(sqrt_mesh)
+        nb_columns = int(sqrt_mesh) +1
+    fig, ax = plt.subplots(nb_lines, nb_columns)
     for i, mesh in enumerate(dataset, 1):
-        plt.subplot(nb_lignes, nb_colonnes, i)
-        subplot_mesh(mesh, ax)
+        plt.subplot(nb_lines, nb_columns, i)
+        subplot_mesh(mesh)
         plt.title('Mesh {}'.format(i))
     plt.tight_layout()
     plt.show()

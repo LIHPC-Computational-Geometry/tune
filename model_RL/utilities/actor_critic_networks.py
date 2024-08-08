@@ -1,7 +1,6 @@
 import numpy as np
 import torch
 import torch.nn as nn
-from torch.distributed.argparse_util import env
 from torch.optim import Adam
 from torch.distributions import Categorical
 from model.mesh_analysis import isValidAction
@@ -78,13 +77,14 @@ class Actor(nn.Module):
         pmf = self.forward(X)
         log_prob = torch.log(pmf[action])
         actor_loss = -log_prob * delta * I
-        actor_loss = torch.stack(actor_loss).sum()
         return actor_loss
 
     def learn(self, actor_loss ):
         self.optimizer.zero_grad()
+        actor_loss = torch.stack(actor_loss).sum()
         actor_loss.backward()
         self.optimizer.step()
+
 
 class Critic(nn.Module):
     def __init__(self, input_dim, lr=0.0001):
@@ -107,10 +107,10 @@ class Critic(nn.Module):
 
     def update(self, delta, value):
         critic_loss = delta * value
-        critic_loss = torch.stack(critic_loss).sum()
         return critic_loss
 
     def learn(self, critic_loss):
         self.optimizer.zero_grad()
+        critic_loss = torch.stack(critic_loss).sum()
         critic_loss.backward()
         self.optimizer.step()

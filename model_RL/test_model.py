@@ -1,16 +1,27 @@
+from numpy import ndarray
+
 from environment.trimesh_env import TriMesh
 from model.mesh_analysis import global_score
-from model_RL.PPO_model import PPO
-from model_RL.actor_critic_networks import Actor, Critic
+from model.mesh_struct.mesh import Mesh
 import numpy as np
 import copy
-import torch
-import random
 from tqdm import tqdm
-from model_RL.actor_critic_networks import NaNExceptionActor, NaNExceptionCritic
 
 
-def testPolicy(policy, n_eval_episodes, dataset, max_steps):
+def testPolicy(
+        policy,
+        n_eval_episodes: int,
+        dataset: list[Mesh],
+        max_steps: int
+) -> tuple[ndarray, ndarray, ndarray, list[Mesh]]:
+    """
+    Tests policy on each mesh of a dataset with n_eval_episodes.
+    :param policy: the policy to test
+    :param n_eval_episodes: number of evaluation episodes on each mesh
+    :param dataset: list of mesh objects
+    :param max_steps: max steps to evaluate
+    :return: average length of evaluation episodes, number of wins,average reward per mesh, dataset with the modified meshes
+    """
     print('Testing policy')
     avg_length = np.zeros(len(dataset))
     avg_rewards = np.zeros(len(dataset))

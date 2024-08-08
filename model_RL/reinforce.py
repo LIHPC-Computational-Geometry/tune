@@ -1,6 +1,5 @@
-import numpy as np
 from tqdm import tqdm
-from model_RL.nnPolicy import NaNException
+from model_RL.utilities.nnPolicy import NaNException
 
 
 def reinforce(policy, env, nb_episodes, baseline=False):

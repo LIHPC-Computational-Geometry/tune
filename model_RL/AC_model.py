@@ -1,10 +1,9 @@
-import numpy as np
 import torch
 from tqdm import tqdm
-from model_RL.actor_critic_networks import NaNExceptionActor, NaNExceptionCritic, Actor, Critic
+from model_RL.utilities.actor_critic_networks import NaNExceptionActor, NaNExceptionCritic, Actor, Critic
 
 
-class ActorCritic:
+class AC:
     def __init__(self, env, lr, gamma, nb_episodes):
         """
         Initialize the actor and critic networks. Monte-Carlo actor-critic algorithm.
@@ -48,7 +47,7 @@ class ActorCritic:
                     ep_reward += self.env.reward
                     trajectory.append((state, action, self.env.reward))
                     # Actor Critic update
-                    X, indices_faces = env.get_x(state, None)
+                    X, indices_faces = self.env.get_x(state, None)
                     X = torch.tensor(X, dtype=torch.float32)
                     next_X, next_indices_faces = self.env.get_x(next_state, None)
                     next_X = torch.tensor(next_X, dtype=torch.float32)
