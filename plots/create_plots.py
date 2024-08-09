@@ -1,76 +1,67 @@
-from model_RL.reinforce_actor_critic_PPO import reinforce_actor_critic
-from model_RL.reinforce import reinforce
-from model_RL.actor_critic import Actor, Critic
-
-from matplotlib.patches import Rectangle
 import matplotlib.pyplot as plt
-from tqdm import tqdm
-import numpy as np
-
-# possible actions
-FLIP = 0
-
-LOCAL = 0
-PARTIAL = 1
+from numpy import ndarray
 
 
-def plot_average_learning_process(runs: int, actor, critic, env, alpha):
-    real_runs = 0
-    list_rewards = []
-    list_wins = []
-    list_len = []
+def plot_test_results(rewards: ndarray, wins: ndarray, steps: ndarray) -> None:
+    """
+    Plot the rewards obtained on the test data, the number of times the agent wins, and the length (number of time steps)
+    of each episode.
+    :param rewards: list of rewards obtained on the test data
+    :param wins: list of wins obtained on the test data
+    :param steps: list of steps of each episode obtained on the test data
+    """
+    nb_episodes = len(rewards)
+    cat = [i for i in range(nb_episodes)]
+    plt.figure(figsize=(10, 6))
+    plt.subplot(3, 1, 1)  # 3 lignes, 1 colonne, graphique 1
+    plt.bar(cat, rewards, label='avg_rewards')
+    plt.title('Average rewards on test data')
+    plt.legend()
 
-    for r in tqdm(range(runs)):
-        print(f'Running run {r}')
-        if critic is not None:
-            critic.reset(env)
-        actor.reset(env)
-        rewards, policy_trained, win, len_ep = reinforce_actor_critic(actor, critic, env)
-        list_rewards.append(rewards)
-        list_wins.append(win)
-        list_len.append(len_ep)
-        """
-        if rewards is None:
-            real_runs -= 1
-        else:
-            avg_run_rewards += (1.0 / (r + 1)) * (rewards - avg_run_rewards)
-            avg_wins += win"""
-        real_runs += 1
-    nb_episodes = min(len(lst) for lst in list_rewards)
-    avg_run_rewards = np.zeros(nb_episodes)
-    avg_wins = np.zeros(nb_episodes)
-    avg_len = np.zeros(nb_episodes)
+    # Ajouter le deuxième sous-graphe
+    plt.subplot(3, 1, 2)  # 3 lignes, 1 colonne, graphique 2
+    plt.bar(cat, wins, label='avg_wins', color='orange')
+    plt.title('Average wins on test data')
+    plt.legend()
 
-    for lst in list_rewards:
-        for i in range(nb_episodes):
-            avg_run_rewards[i] += lst[i]
-    avg_run_rewards /= runs
+    # Ajouter le troisième sous-graphe
+    plt.subplot(3, 1, 3)  # 3 lignes, 1 colonne, graphique 3
+    plt.bar(cat, steps, label='avg_steps', color='green')
+    plt.title('Average length of episodes on test data')
+    plt.legend()
+    # Ajuster l'espacement entre les sous-graphes
+    plt.tight_layout()
+    # Afficher les graphiques
+    plt.show()
 
-    for lst in list_wins:
-        for i in range(nb_episodes):
-            avg_wins[i] += lst[i]
 
-    for lst in list_len:
-        for i in range(nb_episodes):
-            avg_len[i] += lst[i]
-    avg_len /= runs
+def plot_training_results(rewards: ndarray, wins: ndarray, steps: ndarray) -> None:
+    """
+    Plot the rewards obtained during training, the number of times the agent wins, and the length (number of time steps)
+    of each episode.
+    :param rewards: list of rewards obtained during training
+    :param wins: list of wins obtained during training
+    :param steps: list of steps obtained during training
+    """
+    nb_episodes = len(rewards)
+    real_runs = 1
 
     plt.figure()
-    plt.plot(avg_run_rewards)
+    plt.plot(rewards)
     plt.xlabel('Episodes')
     plt.ylabel('Rewards')
     plt.title('Learning Rewards, nb_episodes={}'.format(nb_episodes) + ', nb_runs={}'.format(real_runs))
     plt.legend(loc="best")
     plt.show()
     plt.figure()
-    plt.plot(avg_wins)
+    plt.plot(wins)
     plt.xlabel('Episodes')
     plt.ylabel('Wins')
     plt.title('Learning Wins, nb_episodes={}'.format(nb_episodes) + ', nb_runs={}'.format(real_runs))
     plt.legend(loc="best")
     plt.show()
     plt.figure()
-    plt.plot(avg_len)
+    plt.plot(steps)
     plt.xlabel('Episodes')
     plt.ylabel('Number of steps per episode')
     plt.title('Learning steps, nb_episodes={}'.format(nb_episodes) + ', nb_runs={}'.format(real_runs))

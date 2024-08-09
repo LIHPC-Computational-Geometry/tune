@@ -1,6 +1,5 @@
-import numpy as np
 from tqdm import tqdm
-from model_RL.nnPolicy import NaNException
+from model_RL.utilities.nnPolicy import NaNException
 
 
 def reinforce(policy, env, nb_episodes, baseline=False):
@@ -42,4 +41,4 @@ def reinforce(policy, env, nb_episodes, baseline=False):
         print("NaN exception occurred")
         return None, None, None
 
-    return rewards, policy, wins
+    return policy, rewards, wins

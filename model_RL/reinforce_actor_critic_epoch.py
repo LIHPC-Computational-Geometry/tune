@@ -1,7 +1,6 @@
-import numpy as np
 import torch
 from tqdm import tqdm
-from model_RL.actor_critic_epoch import NaNExceptionActor, NaNExceptionCritic
+from model_RL.utilities.actor_critic_networks import NaNExceptionActor, NaNExceptionCritic
 
 
 def reinforce_actor_critic(actor, critic, env, nb_epochs=1, nb_episodes=100, batch_size=5):

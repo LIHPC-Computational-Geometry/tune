@@ -76,7 +76,7 @@ def mesh_shuffle_flip(mesh: Mesh) -> Mesh:
     :param mesh: the mesh to work with
     :return: a mesh with randomly flipped darts.
     """
-    nb_flip = len(mesh.dart_info)
+    nb_flip = len(mesh.dart_info)*2
     nb_nodes = len(mesh.nodes)
     for i in range(nb_flip):
         i1 = np.random.randint(nb_nodes)
