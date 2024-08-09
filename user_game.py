@@ -3,14 +3,10 @@ from view.window import Game
 import model.random_trimesh as TM
 from mesh_display import MeshDisplay
 
-def user_game(mesh_size):
-    cmap = TM.random_mesh(mesh_size)
-    mesh_disp = MeshDisplay(cmap)
-    g = Game(cmap, mesh_disp)
-    g.run()
 
-        # Code to load a json file and create a mesh
-"""
+def user_game(mesh_size):
+    # Code to load a json file and create a mesh
+    """
     if len(sys.argv) != 2:
         print("Usage: main.py <mesh_file.json>")
     else:
@@ -21,4 +17,8 @@ def user_game(mesh_size):
         mesh_disp = MeshDisplay(cmap)
         g = Game(cmap, mesh_disp)
         g.run()
-"""
+    """
+    cmap = TM.random_mesh(mesh_size)
+    mesh_disp = MeshDisplay(cmap)
+    g = Game(cmap, mesh_disp)
+    g.run()

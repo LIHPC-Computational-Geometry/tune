@@ -51,5 +51,3 @@ def train():
         plot_training_results(rewards, wins, steps)
         plot_test_results(avg_rewards, avg_wins, avg_steps)
     plot_dataset(final_meshes)
-
-    # plot_average_learning_process(nb_runs, actor, critic, env, alpha)
