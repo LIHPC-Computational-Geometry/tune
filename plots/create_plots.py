@@ -12,7 +12,7 @@ def plot_test_results(rewards: ndarray, wins: ndarray, steps: ndarray) -> None:
     """
     nb_episodes = len(rewards)
     cat = [i for i in range(nb_episodes)]
-    fig = plt.figure(figsize=(10, 6))
+    plt.figure(figsize=(10, 6))
     plt.subplot(3, 1, 1)  # 3 lignes, 1 colonne, graphique 1
     plt.bar(cat, rewards, label='avg_rewards')
     plt.title('Average rewards on test data')

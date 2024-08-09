@@ -35,9 +35,6 @@ def subplot_mesh(mesh: Mesh) -> None:
 
     # Tracer les sommets
     plt.plot(nodes[:, 0], nodes[:, 1], 'ro')  # 'ro' pour des points rouges
-    # Annoter les sommets avec leurs indices
-    # for i, (x, y) in enumerate(nodes):
-    # ax.text(x, y, str(i), fontsize=12, ha='right')
     plt.grid(False)
     plt.axis('off')
 

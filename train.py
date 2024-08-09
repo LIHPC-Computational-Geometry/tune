@@ -1,7 +1,6 @@
 import model.random_trimesh as TM
 
 from environment.trimesh_env import TriMesh
-from mesh_display import MeshDisplay
 
 from plots.create_plots import plot_training_results, plot_test_results
 from plots.mesh_plotter import plot_mesh, plot_dataset
@@ -17,25 +16,14 @@ LOCAL_MESH_FEAT = 0
 
 def train():
     mesh_size = 12
-    nb_runs = 1
-    nb_iterations = 2
-    nb_episodes = 20
-    nb_episode_per_iteration = 20
-    nb_epochs = 1
-    batch_size = 8
     lr = 0.0001
     gamma = 0.9
-    baseline = False
     feature = LOCAL_MESH_FEAT
-    norm = True
 
-    mesh = TM.random_flip_mesh(mesh_size)
-    mesh_disp = MeshDisplay(mesh)
-    # plot_mesh(mesh)
     dataset = [TM.random_flip_mesh(30) for _ in range(16)]
     plot_dataset(dataset)
 
-    env = TriMesh(None, mesh_size, max_steps=30)
+    env = TriMesh(None, mesh_size, max_steps=30, feat=feature)
 
     # Choix de la politique Actor Critic
     # actor = Actor(env, 30, 5, lr=0.0001)

@@ -12,7 +12,7 @@ GLOBAL = 0
 
 
 class TriMesh:
-    def __init__(self, mesh=None, mesh_size: int = None, max_steps: int = 50):
+    def __init__(self, mesh=None, mesh_size: int = None, max_steps: int = 50, feat: int = 0):
         self.mesh = mesh if mesh is not None else random_flip_mesh(mesh_size)
         self.mesh_size = len(self.mesh.nodes)
         self.size = len(self.mesh.dart_info)
@@ -23,7 +23,7 @@ class TriMesh:
         self.nodes_scores = global_score(self.mesh)[0]
         self.ideal_score = global_score(self.mesh)[2]
         self.terminal = False
-        self.feat = 0
+        self.feat = feat
         self.won = 0
 
     def reset(self, mesh=None):

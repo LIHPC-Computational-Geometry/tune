@@ -89,14 +89,10 @@ class SAC:
                         for p in self.critic.parameters():
                             p.requires_grad = True
 
-                if (t + 1) % self.steps_per_epoch == 0:
-                    epoch = (t + 1) // self.steps_per_epoch
-                    # A quoi ça sert ?
-
-        except NaNExceptionActor as e:
+        except NaNExceptionActor:
             print("NaN Exception on Actor Network")
-            return None, None
-        except NaNExceptionCritic as e:
+            return None, None, None, None
+        except NaNExceptionCritic:
             print("NaN Exception on Critic Network")
-            return None, None
+            return None, None, None, None
         return self.actor, rewards, wins, len_ep

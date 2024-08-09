@@ -97,10 +97,10 @@ class PPO:
 
                 self.train_epoch(dataset)
 
-        except NaNExceptionActor as e:
+        except NaNExceptionActor:
             print("NaN Exception on Actor Network")
             return None, None, None, None
-        except NaNExceptionCritic as e:
+        except NaNExceptionCritic:
             print("NaN Exception on Critic Network")
             return None, None, None, None
         return self.actor, rewards, wins, len_ep

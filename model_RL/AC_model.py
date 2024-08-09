@@ -67,10 +67,10 @@ class AC:
                 self.critic.learn(critic_loss)
                 self.actor.learn(actor_loss)
                 rewards.append(ep_reward)
-        except NaNExceptionActor as e:
+        except NaNExceptionActor:
             print("NaN Exception on Actor Network")
             return None, None
-        except NaNExceptionCritic as e:
+        except NaNExceptionCritic:
             print("NaN Exception on Critic Network")
             return None, None
         return self.actor, rewards, wins, len_ep
