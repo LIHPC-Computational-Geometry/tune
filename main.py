@@ -2,7 +2,7 @@ from view.window import Game
 from model.mesh_struct.mesh import Mesh
 from mesh_display import MeshDisplay
 import model.random_trimesh as TM
-import model.reader as Reader
+#import model.reader as Reader
 
 import sys
 import json

@@ -21,7 +21,7 @@ def read_medit(filename: string) -> Mesh:
         if "Vertices" == line.strip():
             line = f.readline()
             nb_vertices = line.strip()
-            for n in range(int(nb_vertices)):
+            for _ in range(int(nb_vertices)):
                 line = f.readline()
                 ls = line.split()
                 x = float(ls[0])
@@ -30,7 +30,7 @@ def read_medit(filename: string) -> Mesh:
         if "Triangles" == line.strip():
             line = f.readline()
             nb_faces = line.strip()
-            for e in range(int(nb_faces)):
+            for _ in range(int(nb_faces)):
                 line = f.readline()
                 ls = line.split()
                 n0 = int(ls[0])
@@ -63,14 +63,14 @@ def read_gmsh(filename: string) -> Mesh:
             line = f.readline()
             ls = line.split()
             nb_blocs = int(ls[0])
-            for b in range(nb_blocs):
+            for _ in range(nb_blocs):
                 line = f.readline()
                 ls = line.split()
                 nb_nodes_b = int(ls[3])
                 # skip the tags
-                for n in range(nb_nodes_b):
+                for _ in range(nb_nodes_b):
                     line = f.readline()
-                for n in range(nb_nodes_b):
+                for _ in range(nb_nodes_b):
                     line = f.readline()
                     ls = line.split()
                     x = float(ls[0])
@@ -82,12 +82,12 @@ def read_gmsh(filename: string) -> Mesh:
             line = f.readline()
             ls = line.split()
             nb_blocs = int(ls[0])
-            for b in range(nb_blocs):
+            for _ in range(nb_blocs):
                 line = f.readline()
                 ls = line.split()
                 elem_type = int(ls[2])
                 nb_elems_b = int(ls[3])
-                for e in range(nb_elems_b):
+                for _ in range(nb_elems_b):
                     line = f.readline()
                     ls = line.split()
                     if elem_type == 2:
