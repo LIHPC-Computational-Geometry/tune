@@ -34,7 +34,7 @@ class AC:
                 self.env.reset()
                 trajectory = []
                 ep_reward = 0
-                I = 1
+                L = 1
                 actor_loss = []
                 critic_loss = []
 
@@ -55,8 +55,8 @@ class AC:
                     next_value = 0 if self.env.terminal else self.critic(next_X)
                     delta = R + 0.9 * next_value - value
                     critic_loss.append(self.critic.update(delta, value))
-                    actor_loss.append(self.actor.update(delta.detach(), I, state, action))
-                    I = 0.9 * I
+                    actor_loss.append(self.actor.update(delta.detach(), L, state, action))
+                    L = 0.9 * L
                     if self.env.terminal:
                         len_ep.append(len(trajectory))
                         if self.env.won:

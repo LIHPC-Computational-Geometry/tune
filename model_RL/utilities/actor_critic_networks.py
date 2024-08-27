@@ -71,7 +71,7 @@ class Actor(nn.Module):
         return pmf.tolist()
 
     def update(self, delta, L, state, action):
-        X, indices_faces = self.env.get_x(state, None)
+        X, _ = self.env.get_x(state, None)
         X = torch.tensor(X, dtype=torch.float32)
         action = torch.tensor(action[0], dtype=torch.int64)
         pmf = self.forward(X)

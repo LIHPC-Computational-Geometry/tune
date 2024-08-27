@@ -3,13 +3,13 @@ import model.random_trimesh as TM
 from environment.trimesh_env import TriMesh
 
 from plots.create_plots import plot_training_results, plot_test_results
-from plots.mesh_plotter import plot_mesh, plot_dataset
+from plots.mesh_plotter import plot_dataset
 
 from model_RL.test_model import testPolicy
 
 from model_RL.PPO_model import PPO
-from model_RL.SAC_model import SAC
-from model_RL.AC_model import AC
+#from model_RL.SAC_model import SAC
+#from model_RL.AC_model import AC
 
 LOCAL_MESH_FEAT = 0
 

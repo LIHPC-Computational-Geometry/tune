@@ -9,7 +9,7 @@ def plot_mesh(mesh: Mesh) -> None:
     Plot a mesh using matplotlib
     :param mesh: a Mesh
     """
-    _, ax = plt.subplots()
+    _, _ = plt.subplots()
     subplot_mesh(mesh)
     plt.show()
 
@@ -52,7 +52,7 @@ def plot_dataset(dataset: list[Mesh]) -> None:
     else:
         nb_lines = round(sqrt_mesh)
         nb_columns = int(sqrt_mesh) +1
-    _, ax = plt.subplots(nb_lines, nb_columns)
+    _, _ = plt.subplots(nb_lines, nb_columns)
     for i, mesh in enumerate(dataset, 1):
         plt.subplot(nb_lines, nb_columns, i)
         subplot_mesh(mesh)

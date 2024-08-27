@@ -37,7 +37,7 @@ class SAC:
                 next_state = self.env.mesh
                 R = self.env.reward
                 ep_reward += R
-                trajectory.append((state, action, R, next_state, I, done))
+                trajectory.append((state, action, R, next_state, L, done))
                 if self.env.terminal:
                     rewards.append(ep_reward)
                     len_ep.append(t)
@@ -45,11 +45,11 @@ class SAC:
                     if self.env.won:
                         wins.append(1)
                         done = True
-                        trajectory.append((state, action, R, next_state, I, done))
+                        trajectory.append((state, action, R, next_state, L, done))
                         rollouts.extend(trajectory)
                     else:
                         wins.append(0)
-                        trajectory.append((state, action, R, next_state, I, done))
+                        trajectory.append((state, action, R, next_state, L, done))
                         rollouts.extend(trajectory)
                     self.env.reset()
                     trajectory = []
@@ -63,7 +63,7 @@ class SAC:
                         critic_loss = []
                         actor_loss = []
                         self.critic.optimizer.zero_grad()
-                        for _, (s, a, r, next_s, I, done) in enumerate(batch, 1):
+                        for _, (s, a, r, next_s, L, done) in enumerate(batch, 1):
                             X, _ = self.env.get_x(s, None)
                             X = torch.tensor(X, dtype=torch.float32)
                             next_X, _ = self.env.get_x(next_s, None)
