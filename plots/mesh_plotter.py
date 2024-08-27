@@ -46,11 +46,11 @@ def plot_dataset(dataset: list[Mesh]) -> None:
     """
     nb_mesh = len(dataset)
     sqrt_mesh = np.sqrt(nb_mesh)
-    if sqrt_mesh % 2 == 0:
+    if float(sqrt_mesh).is_integer():
         nb_lines = int(sqrt_mesh)
         nb_columns = int(sqrt_mesh)
     else:
-        nb_lines = int(sqrt_mesh)
+        nb_lines = round(sqrt_mesh)
         nb_columns = int(sqrt_mesh) +1
     fig, ax = plt.subplots(nb_lines, nb_columns)
     for i, mesh in enumerate(dataset, 1):

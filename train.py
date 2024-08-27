@@ -30,7 +30,7 @@ def train():
     # critic = Critic(30, lr=0.0001)
     # policy = NNPolicy(env, 30, 64,5, 0.9, lr=0.0001)
 
-    model = AC(env, lr, gamma, nb_episodes=50)
+    model = PPO(env, lr, gamma, nb_iterations=7, nb_episodes_per_iteration=100, nb_epochs=5, batch_size=8)
     actor, rewards, wins, steps = model.train()
 
     avg_steps, avg_wins, avg_rewards, final_meshes = testPolicy(actor, 10, dataset, 60)
