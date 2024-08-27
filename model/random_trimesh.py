@@ -3,8 +3,8 @@ import numpy as np
 
 from model.mesh_struct.mesh_elements import Dart, Node
 from model.mesh_struct.mesh import Mesh
-from model.mesh_analysis import find_opposite_node
-from actions.triangular_actions import flip_edge_ids
+from model.mesh_analysis import find_opposite_node, node_in_mesh
+from actions.triangular_actions import flip_edge_ids, split_edge_ids
 
 
 def regular_mesh(num_nodes_max: int) -> Mesh:
@@ -14,7 +14,6 @@ def regular_mesh(num_nodes_max: int) -> Mesh:
     :param num_nodes_max: number of nodes of the final mesh
     :return: an almost regular mesh
     """
-
     nodes = [[0.0, 0.0], [1.0, 0.0], [0.5, 0.87]]
     faces = [[0, 1, 2]]
     mesh = Mesh(nodes, faces)
@@ -50,6 +49,16 @@ def regular_mesh(num_nodes_max: int) -> Mesh:
     return mesh
 
 
+def random_flip_mesh(num_nodes_max: int) -> Mesh:
+    """
+    Create a random mesh with a fixed number of nodes.
+    :param num_nodes_max: number of nodes of the final mesh
+    :return: a random mesh
+    """
+    mesh = regular_mesh(num_nodes_max)
+    mesh_shuffle_flip(mesh)
+    return mesh
+
 def random_mesh(num_nodes_max: int) -> Mesh:
     """
     Create a random mesh with a fixed number of nodes.
@@ -57,17 +66,17 @@ def random_mesh(num_nodes_max: int) -> Mesh:
     :return: a random mesh
     """
     mesh = regular_mesh(num_nodes_max)
-    mesh_shuffle(mesh)
+    mesh_shuffle_flip(mesh)
     return mesh
 
 
-def mesh_shuffle(mesh: Mesh) -> Mesh:
+def mesh_shuffle_flip(mesh: Mesh) -> Mesh:
     """
     Performs random flip actions on mesh darts.
     :param mesh: the mesh to work with
     :return: a mesh with randomly flipped darts.
     """
-    nb_flip = len(mesh.dart_info)
+    nb_flip = len(mesh.dart_info)*2
     nb_nodes = len(mesh.nodes)
     for i in range(nb_flip):
         i1 = np.random.randint(nb_nodes)
@@ -76,21 +85,23 @@ def mesh_shuffle(mesh: Mesh) -> Mesh:
             flip_edge_ids(mesh, i1, i2)
     return mesh
 
-
-def node_in_mesh(mesh: Mesh, x: float, y: float) -> (bool, int):
+def mesh_shuffle(mesh: Mesh) -> Mesh:
     """
-    Search if the node of coordinate (x, y) is inside the mesh.
+    Performs random flip actions on mesh darts.
     :param mesh: the mesh to work with
-    :param x: X coordinate
-    :param y: Y coordinate
-    :return: a boolean indicating if the node is inside the mesh and the id of the node if it is.
+    :return: a mesh with randomly flipped darts.
     """
-    n_id = 0
-    for n in mesh.nodes:
-        if abs(x - n[0]) <= 0.1 and abs(y - n[1]) <= 0.1:
-            return True, n_id
-        n_id = n_id + 1
-    return False, None
+    nb_flip = len(mesh.dart_info)
+    nb_action =nb_flip * 2
+    nb_nodes = len(mesh.nodes)
+    for i in range(nb_action):
+        i1 = np.random.randint(nb_nodes)
+        i2 = np.random.randint(nb_nodes)
+        if i1 != i2 and i%2 == 0:
+            flip_edge_ids(mesh, i1, i2)
+        elif i1 !=i2 :
+            split_edge_ids(mesh, i1, i2)
+    return mesh
 
 
 

@@ -1,4 +1,4 @@
-from math import sqrt, degrees, radians, cos, sin
+from math import sqrt, degrees, radians, cos, sin, acos
 import numpy as np
 
 from model.mesh_struct.mesh_elements import Dart, Node
@@ -113,9 +113,9 @@ def adjacent_darts(n: Node) -> list[Dart]:
         d = Dart(n.mesh, d_info[0])
         d_nfrom = d.get_node()
         d_nto = d.get_beta(1)
-        if d_nfrom == n:
+        if d_nfrom == n and d not in adj_darts:
             adj_darts.append(d)
-        if d_nto.get_node() == n:
+        if d_nto.get_node() == n and d not in adj_darts:
             adj_darts.append(d)
     return adj_darts
 
@@ -137,7 +137,8 @@ def degree(n: Node) -> int:
             boundary_darts.append(d)
         else:
             adjacency += 0.5
-
+    if adjacency != int(adjacency):
+        raise ValueError("Adjacency error")
     return adjacency
 
 
@@ -191,3 +192,78 @@ def find_opposite_node(d: Dart) -> (int, int):
     y_C = A.y() + y_AC
 
     return x_C, y_C
+
+def find_template_opposite_node(d: Dart) -> (int):
+    """
+    Find the the vertex opposite in the adjacent triangle
+    :param d: a dart
+    :return: the node found
+    """
+
+    d2 = d.get_beta(2)
+    if d2 is not None:
+        d21 = d2.get_beta(1)
+        d211 = d21.get_beta(1)
+        node_opposite = d211.get_node()
+        return node_opposite.id
+    else:
+        return None
+
+
+def node_in_mesh(mesh: Mesh, x: float, y: float) -> (bool, int):
+    """
+    Search if the node of coordinate (x, y) is inside the mesh.
+    :param mesh: the mesh to work with
+    :param x: X coordinate
+    :param y: Y coordinate
+    :return: a boolean indicating if the node is inside the mesh and the id of the node if it is.
+    """
+    n_id = 0
+    for n in mesh.nodes:
+        if abs(x - n[0]) <= 0.1 and abs(y - n[1]) <= 0.1:
+            return True, n_id
+        n_id = n_id + 1
+    return False, None
+
+
+def isValidAction(mesh, dart_id: int) -> bool:
+    d = Dart(mesh, dart_id)
+    boundary_darts = get_boundary_darts(mesh)
+    if d in boundary_darts or not isFlipOk(d):
+        return False
+    else:
+        return True
+
+def get_angle_by_coord(x1: float, y1: float, x2: float, y2: float, x3:float, y3:float) -> float:
+    BAx, BAy = x1 - x2, y1 - y2
+    BCx, BCy = x3 - x2, y3 - y2
+
+    cos_ABC = (BAx * BCx + BAy * BCy) / (sqrt(BAx ** 2 + BAy ** 2) * sqrt(BCx ** 2 + BCy ** 2))
+
+    rad = acos(cos_ABC)
+    deg = degrees(rad)
+    return deg
+
+
+def isFlipOk(d:Dart) -> bool:
+    d1 = d.get_beta(1)
+    d11 = d1.get_beta(1)
+    A = d.get_node()
+    B = d1.get_node()
+    C = d11.get_node()
+    d2 = d.get_beta(2)
+    if d2 is None:
+        return False
+    else:
+        d21 = d2.get_beta(1)
+        d211 = d21.get_beta(1)
+        D = d211.get_node()
+
+        # Calcul angle at d limits
+        angle_B = get_angle_by_coord(A.x(), A.y(), B.x(), B.y(), C.x(), C.y()) + get_angle_by_coord(A.x(), A.y(), B.x(), B.y(), D.x(), D.y())
+        angle_A = get_angle_by_coord(B.x(), B.y(), A.x(), A.y(), C.x(), C.y()) + get_angle_by_coord(B.x(), B.y(), A.x(), A.y(), D.x(), D.y())
+
+        if angle_B >= 180 or angle_A >= 180:
+            return False
+        else:
+            return True

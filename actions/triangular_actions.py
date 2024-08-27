@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from model.mesh_struct.mesh import Mesh
 from model.mesh_struct.mesh_elements import Dart, Node
-from model.mesh_analysis import degree
+from model.mesh_analysis import degree, isFlipOk
 
 
 def flip_edge_ids(mesh: Mesh, id1: int, id2: int) -> True:
@@ -11,7 +11,8 @@ def flip_edge_ids(mesh: Mesh, id1: int, id2: int) -> True:
 
 def flip_edge(mesh: Mesh, n1: Node, n2: Node) -> True:
     found, d = mesh.find_inner_edge(n1, n2)
-    if not found:
+
+    if not found or not isFlipOk(d):
         return False
 
     d2, d1, d11, d21, d211, n1, n2, n3, n4 = active_triangles(mesh, d)
@@ -113,5 +114,5 @@ def test_degree(n: Node) -> bool:
     """
     if degree(n) > 10:
         return False
-
-    
+    else:
+        return True
