@@ -17,9 +17,9 @@ def reinforce_actor_critic(actor, critic, env, nb_epochs=1, nb_episodes=100, bat
     len_ep = []
     nb_samples = 0
     try:
-        for epoch in tqdm(range(nb_epochs)):
-            rollouts=[]
-            for ep in tqdm(range(nb_episodes)):
+        for _ in tqdm(range(nb_epochs)):
+            rollouts = []
+            for _ in tqdm(range(nb_episodes)):
                 env.reset()
                 trajectory = []
                 ep_reward = 0
@@ -51,10 +51,10 @@ def reinforce_actor_critic(actor, critic, env, nb_epochs=1, nb_episodes=100, bat
                         actor_loss = []
 
                         critic.optimizer.zero_grad()
-                        for i, (s, a, r, next_s, I, done) in enumerate(batch, 1):
+                        for _, (s, a, r, next_s, I, done) in enumerate(batch, 1):
                             X, indices_faces = env.get_x(s, None)
                             X = torch.tensor(X, dtype=torch.float32)
-                            next_X, next_indices_faces = env.get_x(next_s, None)
+                            next_X, _ = env.get_x(next_s, None)
                             next_X = torch.tensor(next_X, dtype=torch.float32)
                             value = critic(X)
                             pmf = actor.forward(X)

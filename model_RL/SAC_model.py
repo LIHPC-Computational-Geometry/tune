@@ -28,7 +28,7 @@ class SAC:
         rollouts = []
         done = False
         ep_reward = 0
-        I = 1
+        L = 1
         try:
             for t in tqdm(range(self.total_steps)):
                 state = self.env.mesh
@@ -54,19 +54,19 @@ class SAC:
                     self.env.reset()
                     trajectory = []
                     ep_reward = 0
-                    I = 1
-                I = 0.9 * I
+                    L = 1
+                L = 0.9 * L
 
                 if t >= self.update_after and t % self.update_every == 0:
-                    for j in range(self.update_every):
+                    for _ in range(self.update_every):
                         batch = random.sample(rollouts, self.batch_size)
                         critic_loss = []
                         actor_loss = []
                         self.critic.optimizer.zero_grad()
-                        for i, (s, a, r, next_s, I, done) in enumerate(batch, 1):
-                            X, indices_faces = self.env.get_x(s, None)
+                        for _, (s, a, r, next_s, I, done) in enumerate(batch, 1):
+                            X, _ = self.env.get_x(s, None)
                             X = torch.tensor(X, dtype=torch.float32)
-                            next_X, next_indices_faces = self.env.get_x(next_s, None)
+                            next_X, _ = self.env.get_x(next_s, None)
                             next_X = torch.tensor(next_X, dtype=torch.float32)
                             value = self.critic(X)
                             pmf = self.actor.forward(X)
@@ -74,7 +74,7 @@ class SAC:
                             next_value = torch.tensor(0.0, dtype=torch.float32) if done else self.critic(next_X)
                             delta = r + 0.9 * next_value - value
                             critic_loss.append(value * delta.detach())
-                            actor_loss.append(-log_prob * delta.detach() * I)
+                            actor_loss.append(-log_prob * delta.detach() * L)
                         actor_loss = torch.stack(actor_loss).sum()
                         critic_loss = torch.stack(critic_loss).sum()
                         critic_loss.backward()

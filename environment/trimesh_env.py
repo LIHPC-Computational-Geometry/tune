@@ -38,14 +38,14 @@ class TriMesh:
 
     def step(self, action):
         dart_id = action[1]
-        nodes_score, mesh_score, mesh_ideal_score = global_score(self.mesh)
+        _, mesh_score, mesh_ideal_score = global_score(self.mesh)
         d = Dart(self.mesh, dart_id)
         d1 = d.get_beta(1)
         n1 = d.get_node()
         n2 = d1.get_node()
         flip_edge(self.mesh, n1, n2)
         self.steps += 1
-        next_nodes_score, next_mesh_score, next_mesh_ideal_score = global_score(self.mesh)
+        next_nodes_score, next_mesh_score, _ = global_score(self.mesh)
         self.nodes_scores = next_nodes_score
         self.reward = (mesh_score - next_mesh_score)*10
         if self.steps >= self.max_steps or next_mesh_score == mesh_ideal_score:

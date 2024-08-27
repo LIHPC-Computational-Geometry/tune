@@ -30,7 +30,7 @@ class AC:
         wins = []
         len_ep = []
         try:
-            for ep in tqdm(range(self.nb_episodes)):
+            for _ in tqdm(range(self.nb_episodes)):
                 self.env.reset()
                 trajectory = []
                 ep_reward = 0
@@ -47,9 +47,9 @@ class AC:
                     ep_reward += self.env.reward
                     trajectory.append((state, action, self.env.reward))
                     # Actor Critic update
-                    X, indices_faces = self.env.get_x(state, None)
+                    X, _ = self.env.get_x(state, None)
                     X = torch.tensor(X, dtype=torch.float32)
-                    next_X, next_indices_faces = self.env.get_x(next_state, None)
+                    next_X, _ = self.env.get_x(next_state, None)
                     next_X = torch.tensor(next_X, dtype=torch.float32)
                     value = self.critic(X)
                     next_value = 0 if self.env.terminal else self.critic(next_X)

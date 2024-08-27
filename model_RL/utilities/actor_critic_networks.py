@@ -65,18 +65,18 @@ class Actor(nn.Module):
         return self.softmax(x)
 
     def get_pi(self, state):
-        X, indices_faces = self.env.get_x(state, None)
+        X, _ = self.env.get_x(state, None)
         X = torch.tensor(X, dtype=torch.float32)
         pmf = self.forward(X)
         return pmf.tolist()
 
-    def update(self, delta, I, state, action):
+    def update(self, delta, L, state, action):
         X, indices_faces = self.env.get_x(state, None)
         X = torch.tensor(X, dtype=torch.float32)
         action = torch.tensor(action[0], dtype=torch.int64)
         pmf = self.forward(X)
         log_prob = torch.log(pmf[action])
-        actor_loss = -log_prob * delta * I
+        actor_loss = -log_prob * delta * L
         return actor_loss
 
     def learn(self, actor_loss ):

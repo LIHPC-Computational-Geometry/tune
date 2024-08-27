@@ -65,7 +65,7 @@ class NNPolicy(nn.Module):
         return x
 
     def get_pi(self, state):
-        X, dart_indices = self.env.get_x(state, None)
+        X, _ = self.env.get_x(state, None)
         X = torch.tensor(X, dtype=torch.float32)
         pmf = self.forward(X)
         return pmf.tolist()
@@ -73,9 +73,9 @@ class NNPolicy(nn.Module):
     def update(self, trajectory):
         G = 0
         policy_loss = []
-        for i, (s, a, r) in enumerate(reversed(trajectory), 1):
+        for _, (s, a, r) in enumerate(reversed(trajectory), 1):
             G = r + self.gamma * G
-            X, dart_indices = self.env.get_x(s, None)
+            X, _ = self.env.get_x(s, None)
             X = torch.tensor(X, dtype=torch.float32)
             action = torch.tensor(a[0], dtype=torch.int64)
             pmf = self.forward(X)

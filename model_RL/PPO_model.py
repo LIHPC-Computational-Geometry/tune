@@ -22,7 +22,7 @@ class PPO:
     def train_epoch(self, dataset):
         num_samples = len(dataset)
         print('Training on {}'.format(num_samples))
-        for epoch in range(self.nb_epochs):
+        for _ in range(self.nb_epochs):
             start = 0
             dataset_rd = random.sample(dataset, num_samples)
             while start < num_samples - 2:
@@ -33,9 +33,9 @@ class PPO:
                 self.critic.optimizer.zero_grad()
                 G = 0
                 for _, (s, a, r, old_prob, next_s, done) in enumerate(batch, 1):
-                    X, indices_faces = self.env.get_x(s, None)
+                    X, _ = self.env.get_x(s, None)
                     X = torch.tensor(X, dtype=torch.float32)
-                    next_X, next_indices_faces = self.env.get_x(next_s, None)
+                    next_X, _ = self.env.get_x(next_s, None)
                     next_X = torch.tensor(next_X, dtype=torch.float32)
                     value = self.critic(X)
                     pmf = self.actor.forward(X)
@@ -80,7 +80,7 @@ class PPO:
                 print('ITERATION', iteration)
                 rollouts = []
                 dataset = []
-                for ep in range(self.nb_episodes_per_iteration):
+                for _ in range(self.nb_episodes_per_iteration):
                     self.env.reset()
                     trajectory = []
                     ep_reward = 0

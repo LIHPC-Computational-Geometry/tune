@@ -14,7 +14,7 @@ def reinforce(policy, env, nb_episodes, baseline=False):
     rewards = []
     wins = []
     try:
-        for ep in tqdm(range(nb_episodes), leave=False):
+        for _ in tqdm(range(nb_episodes), leave=False):
             env.reset()
             trajectory = []
             ep_reward = 0

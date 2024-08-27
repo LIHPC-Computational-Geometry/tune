@@ -30,7 +30,7 @@ def testPolicy(
     for i, mesh in tqdm(enumerate(dataset, 1)):
         env = TriMesh(mesh, None, max_steps)
         best_mesh = None
-        for ep in range(n_eval_episodes):
+        for _ in range(n_eval_episodes):
             ep_rewards: int = 0
             ep_length: int = 0
             env.reset(mesh)
