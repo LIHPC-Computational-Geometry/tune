@@ -65,7 +65,7 @@ class TestMeshAnalysis(unittest.TestCase):
         x1, y1, x2, y2, x3, y3 = 0.0, 0.0, 0.0, 1.0, 1.0, 1.0
         self.assertEqual(Mesh_analysis.notAlignedAndNotObtuse(x1, y1, x2, y2, x3, y3), True)
         x1, y1, x2, y2, x3, y3 = 1.0, 0.0, 0.0, 1.0, 1.0, 1.0
-        self.assertEqual(Mesh_analysis.notAlignedAndNotObtuse(x1, y1, x2, y2, x3, y3), False)
+        self.assertEqual(Mesh_analysis.notAlignedAndNotObtuse(x1, y1, x2, y2, x3, y3), True)
 
 
 if __name__ == '__main__':
