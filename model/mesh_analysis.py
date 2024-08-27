@@ -252,15 +252,18 @@ def isFlipOk(d:Dart) -> bool:
     B = d1.get_node()
     C = d11.get_node()
     d2 = d.get_beta(2)
-    d21 = d2.get_beta(1)
-    d211 = d21.get_beta(1)
-    D = d211.get_node()
-
-    # Calcul angle at d limits
-    angle_B = get_angle_by_coord(A.x(), A.y(), B.x(), B.y(), C.x(), C.y()) + get_angle_by_coord(A.x(), A.y(), B.x(), B.y(), D.x(), D.y())
-    angle_A = get_angle_by_coord(B.x(), B.y(), A.x(), A.y(), C.x(), C.y()) + get_angle_by_coord(B.x(), B.y(), A.x(), A.y(), D.x(), D.y())
-
-    if angle_B >= 180 or angle_A >= 180:
+    if d2 is None:
         return False
     else:
-        return True
+        d21 = d2.get_beta(1)
+        d211 = d21.get_beta(1)
+        D = d211.get_node()
+
+        # Calcul angle at d limits
+        angle_B = get_angle_by_coord(A.x(), A.y(), B.x(), B.y(), C.x(), C.y()) + get_angle_by_coord(A.x(), A.y(), B.x(), B.y(), D.x(), D.y())
+        angle_A = get_angle_by_coord(B.x(), B.y(), A.x(), A.y(), C.x(), C.y()) + get_angle_by_coord(B.x(), B.y(), A.x(), A.y(), D.x(), D.y())
+
+        if angle_B >= 180 or angle_A >= 180:
+            return False
+        else:
+            return True
