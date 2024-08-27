@@ -1,5 +1,5 @@
 from model_RL.utilities.actor_critic_networks import NaNExceptionActor, NaNExceptionCritic, Actor, Critic
-
+from model.mesh_analysis import global_score
 import copy
 import torch
 import random
@@ -17,6 +17,7 @@ class PPO:
         self.nb_episodes_per_iteration = nb_episodes_per_iteration
         self.nb_epochs = nb_epochs
         self.batch_size = batch_size
+        self.epsilon = 0.2
 
     def train_epoch(self, dataset):
         num_samples = len(dataset)
@@ -30,7 +31,8 @@ class PPO:
                 critic_loss = []
                 actor_loss = []
                 self.critic.optimizer.zero_grad()
-                for i, (s, a, r, next_s, I, done) in enumerate(batch, 1):
+                G = 0
+                for i, (s, a, r, old_prob, next_s, done) in enumerate(batch, 1):
                     X, indices_faces = self.env.get_x(s, None)
                     X = torch.tensor(X, dtype=torch.float32)
                     next_X, next_indices_faces = self.env.get_x(next_s, None)
@@ -40,8 +42,16 @@ class PPO:
                     log_prob = torch.log(pmf[a[0]])
                     next_value = torch.tensor(0.0, dtype=torch.float32) if done else self.critic(next_X)
                     delta = r + 0.9 * next_value - value
+                    G = (r + 0.9 * G) / 10
+                    st = global_score(s)[1]
+                    ideal_s = global_score(s)[2]
+                    advantage = 1 if done else G / (st - ideal_s)
+                    ratio = torch.exp(log_prob - torch.log(old_prob).detach())
+                    actor_loss1 = advantage * ratio
+                    actor_loss2 = advantage * torch.clamp(ratio, 1 - self.epsilon, 1 + self.epsilon)
+                    clipped_obj = min(actor_loss1, actor_loss2)
                     critic_loss.append(delta.detach() * value)
-                    actor_loss.append(-log_prob * delta.detach() * I)
+                    actor_loss.append(-clipped_obj)
                 actor_loss = torch.stack(actor_loss).sum()
                 critic_loss = torch.stack(critic_loss).sum()
                 critic_loss.backward()
@@ -57,6 +67,10 @@ class PPO:
                 start = stop + 1
 
     def train(self):
+        """
+        Train the PPO model
+        :return: the actor policy, training rewards, training wins, len of episodes
+        """
         rewards = []
         wins = []
         len_ep = []
@@ -70,11 +84,14 @@ class PPO:
                     self.env.reset()
                     trajectory = []
                     ep_reward = 0
-                    I = 1
                     done = False
                     while True:
                         state = copy.deepcopy(self.env.mesh)
                         action = self.actor.select_action(state)
+                        X, dart_indices = self.env.get_x(state, None)
+                        X = torch.tensor(X, dtype=torch.float32)
+                        pmf = self.actor.forward(X)
+                        prob = pmf[action[0]]
                         self.env.step(action)
                         next_state = copy.deepcopy(self.env.mesh)
                         R = self.env.reward
@@ -83,13 +100,12 @@ class PPO:
                             if self.env.won:
                                 wins.append(1)
                                 done = True
-                                trajectory.append((state, action, R, next_state, I, done))
+                                trajectory.append((state, action, R, prob, next_state, done))
                             else:
                                 wins.append(0)
-                                trajectory.append((state, action, R, next_state, I, done))
+                                trajectory.append((state, action, R, prob, next_state, done))
                             break
-                        trajectory.append((state, action, R, next_state, I, done))
-                        I = 0.9 * I
+                        trajectory.append((state, action, R, prob, next_state, done))
                     rewards.append(ep_reward)
                     rollouts.append(trajectory)
                     dataset.extend(trajectory)
