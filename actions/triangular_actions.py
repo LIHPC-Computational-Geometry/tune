@@ -114,3 +114,5 @@ def test_degree(n: Node) -> bool:
     """
     if degree(n) > 10:
         return False
+    else:
+        return True

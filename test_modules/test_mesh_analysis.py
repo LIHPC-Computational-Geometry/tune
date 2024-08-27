@@ -1,5 +1,6 @@
 import unittest
 from model.mesh_struct.mesh import Mesh
+from model.mesh_struct.mesh_elements import Dart
 import model.mesh_analysis as Mesh_analysis
 from actions.triangular_actions import split_edge_ids
 
@@ -39,6 +40,32 @@ class TestMeshAnalysis(unittest.TestCase):
         split_edge_ids(cmap, 1, 2)
         nodes_score, mesh_score, mesh_ideal_score = Mesh_analysis.global_score(cmap)
         self.assertEqual((5, 1), (mesh_score, mesh_ideal_score))
+
+    def test_find_template_opposite_node_not_found(self):
+        nodes = [[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0], [2.0, 0.0]]
+        faces = [[0, 1, 2], [0, 2, 3], [1, 4, 2]]
+        cmap = Mesh(nodes, faces)
+        dart_to_test = Dart(cmap, 0)
+        node = Mesh_analysis.find_template_opposite_node(dart_to_test)
+        self.assertEqual(node, None)
+        dart_to_test = Dart(cmap, 2)
+        node = Mesh_analysis.find_template_opposite_node(dart_to_test)
+        self.assertEqual(node, 3)
+
+    def test_is_valid_action(self):
+        nodes = [[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0], [2.0, 0.0]]
+        faces = [[0, 1, 2], [0, 2, 3], [1, 4, 2]]
+        cmap = Mesh(nodes, faces)
+        self.assertEqual(Mesh_analysis.isValidAction(cmap, 0), False)
+        self.assertEqual(Mesh_analysis.isValidAction(cmap, 2), True)
+
+    def test_notAlignedAndNotObtuse(self):
+        x1, y1, x2, y2, x3, y3 = 0.0, 0.0, 0.0, 1.0, 0.0, 2.0
+        self.assertEqual(Mesh_analysis.notAlignedAndNotObtuse(x1, y1, x2, y2, x3, y3), False)
+        x1, y1, x2, y2, x3, y3 = 0.0, 0.0, 0.0, 1.0, 1.0, 1.0
+        self.assertEqual(Mesh_analysis.notAlignedAndNotObtuse(x1, y1, x2, y2, x3, y3), True)
+        x1, y1, x2, y2, x3, y3 = 1.0, 0.0, 0.0, 1.0, 1.0, 1.0
+        self.assertEqual(Mesh_analysis.notAlignedAndNotObtuse(x1, y1, x2, y2, x3, y3), False)
 
 
 if __name__ == '__main__':
