@@ -1,4 +1,7 @@
 import unittest
+
+from fontTools.merge import cmap
+
 from model.mesh_struct.mesh import Mesh
 from model.mesh_struct.mesh_elements import Dart
 import model.mesh_analysis as Mesh_analysis
@@ -59,13 +62,14 @@ class TestMeshAnalysis(unittest.TestCase):
         self.assertEqual(Mesh_analysis.isValidAction(cmap, 0), False)
         self.assertEqual(Mesh_analysis.isValidAction(cmap, 2), True)
 
-    def test_notAlignedAndNotObtuse(self):
-        x1, y1, x2, y2, x3, y3 = 0.0, 0.0, 0.0, 1.0, 0.0, 2.0
-        self.assertEqual(Mesh_analysis.notAlignedAndNotObtuse(x1, y1, x2, y2, x3, y3), False)
-        x1, y1, x2, y2, x3, y3 = 0.0, 0.0, 0.0, 1.0, 1.0, 1.0
-        self.assertEqual(Mesh_analysis.notAlignedAndNotObtuse(x1, y1, x2, y2, x3, y3), True)
-        x1, y1, x2, y2, x3, y3 = 1.0, 0.0, 0.0, 1.0, 1.0, 1.0
-        self.assertEqual(Mesh_analysis.notAlignedAndNotObtuse(x1, y1, x2, y2, x3, y3), True)
+    def test_isFlipOk(self):
+        nodes = [[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0], [2.0, 0.0]]
+        faces = [[0, 1, 2], [0, 2, 3], [1, 4, 2]]
+        cmap = Mesh(nodes, faces)
+        dart_to_test = Dart(cmap, 0)
+        self.assertFalse(Mesh_analysis.isFlipOk(dart_to_test))
+        dart_to_test = Dart(cmap, 2)
+        self.assertTrue(Mesh_analysis.isFlipOk(dart_to_test))
 
 
 if __name__ == '__main__':
