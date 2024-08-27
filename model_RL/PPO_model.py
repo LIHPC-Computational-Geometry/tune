@@ -32,7 +32,7 @@ class PPO:
                 actor_loss = []
                 self.critic.optimizer.zero_grad()
                 G = 0
-                for i, (s, a, r, old_prob, next_s, done) in enumerate(batch, 1):
+                for _, (s, a, r, old_prob, next_s, done) in enumerate(batch, 1):
                     X, indices_faces = self.env.get_x(s, None)
                     X = torch.tensor(X, dtype=torch.float32)
                     next_X, next_indices_faces = self.env.get_x(next_s, None)
@@ -88,7 +88,7 @@ class PPO:
                     while True:
                         state = copy.deepcopy(self.env.mesh)
                         action = self.actor.select_action(state)
-                        X, dart_indices = self.env.get_x(state, None)
+                        X, _ = self.env.get_x(state, None)
                         X = torch.tensor(X, dtype=torch.float32)
                         pmf = self.actor.forward(X)
                         prob = pmf[action[0]]
