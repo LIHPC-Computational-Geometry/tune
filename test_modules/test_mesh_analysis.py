@@ -1,7 +1,5 @@
 import unittest
 
-from fontTools.merge import cmap
-
 from model.mesh_struct.mesh import Mesh
 from model.mesh_struct.mesh_elements import Dart
 import model.mesh_analysis as Mesh_analysis
@@ -24,7 +22,7 @@ class TestMeshAnalysis(unittest.TestCase):
         faces = [[0, 1, 2], [0, 2, 3], [3, 2, 4], [7, 0, 3], [7, 10, 0], [10, 14, 0], [0, 14, 1], [10, 12, 14],
                  [3, 4, 5], [3, 5, 6], [3, 6, 7], [7, 6, 8], [7, 8, 9], [7, 9, 10], [10, 9, 11], [10, 11, 12],
                  [14, 12, 13], [14, 13, 15], [1, 14, 15], [1, 15, 16], [1, 16, 17], [1, 17, 2], [2, 17, 18], [2, 18, 4]]
-        cmap = Mesh(nodes,faces)
+        cmap = Mesh(nodes, faces)
         nodes_score, mesh_score, mesh_ideal_score = Mesh_analysis.global_score(cmap)
         self.assertEqual((6, -2), (mesh_score,mesh_ideal_score) )  # add assertion here
 
