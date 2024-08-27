@@ -66,7 +66,7 @@ def random_mesh(num_nodes_max: int) -> Mesh:
     :return: a random mesh
     """
     mesh = regular_mesh(num_nodes_max)
-    mesh_shuffle(mesh)
+    mesh_shuffle_flip(mesh)
     return mesh
 
 
