@@ -18,7 +18,7 @@ class Vertex:
         self.selected = False
         self.color = vertex_color_normal
         self.obj = None
-        self.value = round(value,0)
+        self.value = round(value, 0)
 
     def switch_selection(self):
         if self.selected:
@@ -111,9 +111,9 @@ class Graph:
 
     def update(self, vertices, edges, scores):
         for idx, n in enumerate(vertices):
-            nodes_scores= scores[0]
+            nodes_scores = scores[0]
             n_value = nodes_scores[idx]
-            self.create_vertex(idx, n[0], n[1], n_value)
+            self.create_vertex(n[0], n[1], n[2], n_value)
         for e in edges:
             self.create_edge(e[0], e[1])
 
@@ -123,8 +123,11 @@ class Graph:
         return len(self.vertices) - 1
 
     def create_edge(self, i1: int, i2: int) -> int:
-        n1 = self.vertices[i1]
-        n2 = self.vertices[i2]
+        for v in self.vertices:
+            if v.idx == i1:
+                n1 = v
+            elif v.idx == i2:
+                n2 = v
         self.add_edge(Edge(n1, n2))
         return len(self.edges) - 1
 

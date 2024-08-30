@@ -16,12 +16,14 @@ def global_score(m: Mesh) -> (int, int):
     mesh_score = 0
     nodes_score = []
     for i in range(len(m.nodes)):
-        n_id = i
-        node = Node(m, n_id)
-        n_score = score_calculation(node)
-        nodes_score.append(n_score)
-        mesh_ideal_score += n_score
-        mesh_score += abs(n_score)
+        if m.nodes[i, 2] >= 0:
+            n_id = i
+            node = Node(m, n_id)
+            n_score = score_calculation(node)
+            nodes_score.append(n_score)
+            mesh_ideal_score += n_score
+            mesh_score += abs(n_score)
+        nodes_score.append(None)
     return nodes_score, mesh_score, mesh_ideal_score
 
 
@@ -82,7 +84,7 @@ def get_boundary_angle(n: Node) -> float:
         d_twin = d.get_beta(2)
         if d_twin is None:
             boundary_darts.append(d)
-    if len(boundary_darts) > 3:
+    if len(boundary_darts) >= 4:
         raise ValueError("Boundary error")
     angle = get_angle(boundary_darts[0], boundary_darts[1], n)
     return angle
@@ -109,7 +111,7 @@ def adjacent_darts(n: Node) -> list[Dart]:
     :return: the list of adjacent darts
     """
     adj_darts = []
-    for d_info in n.mesh.dart_info:
+    for d_info in n.mesh.active_darts():
         d = Dart(n.mesh, d_info[0])
         d_nfrom = d.get_node()
         d_nto = d.get_beta(1)
@@ -138,6 +140,8 @@ def degree(n: Node) -> int:
         else:
             adjacency += 0.5
     if adjacency != int(adjacency):
+        print(adjacency)
+        print(n.id)
         raise ValueError("Adjacency error")
     return adjacency
 
@@ -149,7 +153,7 @@ def get_boundary_darts(m: Mesh) -> list[Dart]:
     :return: a list of all boundary darts
     """
     boundary_darts = []
-    for d_info in m.dart_info:
+    for d_info in m.active_darts():
         d = Dart(m, d_info[0])
         d_twin = d.get_beta(2)
         if d_twin is None :
@@ -164,11 +168,11 @@ def get_boundary_nodes(m: Mesh) -> list[Node]:
     :return: a list of all boundary nodes
     """
     boundary_nodes = []
-    nb_nodes = len(m.nodes)
-    for n_id in range(0, nb_nodes):
-        n = Node(m, n_id)
-        if on_boundary(n):
-            boundary_nodes.append(n)
+    for n_id in range(0, len(m.nodes)):
+        if m.nodes[n_id, 2] >= 0:
+            n = Node(m, n_id)
+            if on_boundary(n):
+                boundary_nodes.append(n)
     return boundary_nodes
 
 
@@ -220,16 +224,26 @@ def node_in_mesh(mesh: Mesh, x: float, y: float) -> (bool, int):
     """
     n_id = 0
     for n in mesh.nodes:
-        if abs(x - n[0]) <= 0.1 and abs(y - n[1]) <= 0.1:
-            return True, n_id
-        n_id = n_id + 1
+        if n[2] >= 0 :
+            if abs(x - n[0]) <= 0.1 and abs(y - n[1]) <= 0.1:
+                return True, n_id
+        n_id += 1
     return False, None
 
 
-def isValidAction(mesh, dart_id: int) -> bool:
+def isValidAction(mesh: Mesh, dart_id: int, action: int) -> bool:
+    flip = 0
+    split = 1
+    collapse = 2
     d = Dart(mesh, dart_id)
     boundary_darts = get_boundary_darts(mesh)
-    if d in boundary_darts or not isFlipOk(d):
+    if d in boundary_darts:
+        return False
+    elif action == flip and isFlipOk(d) is not True:
+        return False
+    elif action == split and isFlipOk(d) is not True:
+        return False
+    elif action == collapse and isCollapseOk(d) is not True:
         return False
     else:
         return True
@@ -245,7 +259,7 @@ def get_angle_by_coord(x1: float, y1: float, x2: float, y2: float, x3:float, y3:
     return deg
 
 
-def isFlipOk(d:Dart) -> bool:
+def isFlipOk(d: Dart) -> bool:
     d1 = d.get_beta(1)
     d11 = d1.get_beta(1)
     A = d.get_node()
@@ -267,3 +281,26 @@ def isFlipOk(d:Dart) -> bool:
             return False
         else:
             return True
+
+
+def isCollapseOk(d: Dart) -> bool:
+    mesh = d.mesh
+    d2, d1, d11, d21, d211, n1, n2, n3, n4 = mesh.active_triangles(d)
+
+    d112 = d11.get_beta(2)
+    d12 = d1.get_beta(2)
+
+    d212 = d21.get_beta(2)
+    d2112 = d211.get_beta(2)
+
+    if d112 is None and d12 is None:
+        return False
+    elif d212 is None and d2112 is None:
+        return False
+    elif d212 is None and d12 is None:
+        return False
+    elif d112 is None and d2112 is None:
+        return False
+    else:
+        return True
+

@@ -1,6 +1,8 @@
 import unittest
-from model.random_trimesh import regular_mesh, random_mesh, random_flip_mesh
+from model.random_trimesh import regular_mesh, random_mesh, random_flip_mesh, mesh_shuffle
 from model.mesh_struct.mesh import Mesh
+
+from plots.mesh_plotter import plot_mesh
 
 
 class TestRandomTrimesh(unittest.TestCase):
@@ -28,6 +30,11 @@ class TestRandomTrimesh(unittest.TestCase):
         self.assertEqual(m.nb_nodes(), 30)
         m = random_flip_mesh(60)
         self.assertEqual(m.nb_nodes(), 60)
+
+    def test_mesh_suffle(self):
+        m = regular_mesh(30)
+        mesh = mesh_shuffle(m)
+        plot_mesh(mesh)
 
 
 
