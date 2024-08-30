@@ -27,7 +27,10 @@ class Dart:
         :param a_dart: another dart
         :return: true if the darts are equal, false otherwise
         """
-        return self.mesh == a_dart.mesh and self.id == a_dart.id
+        if a_dart is None:
+            return False
+        else:
+            return self.mesh == a_dart.mesh and self.id == a_dart.id
 
     def get_beta(self, i: int) -> Dart:
         """
@@ -52,7 +55,10 @@ class Dart:
         """
         if i < 1 or i > 2:
             raise ValueError("Wrong alpha dimension")
-        self.mesh.dart_info[self.id, i] = dart_to.id
+        elif dart_to is None:
+            self.mesh.dart_info[self.id, i] = -1
+        else:
+            self.mesh.dart_info[self.id, i] = dart_to.id
 
     def get_node(self) -> Node:
         """

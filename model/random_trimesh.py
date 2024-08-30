@@ -4,7 +4,7 @@ import numpy as np
 from model.mesh_struct.mesh_elements import Dart, Node
 from model.mesh_struct.mesh import Mesh
 from model.mesh_analysis import find_opposite_node, node_in_mesh
-from actions.triangular_actions import flip_edge_ids, split_edge_ids
+from actions.triangular_actions import flip_edge_ids, split_edge_ids, collapse_edge_ids
 
 
 def regular_mesh(num_nodes_max: int) -> Mesh:
@@ -91,16 +91,18 @@ def mesh_shuffle(mesh: Mesh) -> Mesh:
     :param mesh: the mesh to work with
     :return: a mesh with randomly flipped darts.
     """
-    nb_flip = len(mesh.dart_info)
-    nb_action =nb_flip * 2
+    nb_action = len(mesh.dart_info)
     nb_nodes = len(mesh.nodes)
     for i in range(nb_action):
+        action = np.random.randint(1, 4)
         i1 = np.random.randint(nb_nodes)
         i2 = np.random.randint(nb_nodes)
-        if i1 != i2 and i%2 == 0:
+        if action == 1:
             flip_edge_ids(mesh, i1, i2)
-        elif i1 !=i2 :
+        elif action == 2:
             split_edge_ids(mesh, i1, i2)
+        elif action == 3:
+            collapse_edge_ids(mesh, i1, i2)
     return mesh
 
 

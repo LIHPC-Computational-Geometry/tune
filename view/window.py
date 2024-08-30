@@ -3,7 +3,7 @@ from pygame import math
 from pygame.locals import *
 from view import graph
 from mesh_display import MeshDisplay
-from actions.triangular_actions import split_edge_ids, flip_edge_ids
+from actions.triangular_actions import split_edge_ids, flip_edge_ids, collapse_edge_ids
 import sys
 
 color1 = pygame.Color(30, 30, 30)  # Dark Grey
@@ -94,6 +94,11 @@ class Game:
                                 already_selected = True
                         elif pygame.key.get_pressed()[pygame.K_s]:
                             if split_edge_ids(self.model, e.start.idx, e.end.idx):
+                                self.graph.clear()
+                                self.graph.update(self.mesh_disp.get_nodes_coordinates(),self.mesh_disp.get_edges(), self.mesh_disp.get_scores())
+                                already_selected = True
+                        elif pygame.key.get_pressed()[pygame.K_c]:
+                            if collapse_edge_ids(self.model, e.start.idx, e.end.idx):
                                 self.graph.clear()
                                 self.graph.update(self.mesh_disp.get_nodes_coordinates(),self.mesh_disp.get_edges(), self.mesh_disp.get_scores())
                                 already_selected = True
