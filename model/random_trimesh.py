@@ -66,7 +66,7 @@ def random_mesh(num_nodes_max: int) -> Mesh:
     :return: a random mesh
     """
     mesh = regular_mesh(num_nodes_max)
-    mesh_shuffle_flip(mesh)
+    mesh_shuffle(mesh)
     return mesh
 
 
@@ -91,7 +91,7 @@ def mesh_shuffle(mesh: Mesh) -> Mesh:
     :param mesh: the mesh to work with
     :return: a mesh with randomly flipped darts.
     """
-    nb_action = len(mesh.dart_info)
+    nb_action = 2*len(mesh.dart_info)
     nb_nodes = len(mesh.nodes)
     for i in range(nb_action):
         action = np.random.randint(1, 4)

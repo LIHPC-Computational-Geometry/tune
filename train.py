@@ -20,7 +20,7 @@ def train():
     gamma = 0.9
     feature = LOCAL_MESH_FEAT
 
-    dataset = [TM.random_flip_mesh(30) for _ in range(16)]
+    dataset = [TM.random_mesh(30) for _ in range(16)]
     plot_dataset(dataset)
 
     env = TriMesh(None, mesh_size, max_steps=30, feat=feature)
@@ -30,7 +30,7 @@ def train():
     # critic = Critic(30, lr=0.0001)
     # policy = NNPolicy(env, 30, 64,5, 0.9, lr=0.0001)
 
-    model = PPO(env, lr, gamma, nb_iterations=2, nb_episodes_per_iteration=100, nb_epochs=1, batch_size=8)
+    model = PPO(env, lr, gamma, nb_iterations=2, nb_episodes_per_iteration=50, nb_epochs=1, batch_size=8)
     actor, rewards, wins, steps = model.train()
 
     avg_steps, avg_wins, avg_rewards, final_meshes = testPolicy(actor, 10, dataset, 60)
