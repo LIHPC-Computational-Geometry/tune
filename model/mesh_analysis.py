@@ -68,7 +68,9 @@ def get_angle(d1: Dart, d2: Dart, n: Node) -> float:
     vect_AC = (C.x() - A.x(), C.y() - A.y())
     dist_AB = sqrt(vect_AB[0]**2 + vect_AB[1]**2)
     dist_AC = sqrt(vect_AC[0]**2 + vect_AC[1]**2)
-    angle = np.arccos(np.dot(vect_AB, vect_AC)/(dist_AB*dist_AC))
+    cos_theta = np.dot(vect_AB, vect_AC)/(dist_AB*dist_AC)
+    cos_theta = np.clip(cos_theta, -1, 1)
+    angle = np.arccos(cos_theta)
     return degrees(angle)
 
 
@@ -84,7 +86,7 @@ def get_boundary_angle(n: Node) -> float:
         d_twin = d.get_beta(2)
         if d_twin is None:
             boundary_darts.append(d)
-    if len(boundary_darts) >= 4:
+    if len(boundary_darts) > 10:
         raise ValueError("Boundary error")
     angle = get_angle(boundary_darts[0], boundary_darts[1], n)
     return angle
@@ -197,7 +199,8 @@ def find_opposite_node(d: Dart) -> (int, int):
 
     return x_C, y_C
 
-def find_template_opposite_node(d: Dart) -> (int):
+
+def find_template_opposite_node(d: Dart) -> int:
     """
     Find the the vertex opposite in the adjacent triangle
     :param d: a dart
@@ -293,6 +296,24 @@ def isCollapseOk(d: Dart) -> bool:
     d212 = d21.get_beta(2)
     d2112 = d211.get_beta(2)
 
+    if d112 is None and d12 is None and d2112 is None and d212 is None:
+        return False
+    elif d112 is not None and d212 is not None:
+        if d12 is None and d2112 is None:
+            return True
+    elif d12 is not None:
+        ds = d12.get_beta(1)
+        while ds != d2112:
+            ds2 = ds.get_beta(2)
+            if ds2 is None:
+                return False
+            ds = ds2.get_beta(1)
+        return True
+    else:
+        return False
+
+    """
+    #Old condition
     if d112 is None and d12 is None:
         return False
     elif d212 is None and d2112 is None:
@@ -303,4 +324,6 @@ def isCollapseOk(d: Dart) -> bool:
         return False
     else:
         return True
+        
+    """
 

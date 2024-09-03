@@ -4,7 +4,7 @@ from model.mesh_analysis import global_score, isValidAction, find_template_oppos
 from model.mesh_struct.mesh_elements import Dart
 from model.mesh_struct.mesh import Mesh
 from actions.triangular_actions import flip_edge
-from model.random_trimesh import random_flip_mesh
+from model.random_trimesh import random_flip_mesh, random_mesh
 
 # possible actions
 FLIP = 0
@@ -14,7 +14,7 @@ GLOBAL = 0
 class TriMesh:
     def __init__(self, mesh=None, mesh_size: int = None, max_steps: int = 50, feat: int = 0):
         self.mesh = mesh if mesh is not None else random_flip_mesh(mesh_size)
-        self.mesh_size = len(self.mesh.nodes)
+        self.mesh_size = len(self.mesh.active_nodes())
         self.size = len(self.mesh.dart_info)
         self.actions = np.array([FLIP])
         self.reward = 0
@@ -30,7 +30,7 @@ class TriMesh:
         self.reward = 0
         self.steps = 0
         self.terminal = False
-        self.mesh = mesh if mesh is not None else random_flip_mesh(self.mesh_size)
+        self.mesh = mesh if mesh is not None else random_mesh(self.mesh_size)
         self.size = len(self.mesh.dart_info)
         self.nodes_scores = global_score(self.mesh)[0]
         self.ideal_score = global_score(self.mesh)[2]
@@ -75,10 +75,10 @@ def get_x_global_4(env, state: Mesh) -> tuple[Any, list[int | list[int]]]:
     """
     mesh = state
     nodes_scores = global_score(mesh)[0]
-    size = len(mesh.dart_info)
+    size = len(mesh.active_darts())
     template = np.zeros((size, 6))
 
-    for d_info in mesh.dart_info:
+    for d_info in mesh.active_darts():
 
         d = Dart(mesh, d_info[0])
         A = d.get_node()
