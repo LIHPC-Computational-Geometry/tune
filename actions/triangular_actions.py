@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from model.mesh_struct.mesh import Mesh
 from model.mesh_struct.mesh_elements import Dart, Node
-from model.mesh_analysis import degree, isFlipOk, isCollapseOk
+from model.mesh_analysis import degree, isFlipOk, newIsCollapseOk, adjacent_darts
 
 import numpy as np
 
@@ -60,8 +60,11 @@ def split_edge(mesh: Mesh, n1: Node, n2: Node) -> True:
         return False
 
     d2, d1, d11, d21, d211, n1, n2, n3, n4 = mesh.active_triangles(d)
-    test_degree(n3)
-    test_degree(n4)
+
+    if not test_degree(n3):
+        return False
+    elif not test_degree(n4):
+        return False
 
     # create a new node in the middle of [n1, n2]
     N5 = mesh.add_node((n1.x() + n2.x()) / 2, (n1.y() + n2.y()) / 2)
@@ -94,7 +97,12 @@ def collapse_edge_ids(mesh: Mesh, id1: int, id2: int) -> True:
 
 def collapse_edge(mesh: Mesh, n1: Node, n2: Node) -> True:
     found, d = mesh.find_inner_edge(n1, n2)
-    if not found or not isCollapseOk(d):
+
+    if not found or not newIsCollapseOk(d):
+        return False
+    elif not test_degree(n1):
+        return False
+    elif not test_boundary(n1, n2):
         return False
 
     d2, d1, d11, d21, d211, n1, n2, n3, n4 = mesh.active_triangles(d)
@@ -134,6 +142,15 @@ def collapse_edge(mesh: Mesh, n1: Node, n2: Node) -> True:
             else:
                 ds = d2s.get_beta(1)
                 ds.set_node(n1)
+    elif d12 is None and d2112 is not None:
+        d2112.set_node(n1)
+        ds = (d2112.get_beta(1)).get_beta(1)
+        ds2 = ds.get_beta(2)
+        while ds2 is not None:
+            ds2.set_node(n1)
+            ds = (ds2.get_beta(1)).get_beta(1)
+            ds2 = ds.get_beta(2)
+
 
     #update beta2 relations
     if d112 is not None:
@@ -148,7 +165,10 @@ def collapse_edge(mesh: Mesh, n1: Node, n2: Node) -> True:
 
     #delete n2 node
     mesh.del_node(n2)
-
+    if not check_double(mesh):
+        raise ValueError("double error")
+    if not check_beta2_relation(mesh):
+        raise ValueError("error beta2")
     return True
 
 def delete_triangles(mesh: Mesh, d: Dart) -> None:
@@ -176,3 +196,56 @@ def test_degree(n: Node) -> bool:
         return False
     else:
         return True
+
+
+def test_boundary(n1: Node, n2: Node) -> bool:
+    boundary_darts_n1 = []
+    boundary_darts_n2 = []
+    for d in adjacent_darts(n1):
+        if d.get_beta(2) is None:
+            boundary_darts_n1.append(d)
+    for d in adjacent_darts(n2):
+        if d.get_beta(2) is None:
+            boundary_darts_n2.append(d)
+    if (len(boundary_darts_n1) + len(boundary_darts_n2)) > 3:
+        return False
+    else:
+        return True
+
+def check_beta2_relation(mesh: Mesh) -> bool:
+    for dart_info in mesh.active_darts():
+        d = dart_info[0]
+        d2 = dart_info[2]
+        if d2 >= 0 and mesh.dart_info[d2, 0] < 0:
+            return False
+        elif d2 >= 0 and mesh.dart_info[d2, 2] != d:
+            return False
+    return True
+
+
+def check_double(mesh: Mesh) -> bool:
+    for dart_info in mesh.active_darts():
+        d = Dart(mesh, dart_info[0])
+        d2 = Dart(mesh, dart_info[2]) if dart_info[2] >= 0 else None
+        n1 = dart_info[3]
+        if d2 is None:
+            d1 = d.get_beta(1)
+            n2 = d1.get_node().id
+        else :
+            n2 = d2.get_node().id
+        for dart_info2 in mesh.active_darts():
+            ds = Dart(mesh, dart_info2[0])
+            ds2 = Dart(mesh, dart_info2[2]) if dart_info2[2] >= 0 else None
+            if d != ds and d != ds2:
+                ns1 = dart_info2[3]
+                if ds2 is None:
+                    ds1 = ds.get_beta(1)
+                    ns2 = ds1.get_node().id
+                else:
+                    ns2 = ds2.get_node().id
+
+                if n1 == ns1 and n2 == ns2:
+                    return False
+                elif n2 == ns1 and n1 == ns2:
+                    return False
+    return True

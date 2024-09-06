@@ -1,7 +1,7 @@
 from numpy import ndarray
 
 from environment.trimesh_env import TriMesh
-from model.mesh_analysis import global_score
+from model.mesh_analysis import global_score, get_boundary_darts
 from model.mesh_struct.mesh import Mesh
 import numpy as np
 import copy
@@ -34,8 +34,12 @@ def testPolicy(
             ep_rewards: int = 0
             ep_length: int = 0
             env.reset(mesh)
-            while env.won == 0 and ep_length < 30:
-                action = policy.select_action(env.mesh)
+            while env.won == 0 and ep_length < max_steps:
+                action, _ = policy.select_action(env.mesh)
+                if action is None:
+                    env.terminal = True
+                    break
+                boundary_darts = get_boundary_darts(env.mesh)
                 env.step(action)
                 ep_rewards += env.reward
                 ep_length += 1
@@ -57,7 +61,7 @@ def isBetterPolicy(actual_best_policy, policy_to_test):
 
 
 def isBetterMesh(best_mesh, actual_mesh):
-    if actual_mesh is not None or global_score(best_mesh)[1] > global_score(actual_mesh)[1]:
+    if best_mesh is None or global_score(best_mesh)[1] > global_score(actual_mesh)[1]:
         return True
     else:
         return False

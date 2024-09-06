@@ -13,8 +13,10 @@ if __name__ == '__main__':
     if len(sys.argv) == 2:
         user_game(int(sys.argv[1]))
     else:
-        #train()
+        train()
+        """
         cmap = read_gmsh("mesh_files/irr_losange.msh")
         mesh_disp = MeshDisplay(cmap)
         g = Game(cmap, mesh_disp)
         g.run()
+        """

@@ -9,18 +9,18 @@ class MeshDisplay:
     def get_nodes_coordinates(self):
         """
         Build a list containing the coordinates of the all the mesh nodes
-        :return: a list of coordinates (x,y)
+        :return: a list of coordinates (id, x, y)
         """
         node_list = []
         for idx, n in enumerate(self.mesh.nodes):
-            if n[2] >= 0 :
+            if n[2] >= 0:
                 node_list.append((idx, n[0], n[1]))
         return node_list
 
     def get_edges(self):
         """
-        Build a list containing the coordinates of the all the mesh nodes
-        :return: a list of coordinates (x,y)
+        Build a list containing the id of the nodes of the mesh edges
+        :return: a list of nodes id (n1_id, n2_id)
         """
         edge_list = []
         for d in self.mesh.active_darts():
@@ -36,5 +36,4 @@ class MeshDisplay:
         :return: a list of three elements (nodes_score, mesh_score, ideal_mesh_score)
         """
         nodes_score, mesh_score, ideal_mesh_score = global_score(self.mesh)
-        nodes_score = [score for score in nodes_score if score is not None]
         return [nodes_score, mesh_score, ideal_mesh_score]
