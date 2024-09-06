@@ -57,8 +57,9 @@ class TestMeshAnalysis(unittest.TestCase):
         nodes = [[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0], [2.0, 0.0]]
         faces = [[0, 1, 2], [0, 2, 3], [1, 4, 2]]
         cmap = Mesh(nodes, faces)
-        self.assertEqual(Mesh_analysis.isValidAction(cmap, 0), False)
-        self.assertEqual(Mesh_analysis.isValidAction(cmap, 2), True)
+        self.assertEqual(Mesh_analysis.isValidAction(cmap, 0, 3), False)
+        self.assertEqual(Mesh_analysis.isValidAction(cmap, 2, 0), True)
+        self.assertEqual(Mesh_analysis.isValidAction(cmap, 2, 3), False)
 
     def test_isFlipOk(self):
         nodes = [[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0], [2.0, 0.0]]

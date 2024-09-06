@@ -20,9 +20,9 @@ class Mesh:
         self.nodes = numpy.empty((0, 3))
         self.faces = numpy.empty(0, dtype=int)
         self.dart_info = numpy.empty((0, 5), dtype=int)
-        self.first_free_dart = 1
-        self.first_free_node = 1
-        self.first_free_face = 1
+        self.first_free_dart = 0
+        self.first_free_node = 0
+        self.first_free_face = 0
 
         for n in nodes:
             self.add_node(n[0], n[1])
@@ -65,14 +65,14 @@ class Mesh:
         :param y: Y coordinate
         :return: the created node
         """
-        if len(self.nodes) < self.first_free_node:
+        if len(self.nodes) <= self.first_free_node:
             self.nodes = numpy.append(self.nodes, [[x, y, -1]], axis=0)
             self.first_free_node += 1
             return Node(self, len(self.nodes) - 1)
         elif self.first_free_node >= 0:
             n_id = int(self.first_free_node)
             if isinstance(n_id, int):
-                self.first_free_node = abs(self.nodes[n_id, 2] + 1 )
+                self.first_free_node = abs(self.nodes[n_id, 2] + 1)
                 self.nodes[n_id] = [x, y, -1]
             else:
                 print(n_id)
@@ -117,7 +117,7 @@ class Mesh:
             darts[k].set_node(nodes[k])
             nodes[k].set_dart(darts[k])
 
-        if len(self.faces) < self.first_free_face:
+        if len(self.faces) <= self.first_free_face:
             self.faces = numpy.append(self.faces, [darts[0].id])
             self.first_free_face += 1
             tri = Face(self, len(self.faces) - 1)
@@ -139,7 +139,7 @@ class Mesh:
         self.del_dart(d2)
         self.del_dart(d3)
 
-        self.faces[f.id] = -self.first_free_face -1
+        self.faces[f.id] = -self.first_free_face - 1
         self.first_free_face = f.id
 
 
@@ -245,9 +245,10 @@ class Mesh:
         :param a1: dart index to connect by alpha1
         :param a2: dart index to connect by alpha2
         :param v:  vertex index this dart point to
+        :param f: face to connect
         :return: the created dart
         """
-        if len(self.dart_info) < self.first_free_dart:
+        if len(self.dart_info) <= self.first_free_dart:
             self.dart_info = numpy.append(self.dart_info, [[len(self.dart_info), a1, a2, v, f]], axis=0)
             self.first_free_dart += 1
             return Dart(self, len(self.dart_info) - 1)

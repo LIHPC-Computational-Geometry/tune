@@ -110,9 +110,9 @@ class Graph:
         self.edges = []
 
     def update(self, vertices, edges, scores):
-        for idx, n in enumerate(vertices):
+        for n in vertices:
             nodes_scores = scores[0]
-            n_value = nodes_scores[idx]
+            n_value = nodes_scores[n[0]]
             self.create_vertex(n[0], n[1], n[2], n_value)
         for e in edges:
             self.create_edge(e[0], e[1])

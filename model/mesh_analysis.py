@@ -1,11 +1,11 @@
 from math import sqrt, degrees, radians, cos, sin, acos
 import numpy as np
 
-from model.mesh_struct.mesh_elements import Dart, Node
+from model.mesh_struct.mesh_elements import Dart, Node, Face
 from model.mesh_struct.mesh import Mesh
 
 
-def global_score(m: Mesh) -> (int, int):
+def global_score(m: Mesh):
     """
     Calculate the overall mesh score. The mesh cannot achieve a better score than the ideal one.
     And the current score is the mesh score.
@@ -15,15 +15,18 @@ def global_score(m: Mesh) -> (int, int):
     mesh_ideal_score = 0
     mesh_score = 0
     nodes_score = []
+    active_nodes_score = []
     for i in range(len(m.nodes)):
         if m.nodes[i, 2] >= 0:
             n_id = i
             node = Node(m, n_id)
             n_score = score_calculation(node)
             nodes_score.append(n_score)
+            active_nodes_score.append(n_score)
             mesh_ideal_score += n_score
             mesh_score += abs(n_score)
-        nodes_score.append(None)
+        else:
+            nodes_score.append(0)
     return nodes_score, mesh_score, mesh_ideal_score
 
 
@@ -71,6 +74,8 @@ def get_angle(d1: Dart, d2: Dart, n: Node) -> float:
     cos_theta = np.dot(vect_AB, vect_AC)/(dist_AB*dist_AC)
     cos_theta = np.clip(cos_theta, -1, 1)
     angle = np.arccos(cos_theta)
+    if np.isnan(angle):
+        raise(ValueError("Angle error"))
     return degrees(angle)
 
 
@@ -86,7 +91,7 @@ def get_boundary_angle(n: Node) -> float:
         d_twin = d.get_beta(2)
         if d_twin is None:
             boundary_darts.append(d)
-    if len(boundary_darts) > 10:
+    if len(boundary_darts) > 7:
         raise ValueError("Boundary error")
     angle = get_angle(boundary_darts[0], boundary_darts[1], n)
     return angle
@@ -158,7 +163,7 @@ def get_boundary_darts(m: Mesh) -> list[Dart]:
     for d_info in m.active_darts():
         d = Dart(m, d_info[0])
         d_twin = d.get_beta(2)
-        if d_twin is None :
+        if d_twin is None:
             boundary_darts.append(d)
     return boundary_darts
 
@@ -238,25 +243,29 @@ def isValidAction(mesh: Mesh, dart_id: int, action: int) -> bool:
     flip = 0
     split = 1
     collapse = 2
+    test_all = 3
     d = Dart(mesh, dart_id)
     boundary_darts = get_boundary_darts(mesh)
     if d in boundary_darts:
         return False
-    elif action == flip and isFlipOk(d) is not True:
-        return False
-    elif action == split and isFlipOk(d) is not True:
-        return False
-    elif action == collapse and isCollapseOk(d) is not True:
-        return False
+    elif action == flip:
+        return isFlipOk(d)
+    elif action == split:
+        return isFlipOk(d)
+    elif action == collapse:
+        return newIsCollapseOk(d)
+    elif action == test_all:
+        return isFlipOk(d) and newIsCollapseOk(d)
     else:
-        return True
+        raise ValueError("No valid action")
+
 
 def get_angle_by_coord(x1: float, y1: float, x2: float, y2: float, x3:float, y3:float) -> float:
     BAx, BAy = x1 - x2, y1 - y2
     BCx, BCy = x3 - x2, y3 - y2
 
     cos_ABC = (BAx * BCx + BAy * BCy) / (sqrt(BAx ** 2 + BAy ** 2) * sqrt(BCx ** 2 + BCy ** 2))
-
+    cos_ABC = np.clip(cos_ABC, -1, 1)
     rad = acos(cos_ABC)
     deg = degrees(rad)
     return deg
@@ -286,7 +295,7 @@ def isFlipOk(d: Dart) -> bool:
             return True
 
 
-def isCollapseOk(d: Dart) -> bool:
+def newIsCollapseOk(d: Dart) -> bool:
     mesh = d.mesh
     d2, d1, d11, d21, d211, n1, n2, n3, n4 = mesh.active_triangles(d)
 
@@ -296,12 +305,124 @@ def isCollapseOk(d: Dart) -> bool:
     d212 = d21.get_beta(2)
     d2112 = d211.get_beta(2)
 
-    if d112 is None and d12 is None and d2112 is None and d212 is None:
+    newNode_x, newNode_y = (n1.x() + n2.x()) / 2, (n1.y() + n2.y()) / 2
+
+    if d112 is None or d12 is None or d2112 is None or d212 is None:
         return False
+    elif on_boundary(n1) or on_boundary(n2):
+        return False
+    else:
+        # search for all adjacent faces to n1 and n2
+        if d12 is None and d2112 is None:
+            adj_faces_n1 = get_adjacent_faces(n1, d212, d112)
+            return valid_faces_changes(adj_faces_n1, n1.id, newNode_x, newNode_y)
+        elif d212 is None and d112 is None:
+            adj_faces_n2 = get_adjacent_faces(n2, d12, d2112)
+            return valid_faces_changes(adj_faces_n2, n2.id, newNode_x, newNode_y)
+        else:
+            adj_faces_n1 = get_adjacent_faces(n1, d212, d112)
+            adj_faces_n2 = get_adjacent_faces(n2, d12, d2112)
+            if not valid_faces_changes(adj_faces_n1, n1.id, newNode_x, newNode_y) or not valid_faces_changes(adj_faces_n2, n2.id, newNode_x, newNode_y):
+                return False
+            else:
+                return True
+
+
+def get_adjacent_faces(n: Node, d_from: Dart, d_to: Dart) -> list:
+    adj_faces = []
+    d2 = d_from
+    d = None if d2 is None else d_from.get_beta(1)
+    while d != d_to:
+        if d2 is None and d_to is not None:
+            # chercher dans l'autre sens
+            d = d_to
+            adj_faces.append(d.get_face())
+            d1 = d.get_beta(1)
+            d11 = d1.get_beta(1)
+            d = d11.get_beta(2)
+            while d is not None:
+                adj_faces.append(d.get_face())
+                d1 = d.get_beta(1)
+                d11 = d1.get_beta(1)
+                d = d11.get_beta(2)
+            break
+        elif d2 is None and d_to is None:
+            break
+        elif d2 is not None:
+            d = d2.get_beta(1)
+            adj_faces.append(d.get_face())
+            d2 = d.get_beta(2)
+        else:
+            break
+    return adj_faces
+
+def discontinue(d_from, d_to) -> bool:
+    if d_from is None or d_to is None:
+        raise ValueError("Discontinue condition")
+
+    ds = d_from.get_beta(1)
+    while ds != d_to:
+        ds2 = ds.get_beta(2)
+        if ds2 is None:
+            return True
+        ds = ds2.get_beta(1)
+    d1 = d_from.get_beta(1)
+    ds = d1.get_beta(1)
+    i = 0
+    while ds != d_to:
+        ds2 = ds.get_beta(2)
+        if ds2 is None or i > 10:
+            return True
+        ds21 = ds2.get_beta(1)
+        ds = ds21.get_beta(1)
+        i += 1
+    return False
+
+def valid_faces_changes(faces: list[Face], n_id: int, new_x: float, new_y: float) -> bool:
+    """
+    Check the orientation of triangles adjacent to node n = Node(mesh, n_id) if the latter is moved to coordinates new_x, new_y.
+    Also checks that no triangle will become flat
+    :param mesh:
+    :param faces: adjacents faces to node of id n_id
+    :param n_id:
+    :param new_x:
+    :param new_y:
+    :return:
+    """
+    for f in faces:
+        d, d1, d11, A, B, C = f.get_surrounding()
+        if A.id == n_id:
+            vect_AB = (B.x() - new_x, B.y() - new_y)
+            vect_AC = (C.x() - new_x, C.y() - new_y)
+        elif B.id == n_id:
+            vect_AB = (new_x - A.x(), new_y - A.y())
+            vect_AC = (C.x() - A.x(), C.y() - A.y())
+        elif C.id == n_id:
+            vect_AB = (B.x() - A.x(), B.y() - A.y())
+            vect_AC = (new_x - A.x(), new_y - A.y())
+        else:
+            print("Erreur face non adjacente")
+            continue
+
+        cross_product = vect_AB[0] * vect_AC[1] - vect_AB[1] * vect_AC[0]
+
+        if cross_product <= 0:
+            return False  # Une face n'est pas orientée correctement ou est plate
+    return True
+
+    """
     elif d112 is not None and d212 is not None:
         if d12 is None and d2112 is None:
+            # search for discontinuities
+            ds = d212.get_beta(1)
+            while ds != d112:
+                ds2 = ds.get_beta(2)
+                if ds2 is None:
+                    return False
+                ds = ds2.get_beta(1)
             return True
     elif d12 is not None:
+        # search for discontinuities
         ds = d12.get_beta(1)
         while ds != d2112:
             ds2 = ds.get_beta(2)
@@ -312,7 +433,6 @@ def isCollapseOk(d: Dart) -> bool:
     else:
         return False
 
-    """
     #Old condition
     if d112 is None and d12 is None:
         return False
@@ -324,6 +444,26 @@ def isCollapseOk(d: Dart) -> bool:
         return False
     else:
         return True
-        
-    """
 
+
+def isCollapseOk(d: Dart) -> bool:
+    mesh = d.mesh
+    d2, d1, d11, d21, d211, n1, n2, n3, n4 = mesh.active_triangles(d)
+
+    d112 = d11.get_beta(2)
+    d12 = d1.get_beta(2)
+
+    d212 = d21.get_beta(2)
+    d2112 = d211.get_beta(2)
+
+    if d112 is None or d12 is None or d2112 is None or d212 is None:
+        return False
+    else:
+        # search for discontinuities on right side (d12 and d2112)
+        if discontinue(d12, d2112):
+            return False
+        if discontinue(d212, d112):
+            return False
+        else:
+            return True
+    """
