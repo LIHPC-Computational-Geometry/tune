@@ -269,7 +269,6 @@ class Mesh:
         self.dart_info[d.id][0] = -self.first_free_dart - 1
         self.first_free_dart = d.id
 
-
     def set_beta2(self, dart: Dart) -> None:
         """
         Search for a dart to connect with beta2 relation when possible.

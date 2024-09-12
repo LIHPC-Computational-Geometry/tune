@@ -20,6 +20,33 @@ def global_score(m: Mesh):
         if m.nodes[i, 2] >= 0:
             n_id = i
             node = Node(m, n_id)
+            real_n_score = score_calculation(node)
+            #n_score = real_n_score ** 2 if real_n_score > 0 else -1 * (real_n_score ** 2)
+            n_score = real_n_score
+            nodes_score.append(n_score)
+            active_nodes_score.append(n_score)
+            mesh_ideal_score += n_score
+            mesh_score += abs(n_score)
+        else:
+            nodes_score.append(0)
+    return nodes_score, mesh_score, mesh_ideal_score
+
+
+def global_score_old(m: Mesh):
+    """
+    Calculate the overall mesh score. The mesh cannot achieve a better score than the ideal one.
+    And the current score is the mesh score.
+    :param m: the mesh to be analyzed
+    :return: three return values: a list of the nodes score, the current mesh score and the ideal mesh score
+    """
+    mesh_ideal_score = 0
+    mesh_score = 0
+    nodes_score = []
+    active_nodes_score = []
+    for i in range(len(m.nodes)):
+        if m.nodes[i, 2] >= 0:
+            n_id = i
+            node = Node(m, n_id)
             n_score = score_calculation(node)
             nodes_score.append(n_score)
             active_nodes_score.append(n_score)
@@ -253,9 +280,9 @@ def isValidAction(mesh: Mesh, dart_id: int, action: int) -> bool:
     elif action == split:
         return isFlipOk(d)
     elif action == collapse:
-        return newIsCollapseOk(d)
+        return isCollapseOk(d)
     elif action == test_all:
-        return isFlipOk(d) and newIsCollapseOk(d)
+        return isFlipOk(d) and isCollapseOk(d)
     else:
         raise ValueError("No valid action")
 
@@ -295,7 +322,12 @@ def isFlipOk(d: Dart) -> bool:
             return True
 
 
-def newIsCollapseOk(d: Dart) -> bool:
+def isSplitOk(d: Dart) -> bool:
+    mesh = d.mesh
+
+    return True
+
+def isCollapseOk(d: Dart) -> bool:
     mesh = d.mesh
     d2, d1, d11, d21, d211, n1, n2, n3, n4 = mesh.active_triangles(d)
 
@@ -356,27 +388,6 @@ def get_adjacent_faces(n: Node, d_from: Dart, d_to: Dart) -> list:
             break
     return adj_faces
 
-def discontinue(d_from, d_to) -> bool:
-    if d_from is None or d_to is None:
-        raise ValueError("Discontinue condition")
-
-    ds = d_from.get_beta(1)
-    while ds != d_to:
-        ds2 = ds.get_beta(2)
-        if ds2 is None:
-            return True
-        ds = ds2.get_beta(1)
-    d1 = d_from.get_beta(1)
-    ds = d1.get_beta(1)
-    i = 0
-    while ds != d_to:
-        ds2 = ds.get_beta(2)
-        if ds2 is None or i > 10:
-            return True
-        ds21 = ds2.get_beta(1)
-        ds = ds21.get_beta(1)
-        i += 1
-    return False
 
 def valid_faces_changes(faces: list[Face], n_id: int, new_x: float, new_y: float) -> bool:
     """
@@ -394,12 +405,15 @@ def valid_faces_changes(faces: list[Face], n_id: int, new_x: float, new_y: float
         if A.id == n_id:
             vect_AB = (B.x() - new_x, B.y() - new_y)
             vect_AC = (C.x() - new_x, C.y() - new_y)
+            vect_BC = (C.x() - B.x(), C.y() - B.y())
         elif B.id == n_id:
             vect_AB = (new_x - A.x(), new_y - A.y())
             vect_AC = (C.x() - A.x(), C.y() - A.y())
+            vect_BC = (C.x() - new_x, C.y() - new_y)
         elif C.id == n_id:
             vect_AB = (B.x() - A.x(), B.y() - A.y())
             vect_AC = (new_x - A.x(), new_y - A.y())
+            vect_BC = (new_x - B.x(), new_y - B.y())
         else:
             print("Erreur face non adjacente")
             continue
@@ -408,62 +422,42 @@ def valid_faces_changes(faces: list[Face], n_id: int, new_x: float, new_y: float
 
         if cross_product <= 0:
             return False  # Une face n'est pas orientée correctement ou est plate
+        elif not valid_triangle(vect_AB, vect_AC, vect_BC):
+            return False
     return True
 
-    """
-    elif d112 is not None and d212 is not None:
-        if d12 is None and d2112 is None:
-            # search for discontinuities
-            ds = d212.get_beta(1)
-            while ds != d112:
-                ds2 = ds.get_beta(2)
-                if ds2 is None:
-                    return False
-                ds = ds2.get_beta(1)
-            return True
-    elif d12 is not None:
-        # search for discontinuities
-        ds = d12.get_beta(1)
-        while ds != d2112:
-            ds2 = ds.get_beta(2)
-            if ds2 is None:
-                return False
-            ds = ds2.get_beta(1)
-        return True
+
+def valid_triangle(vect_AB, vect_AC, vect_BC) -> bool:
+    dist_AB = sqrt(vect_AB[0] ** 2 + vect_AB[1] ** 2)
+    dist_AC = sqrt(vect_AC[0] ** 2 + vect_AC[1] ** 2)
+    dist_BC = sqrt(vect_BC[0] ** 2 + vect_BC[1] ** 2)
+    l_min = 0.1
+    l_max = 1.5
+
+    if l_min < dist_AB < l_max or l_min < dist_AC < l_max or l_min < dist_BC < l_max:
+        pass
     else:
         return False
 
-    #Old condition
-    if d112 is None and d12 is None:
+    # Calcul des angles avec le théorème du cosinus
+    angle_A = degrees(angle_from_sides(dist_AC, dist_AB, dist_BC))  # Angle au point A
+    angle_B = degrees(angle_from_sides(dist_AB, dist_BC, dist_AC))  # Angle au point B
+    angle_C = degrees(angle_from_sides(dist_BC, dist_AC, dist_AB))  # Angle au point C
+
+    # Vérification que tous les angles sont supérieurs à 5°
+    if angle_A <= 5 or angle_B <= 5 or angle_C <= 5:
         return False
-    elif d212 is None and d2112 is None:
-        return False
-    elif d212 is None and d12 is None:
-        return False
-    elif d112 is None and d2112 is None:
-        return False
-    else:
-        return True
+    return True
 
 
-def isCollapseOk(d: Dart) -> bool:
-    mesh = d.mesh
-    d2, d1, d11, d21, d211, n1, n2, n3, n4 = mesh.active_triangles(d)
+def angle_from_sides(a, b, c):
+    # Théorème du cosinus pour obtenir l'angle en radians entre les côtés a, b, c
+    cosA = (b**2 + c**2 - a**2) / (2 * b * c)
+    if 1 <= cosA < 1.01:
+        cosA = 1
+    elif -1.01 <= cosA < -1:
+        cosA = -1
+    elif cosA > 1.01 or cosA < -1.01:
+        raise ValueError("Math domain error : cos>1.01")
+    return acos(cosA)
 
-    d112 = d11.get_beta(2)
-    d12 = d1.get_beta(2)
-
-    d212 = d21.get_beta(2)
-    d2112 = d211.get_beta(2)
-
-    if d112 is None or d12 is None or d2112 is None or d212 is None:
-        return False
-    else:
-        # search for discontinuities on right side (d12 and d2112)
-        if discontinue(d12, d2112):
-            return False
-        if discontinue(d212, d112):
-            return False
-        else:
-            return True
-    """

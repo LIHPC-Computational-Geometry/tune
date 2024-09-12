@@ -59,6 +59,7 @@ def random_flip_mesh(num_nodes_max: int) -> Mesh:
     mesh_shuffle_flip(mesh)
     return mesh
 
+
 def random_mesh(num_nodes_max: int) -> Mesh:
     """
     Create a random mesh with a fixed number of nodes.
@@ -66,7 +67,7 @@ def random_mesh(num_nodes_max: int) -> Mesh:
     :return: a random mesh
     """
     mesh = regular_mesh(num_nodes_max)
-    mesh_shuffle(mesh)
+    mesh_shuffle(mesh, num_nodes_max)
     return mesh
 
 
@@ -85,13 +86,13 @@ def mesh_shuffle_flip(mesh: Mesh) -> Mesh:
             flip_edge_ids(mesh, i1, i2)
     return mesh
 
-def mesh_shuffle(mesh: Mesh) -> Mesh:
+def mesh_shuffle(mesh: Mesh, num_nodes) -> Mesh:
     """
     Performs random flip actions on mesh darts.
     :param mesh: the mesh to work with
     :return: a mesh with randomly flipped darts.
     """
-    nb_action_max = 5
+    nb_action_max = int(num_nodes / 2)
     nb_action = 0
     active_darts_list = mesh.active_darts()
     i = 0
