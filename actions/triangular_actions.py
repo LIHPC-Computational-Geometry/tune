@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from model.mesh_struct.mesh import Mesh
 from model.mesh_struct.mesh_elements import Dart, Node
-from model.mesh_analysis import degree, isFlipOk, newIsCollapseOk, adjacent_darts
+from model.mesh_analysis import degree, isFlipOk, isCollapseOk, adjacent_darts
 
 import numpy as np
 
@@ -98,7 +98,7 @@ def collapse_edge_ids(mesh: Mesh, id1: int, id2: int) -> True:
 def collapse_edge(mesh: Mesh, n1: Node, n2: Node) -> True:
     found, d = mesh.find_inner_edge(n1, n2)
 
-    if not found or not newIsCollapseOk(d):
+    if not found or not isCollapseOk(d):
         return False
     elif not test_degree(n1):
         return False
@@ -212,6 +212,7 @@ def test_boundary(n1: Node, n2: Node) -> bool:
     else:
         return True
 
+
 def check_beta2_relation(mesh: Mesh) -> bool:
     for dart_info in mesh.active_darts():
         d = dart_info[0]
@@ -231,7 +232,7 @@ def check_double(mesh: Mesh) -> bool:
         if d2 is None:
             d1 = d.get_beta(1)
             n2 = d1.get_node().id
-        else :
+        else:
             n2 = d2.get_node().id
         for dart_info2 in mesh.active_darts():
             ds = Dart(mesh, dart_info2[0])

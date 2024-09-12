@@ -2,6 +2,7 @@ import sys
 
 from user_game import user_game
 from train import train
+from exploit import exploit
 from model.reader import read_gmsh
 from view.window import Game
 from mesh_display import MeshDisplay
