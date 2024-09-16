@@ -278,11 +278,11 @@ def isValidAction(mesh: Mesh, dart_id: int, action: int) -> bool:
     elif action == flip:
         return isFlipOk(d)
     elif action == split:
-        return isFlipOk(d)
+        return isSplitOk(d)
     elif action == collapse:
         return isCollapseOk(d)
     elif action == test_all:
-        return isFlipOk(d) and isCollapseOk(d)
+        return isFlipOk(d) and isCollapseOk(d) and isSplitOk(d)
     else:
         raise ValueError("No valid action")
 
@@ -299,6 +299,35 @@ def get_angle_by_coord(x1: float, y1: float, x2: float, y2: float, x3:float, y3:
 
 
 def isFlipOk(d: Dart) -> bool:
+    mesh = d.mesh
+    if d.get_beta(2) is None:
+        return False
+    else:
+        d2, d1, d11, d21, d211, A, B, C, D = mesh.active_triangles(d)
+
+    # Check angle at d limits to avoid edge reversal
+    angle_B = get_angle_by_coord(A.x(), A.y(), B.x(), B.y(), C.x(), C.y()) + get_angle_by_coord(A.x(), A.y(), B.x(), B.y(), D.x(), D.y())
+    angle_A = get_angle_by_coord(B.x(), B.y(), A.x(), A.y(), C.x(), C.y()) + get_angle_by_coord(B.x(), B.y(), A.x(), A.y(), D.x(), D.y())
+    if angle_B >= 180 or angle_A >= 180:
+        return False
+
+    #Check if new triangle will be valid
+
+    #Triangle ACD
+    vect_AC = (C.x() - A.x(), C.y() - A.y())
+    vect_AD = (D.x() - A.x(), D.y() - A.y())
+    vect_DC = (C.x() - D.x(), C.y() - D.y())
+
+    #Triangle CBD
+    vect_BC = (C.x() - B.x(), C.y() - B.y())
+    vect_BD = (D.x() - B.x(), D.y() - B.y())
+
+    if not valid_triangle(vect_AC, vect_AD, vect_DC) or not valid_triangle(vect_BC, vect_BD, vect_DC):
+        return False
+
+    return True
+
+def isFlipOk_old(d: Dart) -> bool:
     d1 = d.get_beta(1)
     d11 = d1.get_beta(1)
     A = d.get_node()
@@ -325,7 +354,49 @@ def isFlipOk(d: Dart) -> bool:
 def isSplitOk(d: Dart) -> bool:
     mesh = d.mesh
 
+    if d.get_beta(2) is None:
+        return False
+    else:
+        d2, d1, d11, d21, d211, A, B, C, D = mesh.active_triangles(d)
+
+    newNode_x, newNode_y = (A.x() + B.x()) / 2, (A.y() + B.y()) / 2
+
+    # Check angle at d limits to avoid edge reversal
+    angle_B = get_angle_by_coord(A.x(), A.y(), B.x(), B.y(), C.x(), C.y()) + get_angle_by_coord(A.x(), A.y(), B.x(), B.y(), D.x(), D.y())
+    angle_A = get_angle_by_coord(B.x(), B.y(), A.x(), A.y(), C.x(), C.y()) + get_angle_by_coord(B.x(), B.y(), A.x(), A.y(), D.x(), D.y())
+    if angle_B >= 180 or angle_A >= 180:
+        return False
+
+    #Check if new triangle will be valid
+
+    # Triangle AEC
+    vect_AC = (C.x() - A.x(), C.y() - A.y())
+    vect_AE = (newNode_x - A.x(), newNode_y - A.y())
+    vect_EC = (C.x() - newNode_x, C.y() - newNode_y)
+    if not valid_triangle(vect_AE, vect_AC, vect_EC):
+        return False
+
+    # Triangle ADE
+    vect_AD = (D.x() - A.x(), D.y() - A.y())
+    vect_ED = (D.x() - newNode_x, D.y() - newNode_y)
+    if not valid_triangle(vect_AD, vect_AE, vect_ED):
+        return False
+
+    # Triangle BCE
+    vect_BC = (C.x() - B.x(), C.y() - B.y())
+    vect_BE = (newNode_x - B.x(), newNode_y - B.y())
+    vect_EC = (C.x() - newNode_x, C.y() - newNode_y)
+    if not valid_triangle(vect_BC, vect_BE, vect_EC):
+        return False
+
+    # Triangle BDE
+    vect_BD = (D.x() - B.x(), D.y() - B.y())
+    vect_ED = (D.x() - newNode_x, D.y() - newNode_y)
+    if not valid_triangle(vect_BD, vect_BE, vect_ED):
+        return False
+
     return True
+
 
 def isCollapseOk(d: Dart) -> bool:
     mesh = d.mesh
@@ -431,18 +502,19 @@ def valid_triangle(vect_AB, vect_AC, vect_BC) -> bool:
     dist_AB = sqrt(vect_AB[0] ** 2 + vect_AB[1] ** 2)
     dist_AC = sqrt(vect_AC[0] ** 2 + vect_AC[1] ** 2)
     dist_BC = sqrt(vect_BC[0] ** 2 + vect_BC[1] ** 2)
-    l_min = 0.1
-    l_max = 1.5
+    target_mesh_size = 1
 
-    if l_min < dist_AB < l_max or l_min < dist_AC < l_max or l_min < dist_BC < l_max:
+    L_max = max(dist_AB, dist_AC, dist_BC)
+
+    if target_mesh_size/sqrt(2) < L_max < target_mesh_size*sqrt(2):
         pass
     else:
         return False
 
     # Calcul des angles avec le théorème du cosinus
-    angle_A = degrees(angle_from_sides(dist_AC, dist_AB, dist_BC))  # Angle au point A
-    angle_B = degrees(angle_from_sides(dist_AB, dist_BC, dist_AC))  # Angle au point B
-    angle_C = degrees(angle_from_sides(dist_BC, dist_AC, dist_AB))  # Angle au point C
+    angle_B = degrees(angle_from_sides(dist_AC, dist_AB, dist_BC))  # Angle au point A
+    angle_C = degrees(angle_from_sides(dist_AB, dist_BC, dist_AC))  # Angle au point B
+    angle_A = degrees(angle_from_sides(dist_BC, dist_AC, dist_AB))  # Angle au point C
 
     # Vérification que tous les angles sont supérieurs à 5°
     if angle_A <= 5 or angle_B <= 5 or angle_C <= 5:
@@ -451,7 +523,7 @@ def valid_triangle(vect_AB, vect_AC, vect_BC) -> bool:
 
 
 def angle_from_sides(a, b, c):
-    # Théorème du cosinus pour obtenir l'angle en radians entre les côtés a, b, c
+    # Calculate angle A, with a the opposite side and b and c the adjacent sides
     cosA = (b**2 + c**2 - a**2) / (2 * b * c)
     if 1 <= cosA < 1.01:
         cosA = 1

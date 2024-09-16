@@ -92,24 +92,24 @@ def mesh_shuffle(mesh: Mesh, num_nodes) -> Mesh:
     :param mesh: the mesh to work with
     :return: a mesh with randomly flipped darts.
     """
-    nb_action_max = int(num_nodes / 2)
+    nb_action_max = int(num_nodes*3)
     nb_action = 0
     active_darts_list = mesh.active_darts()
     i = 0
-    while nb_action < nb_action_max and i < 20:
-        action_type = np.random.randint(1, 4)
+    while nb_action < nb_action_max and i < (nb_action_max + 30):
+        action_type = np.random.randint(0, 3)
         d_id = np.random.randint(len(active_darts_list))
         d_id = active_darts_list[d_id][0]
         dart = Dart(mesh, d_id)
         i1 = dart.get_node()
         i2 = ((dart.get_beta(1)).get_beta(1)).get_node()
-        if action_type == 1 and isValidAction(mesh, d_id, action_type):
+        if action_type == 0 and isValidAction(mesh, d_id, action_type):
             flip_edge_ids(mesh, i1.id, i2.id)
             nb_action += 1
-        elif action_type == 2 and isValidAction(mesh, d_id, action_type):
+        elif action_type == 1 and isValidAction(mesh, d_id, action_type):
             split_edge_ids(mesh, i1.id, i2.id)
             nb_action += 1
-        elif action_type == 3 and isValidAction(mesh, d_id, action_type):
+        elif action_type == 2 and isValidAction(mesh, d_id, action_type):
             collapse_edge_ids(mesh, i1.id, i2.id)
             nb_action += 1
         i += 1

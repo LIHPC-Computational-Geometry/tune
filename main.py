@@ -14,7 +14,7 @@ if __name__ == '__main__':
     if len(sys.argv) == 2:
         user_game(int(sys.argv[1]))
     else:
-        train()
+        exploit()
         """
         cmap = read_gmsh("mesh_files/irr_losange.msh")
         mesh_disp = MeshDisplay(cmap)
