@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from mesh_model.mesh_struct.mesh import Mesh
 from mesh_model.mesh_struct.mesh_elements import Dart, Node
-from mesh_model.mesh_analysis import degree, isFlipOk, isCollapseOk, adjacent_darts, isSplitOk
+from mesh_model.mesh_analysis import isFlipOk, isCollapseOk, adjacent_darts, isSplitOk
 
 
 def flip_edge_ids(mesh: Mesh, id1: int, id2: int) -> True:
@@ -51,10 +51,10 @@ def split_edge_ids(mesh: Mesh, id1: int, id2: int) -> True:
 
 def split_edge(mesh: Mesh, n1: Node, n2: Node) -> True:
     found, d = mesh.find_inner_edge(n1, n2)
-    if not found or not isFlipOk(d):
+    if not found or not isSplitOk(d):
         return False
 
-    d2, d1, d11, d21, d211, n1, n2, n3, n4 = mesh.active_triangles(d)
+    d2, d1, _, d21, _, n1, n2, n3, n4 = mesh.active_triangles(d)
 
     # create a new node in the middle of [n1, n2]
     N5 = mesh.add_node((n1.x() + n2.x()) / 2, (n1.y() + n2.y()) / 2)

@@ -311,7 +311,7 @@ def isSplitOk(d: Dart) -> bool:
     if d.get_beta(2) is None:
         return False
     else:
-        d2, d1, d11, d21, d211, A, B, C, D = mesh.active_triangles(d)
+        _, _, _, _, _, A, B, C, D = mesh.active_triangles(d)
 
     if not test_degree(A) or not test_degree(B):
         return False

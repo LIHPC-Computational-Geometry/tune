@@ -15,9 +15,8 @@ if __name__ == '__main__':
     else:
         exploit()
 
-"""
-        cmap = read_gmsh("mesh_files/irr_losange.msh")
-        mesh_disp = MeshDisplay(cmap)
-        g = Game(cmap, mesh_disp)
-        g.run()
-"""
+
+        #cmap = read_gmsh("mesh_files/irr_losange.msh")
+        #mesh_disp = MeshDisplay(cmap)
+        #g = Game(cmap, mesh_disp)
+        #g.run()
