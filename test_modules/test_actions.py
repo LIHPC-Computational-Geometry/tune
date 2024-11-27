@@ -1,6 +1,6 @@
 import unittest
 import mesh_model.mesh_struct.mesh as mesh
-from mesh_model.mesh_struct.mesh_elements import Dart, Node, Face
+from mesh_model.mesh_struct.mesh_elements import Dart, Node
 import numpy.testing
 from plots.mesh_plotter import plot_mesh
 

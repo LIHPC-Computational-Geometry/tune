@@ -16,7 +16,7 @@ class TestRandomTrimesh(unittest.TestCase):
         self.assertEqual(m.nb_nodes(), 60)
 
     def test_random_trimesh(self):
-        for i in range(10):
+        for _ in range(10):
             m = random_mesh(30)
             self.assertIsInstance(m, Mesh)
 
@@ -30,7 +30,7 @@ class TestRandomTrimesh(unittest.TestCase):
 
     def test_mesh_suffle(self):
         m = regular_mesh(15)
-        mesh = mesh_shuffle(m)
+        mesh = mesh_shuffle(m, 15)
         plot_mesh(mesh)
 
 

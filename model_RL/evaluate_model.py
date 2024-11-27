@@ -1,7 +1,7 @@
 from numpy import ndarray
 
 from environment.trimesh_env import TriMesh
-from mesh_model.mesh_analysis import global_score, get_boundary_darts
+from mesh_model.mesh_analysis import global_score
 from mesh_model.mesh_struct.mesh import Mesh
 import numpy as np
 import copy
@@ -39,7 +39,6 @@ def testPolicy(
                 if action is None:
                     env.terminal = True
                     break
-                boundary_darts = get_boundary_darts(env.mesh)
                 env.step(action)
                 ep_rewards += env.reward
                 ep_length += 1
