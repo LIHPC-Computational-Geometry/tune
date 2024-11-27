@@ -91,19 +91,12 @@ def collapse_edge(mesh: Mesh, n1: Node, n2: Node) -> True:
     if not found or not isCollapseOk(d):
         return False
 
-    d2, d1, dbeta1, d21, d211, n1, n2, n3, n4 = mesh.active_triangles(d)
-    d11 = dbeta1
-    #T1
-    d212 = d21.get_beta(2)
+    _, d1, d11, d21, d211, n1, n2, _, _ = mesh.active_triangles(d)
 
-    #T2
-    d2112 = d211.get_beta(2)
-
-    #T3
-    d12 = d1.get_beta(2)
-
-    #T4
-    d112 = d11.get_beta(2)
+    d212 = d21.get_beta(2) #T1
+    d2112 = d211.get_beta(2) #T2
+    d12 = d1.get_beta(2) #T3
+    d112 = d11.get_beta(2) #T4
 
     #Delete the darts around selected dart
     mesh.del_adj_triangles(d)
