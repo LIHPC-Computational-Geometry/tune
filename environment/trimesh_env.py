@@ -1,7 +1,7 @@
 from typing import Any
 import math
 import numpy as np
-from mesh_model.mesh_analysis import global_score, isValidAction, find_template_opposite_node
+from mesh_model.mesh_analysis import global_score, find_template_opposite_node
 from mesh_model.mesh_struct.mesh_elements import Dart
 from mesh_model.mesh_struct.mesh import Mesh
 from actions.triangular_actions import flip_edge, split_edge, collapse_edge
@@ -83,11 +83,9 @@ def get_x_global_4(env, state: Mesh):
     template = get_template_2(mesh)
     darts_to_delete = []
     darts_id = []
-    all_action_type = 3
 
     for i, d_info in enumerate(mesh.active_darts()):
         d_id = d_info[0]
-        d = Dart(mesh, d_id)
         if d_info[2] == -1: #test the validity of all action type
             darts_to_delete.append(i)
         else:

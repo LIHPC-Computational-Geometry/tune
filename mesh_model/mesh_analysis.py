@@ -75,7 +75,7 @@ def get_angle(d1: Dart, d2: Dart, n: Node) -> float:
     cos_theta = np.clip(cos_theta, -1, 1)
     angle = np.arccos(cos_theta)
     if np.isnan(angle):
-        raise(ValueError("Angle error"))
+        raise ValueError("Angle error")
     return degrees(angle)
 
 
@@ -345,7 +345,7 @@ def isSplitOk(d: Dart) -> bool:
 
 def isCollapseOk(d: Dart) -> bool:
     mesh = d.mesh
-    d2, d1, d11, d21, d211, n1, n2, n3, n4 = mesh.active_triangles(d)
+    _, d1, d11, d21, d211, n1, n2, n3, n4 = mesh.active_triangles(d)
 
     d112 = d11.get_beta(2)
     d12 = d1.get_beta(2)
@@ -417,7 +417,7 @@ def valid_faces_changes(faces: list[Face], n_id: int, new_x: float, new_y: float
     :return: True if valid, False otherwise
     """
     for f in faces:
-        d, d1, d11, A, B, C = f.get_surrounding()
+        _, _, _, A, B, C = f.get_surrounding()
         if A.id == n_id:
             vect_AB = (B.x() - new_x, B.y() - new_y)
             vect_AC = (C.x() - new_x, C.y() - new_y)

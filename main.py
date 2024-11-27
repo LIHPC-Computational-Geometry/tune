@@ -1,12 +1,10 @@
 import sys
 
 from user_game import user_game
-from train import train
+#from train import train
 from exploit import exploit
-from mesh_model.reader import read_gmsh
-from view.window import Game
-from mesh_display import MeshDisplay
-from mesh_model.random_trimesh import random_mesh
+#from mesh_model.reader import read_gmsh
+#from mesh_display import MeshDisplay
 
 
 # Press the green button in the gutter to run the script.
