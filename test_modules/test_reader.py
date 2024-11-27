@@ -1,6 +1,6 @@
 import unittest
-from model.reader import read_medit
-from model.reader import read_gmsh
+from mesh_model.reader import read_medit
+from mesh_model.reader import read_gmsh
 
 import os
 TESTFILE_FOLDER = os.path.join(os.path.dirname(__file__), '../mesh_files/')

@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
-from model.mesh_struct.mesh_elements import Dart
-from model.mesh_struct.mesh import Mesh
+from mesh_model.mesh_struct.mesh_elements import Dart
+from mesh_model.mesh_struct.mesh import Mesh
 import numpy as np
 
 

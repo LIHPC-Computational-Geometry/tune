@@ -1,5 +1,5 @@
 import unittest
-import model.mesh_struct.mesh as mesh
+import mesh_model.mesh_struct.mesh as mesh
 import numpy.testing
 
 

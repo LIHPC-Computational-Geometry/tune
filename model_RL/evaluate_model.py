@@ -1,8 +1,8 @@
 from numpy import ndarray
 
 from environment.trimesh_env import TriMesh
-from model.mesh_analysis import global_score, get_boundary_darts
-from model.mesh_struct.mesh import Mesh
+from mesh_model.mesh_analysis import global_score, get_boundary_darts
+from mesh_model.mesh_struct.mesh import Mesh
 import numpy as np
 import copy
 from tqdm import tqdm

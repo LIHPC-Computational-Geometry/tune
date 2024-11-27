@@ -1,6 +1,6 @@
 import string
 
-from model.mesh_struct.mesh import Mesh
+from mesh_model.mesh_struct.mesh import Mesh
 
 
 def read_medit(filename: string) -> Mesh:

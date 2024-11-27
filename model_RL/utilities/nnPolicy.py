@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 from torch.optim import Adam
 from torch.distributions import Categorical
-from model.mesh_analysis_old import isValidAction
+from mesh_model.mesh_analysis_old import isValidAction
 
 
 class NaNException(Exception):

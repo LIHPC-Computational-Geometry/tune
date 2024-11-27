@@ -1,38 +1,11 @@
 from math import sqrt, degrees, radians, cos, sin, acos
 import numpy as np
 
-from model.mesh_struct.mesh_elements import Dart, Node, Face
-from model.mesh_struct.mesh import Mesh
+from mesh_model.mesh_struct.mesh_elements import Dart, Node, Face
+from mesh_model.mesh_struct.mesh import Mesh
 
 
 def global_score(m: Mesh):
-    """
-    Calculate the overall mesh score. The mesh cannot achieve a better score than the ideal one.
-    And the current score is the mesh score.
-    :param m: the mesh to be analyzed
-    :return: three return values: a list of the nodes score, the current mesh score and the ideal mesh score
-    """
-    mesh_ideal_score = 0
-    mesh_score = 0
-    nodes_score = []
-    active_nodes_score = []
-    for i in range(len(m.nodes)):
-        if m.nodes[i, 2] >= 0:
-            n_id = i
-            node = Node(m, n_id)
-            real_n_score = score_calculation(node)
-            #n_score = real_n_score ** 2 if real_n_score > 0 else -1 * (real_n_score ** 2)
-            n_score = real_n_score
-            nodes_score.append(n_score)
-            active_nodes_score.append(n_score)
-            mesh_ideal_score += n_score
-            mesh_score += abs(n_score)
-        else:
-            nodes_score.append(0)
-    return nodes_score, mesh_score, mesh_ideal_score
-
-
-def global_score_old(m: Mesh):
     """
     Calculate the overall mesh score. The mesh cannot achieve a better score than the ideal one.
     And the current score is the mesh score.
@@ -300,6 +273,8 @@ def get_angle_by_coord(x1: float, y1: float, x2: float, y2: float, x3:float, y3:
 
 def isFlipOk(d: Dart) -> bool:
     mesh = d.mesh
+
+    #if d is on boundary, flip is not possible
     if d.get_beta(2) is None:
         return False
     else:
@@ -327,30 +302,6 @@ def isFlipOk(d: Dart) -> bool:
 
     return True
 
-def isFlipOk_old(d: Dart) -> bool:
-    d1 = d.get_beta(1)
-    d11 = d1.get_beta(1)
-    A = d.get_node()
-    B = d1.get_node()
-    C = d11.get_node()
-    d2 = d.get_beta(2)
-    if d2 is None:
-        return False
-    else:
-        d21 = d2.get_beta(1)
-        d211 = d21.get_beta(1)
-        D = d211.get_node()
-
-        # Calcul angle at d limits
-        angle_B = get_angle_by_coord(A.x(), A.y(), B.x(), B.y(), C.x(), C.y()) + get_angle_by_coord(A.x(), A.y(), B.x(), B.y(), D.x(), D.y())
-        angle_A = get_angle_by_coord(B.x(), B.y(), A.x(), A.y(), C.x(), C.y()) + get_angle_by_coord(B.x(), B.y(), A.x(), A.y(), D.x(), D.y())
-
-        if angle_B >= 180 or angle_A >= 180:
-            return False
-        else:
-            return True
-
-
 def isSplitOk(d: Dart) -> bool:
     mesh = d.mesh
 
@@ -360,12 +311,6 @@ def isSplitOk(d: Dart) -> bool:
         d2, d1, d11, d21, d211, A, B, C, D = mesh.active_triangles(d)
 
     newNode_x, newNode_y = (A.x() + B.x()) / 2, (A.y() + B.y()) / 2
-
-    # Check angle at d limits to avoid edge reversal
-    angle_B = get_angle_by_coord(A.x(), A.y(), B.x(), B.y(), C.x(), C.y()) + get_angle_by_coord(A.x(), A.y(), B.x(), B.y(), D.x(), D.y())
-    angle_A = get_angle_by_coord(B.x(), B.y(), A.x(), A.y(), C.x(), C.y()) + get_angle_by_coord(B.x(), B.y(), A.x(), A.y(), D.x(), D.y())
-    if angle_B >= 180 or angle_A >= 180:
-        return False
 
     #Check if new triangle will be valid
 
@@ -464,12 +409,12 @@ def valid_faces_changes(faces: list[Face], n_id: int, new_x: float, new_y: float
     """
     Check the orientation of triangles adjacent to node n = Node(mesh, n_id) if the latter is moved to coordinates new_x, new_y.
     Also checks that no triangle will become flat
-    :param mesh:
+    :param mesh: a mesh
     :param faces: adjacents faces to node of id n_id
-    :param n_id:
-    :param new_x:
-    :param new_y:
-    :return:
+    :param n_id: node id
+    :param new_x: new x coordinate
+    :param new_y: new y coordinate
+    :return: True if valid, False otherwise
     """
     for f in faces:
         d, d1, d11, A, B, C = f.get_surrounding()
@@ -486,13 +431,13 @@ def valid_faces_changes(faces: list[Face], n_id: int, new_x: float, new_y: float
             vect_AC = (new_x - A.x(), new_y - A.y())
             vect_BC = (new_x - B.x(), new_y - B.y())
         else:
-            print("Erreur face non adjacente")
+            print("Non-adjacent face error")
             continue
 
         cross_product = vect_AB[0] * vect_AC[1] - vect_AB[1] * vect_AC[0]
 
         if cross_product <= 0:
-            return False  # Une face n'est pas orientée correctement ou est plate
+            return False  # One face is not correctly oriented or is flat
         elif not valid_triangle(vect_AB, vect_AC, vect_BC):
             return False
     return True
@@ -506,7 +451,7 @@ def valid_triangle(vect_AB, vect_AC, vect_BC) -> bool:
 
     L_max = max(dist_AB, dist_AC, dist_BC)
 
-    if target_mesh_size/sqrt(2) < L_max < target_mesh_size*sqrt(2):
+    if target_mesh_size/1.5*sqrt(2) < L_max < target_mesh_size*1.5*sqrt(2):
         pass
     else:
         return False

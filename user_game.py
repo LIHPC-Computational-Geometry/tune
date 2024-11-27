@@ -1,6 +1,6 @@
 from view.window import Game
 
-import model.random_trimesh as TM
+import mesh_model.random_trimesh as TM
 from mesh_display import MeshDisplay
 
 

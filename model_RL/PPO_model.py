@@ -1,5 +1,5 @@
 from model_RL.utilities.actor_critic_networks import NaNExceptionActor, NaNExceptionCritic, Actor, Critic
-from model.mesh_analysis import global_score
+from mesh_model.mesh_analysis import global_score
 import copy
 import torch
 import random
@@ -69,7 +69,7 @@ class PPO:
 
     def train(self):
         """
-        Train the PPO model
+        Train the PPO mesh_model
         :return: the actor policy, training rewards, training wins, len of episodes
         """
         rewards = []

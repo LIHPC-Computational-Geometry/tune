@@ -23,7 +23,7 @@ class AC:
 
     def train(self) -> [Actor, list, list, list]:
         """
-        Train the model over nb episodes. Both Actor and Critic networks are updated at the end of each episode.
+        Train the mesh_model over nb episodes. Both Actor and Critic networks are updated at the end of each episode.
         :return: the final actor policy, rewards history, wins history and number of steps history
         """
         rewards = []

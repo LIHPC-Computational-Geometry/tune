@@ -1,8 +1,8 @@
 import unittest
 
-from model.mesh_struct.mesh import Mesh
-from model.mesh_struct.mesh_elements import Dart
-import model.mesh_analysis as Mesh_analysis
+from mesh_model.mesh_struct.mesh import Mesh
+from mesh_model.mesh_struct.mesh_elements import Dart
+import mesh_model.mesh_analysis as Mesh_analysis
 from actions.triangular_actions import split_edge_ids
 
 
