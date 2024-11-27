@@ -91,8 +91,8 @@ def collapse_edge(mesh: Mesh, n1: Node, n2: Node) -> True:
     if not found or not isCollapseOk(d):
         return False
 
-    d2, d1, d11, d21, d211, n1, n2, n3, n4 = mesh.active_triangles(d)
-
+    d2, d1, dbeta1, d21, d211, n1, n2, n3, n4 = mesh.active_triangles(d)
+    d11 = dbeta1
     #T1
     d212 = d21.get_beta(2)
 
