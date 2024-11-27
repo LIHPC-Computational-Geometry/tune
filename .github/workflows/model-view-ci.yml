@@ -1,4 +1,4 @@
-name: model-ci
+name: mesh_model-ci
 
 on:
   push:

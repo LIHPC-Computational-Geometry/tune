@@ -1,4 +1,4 @@
-import model.random_trimesh as TM
+import mesh_model.random_trimesh as TM
 import torch
 from environment.trimesh_env import TriMesh
 
@@ -30,12 +30,12 @@ def train():
     # critic = Critic(30, lr=0.0001)
     # policy = NNPolicy(env, 30, 64,5, 0.9, lr=0.0001)
 
-    model = PPO(env, lr, gamma, nb_iterations=8, nb_episodes_per_iteration=100, nb_epochs=2, batch_size=8)
+    model = PPO(env, lr, gamma, nb_iterations=7, nb_episodes_per_iteration=100, nb_epochs=2, batch_size=8)
     actor, rewards, wins, steps = model.train()
     if rewards is not None:
         plot_training_results(rewards, wins, steps)
 
-    torch.save(actor.state_dict(), 'policy saved/actor_network.pth')
+    torch.save(actor.state_dict(), 'policy_saved/actor_network.pth')
     avg_steps, avg_wins, avg_rewards, final_meshes = testPolicy(actor, 5, dataset, 60)
 
     if rewards is not None:

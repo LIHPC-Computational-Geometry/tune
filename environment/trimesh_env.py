@@ -1,11 +1,11 @@
 from typing import Any
 import math
 import numpy as np
-from model.mesh_analysis import global_score, isValidAction, find_template_opposite_node
-from model.mesh_struct.mesh_elements import Dart
-from model.mesh_struct.mesh import Mesh
+from mesh_model.mesh_analysis import global_score, isValidAction, find_template_opposite_node
+from mesh_model.mesh_struct.mesh_elements import Dart
+from mesh_model.mesh_struct.mesh import Mesh
 from actions.triangular_actions import flip_edge, split_edge, collapse_edge
-from model.random_trimesh import random_flip_mesh, random_mesh
+from mesh_model.random_trimesh import random_flip_mesh, random_mesh
 
 # possible actions
 FLIP = 0
@@ -59,7 +59,7 @@ class TriMesh:
             self.terminal = True
         self.nodes_scores, self.mesh_score = next_nodes_score, next_mesh_score
 
-    def get_x(self, s: Mesh, a: int) -> tuple[Any, list[int | list[int]]]:
+    def get_x(self, s: Mesh, a: int):
         """
         Get the feature vector of the state-action pair
         :param s: the state
@@ -72,7 +72,7 @@ class TriMesh:
             return get_x_global_4(self, s)
 
 
-def get_x_global_4(env, state: Mesh) -> tuple[Any, list[int | list[int]]]:
+def get_x_global_4(env, state: Mesh):
     """
     Get the feature vector of the state.
     :param state: the state

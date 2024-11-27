@@ -1,10 +1,8 @@
 from __future__ import annotations
 
-from model.mesh_struct.mesh import Mesh
-from model.mesh_struct.mesh_elements import Dart, Node
-from model.mesh_analysis import degree, isFlipOk, isCollapseOk, adjacent_darts
-
-import numpy as np
+from mesh_model.mesh_struct.mesh import Mesh
+from mesh_model.mesh_struct.mesh_elements import Dart, Node
+from mesh_model.mesh_analysis import degree, isFlipOk, isCollapseOk, adjacent_darts
 
 
 def flip_edge_ids(mesh: Mesh, id1: int, id2: int) -> True:
@@ -120,12 +118,12 @@ def collapse_edge(mesh: Mesh, n1: Node, n2: Node) -> True:
     d112 = d11.get_beta(2)
 
     #Delete the darts around selected dart
-    delete_triangles(mesh, d)
+    mesh.del_adj_triangles(d)
 
-    #move n1 node in the middle of [n1, n2]
+    #Move n1 node in the middle of [n1, n2]
     n1.set_xy((n1.x() + n2.x()) / 2, (n1.y() + n2.y()) / 2)
 
-    #update node relations
+    #Update node relations
     if d12 is not None:
         d121 = d12.get_beta(1)
         d121.set_node(n1)
@@ -165,26 +163,13 @@ def collapse_edge(mesh: Mesh, n1: Node, n2: Node) -> True:
 
     #delete n2 node
     mesh.del_node(n2)
+
+    #check for duplicate darts
     if not check_double(mesh):
         raise ValueError("double error")
     if not check_beta2_relation(mesh):
         raise ValueError("error beta2")
     return True
-
-def delete_triangles(mesh: Mesh, d: Dart) -> None:
-    d2 = d.get_beta(2)
-    d1 = d.get_beta(1)
-    d11 = d1.get_beta(1)
-    d21 = d2.get_beta(1)
-    d211 = d21.get_beta(1)
-
-    f1 = d.get_face()
-    f2 = d2.get_face()
-
-    mesh.del_triangle(d, d1, d11, f1)
-    mesh.del_triangle(d2, d21, d211, f2)
-
-
 
 def test_degree(n: Node) -> bool:
     """

@@ -2,7 +2,7 @@ from __future__ import annotations
 import sys
 import numpy
 
-from model.mesh_struct.mesh_elements import Dart, Node, Face
+from mesh_model.mesh_struct.mesh_elements import Dart, Node, Face
 
 """
 Classes Dart, Node and Face must be seen as handlers on data that are stored in the
@@ -142,6 +142,23 @@ class Mesh:
         self.faces[f.id] = -self.first_free_face - 1
         self.first_free_face = f.id
 
+    def del_adj_triangles(self, d: Dart) -> None:
+        """
+        Delete the two adjacent triangles of the given dart d
+        :param mesh: a mesh
+        :param d: the dart to be deleted
+        """
+        d2 = d.get_beta(2)
+        d1 = d.get_beta(1)
+        d11 = d1.get_beta(1)
+        d21 = d2.get_beta(1)
+        d211 = d21.get_beta(1)
+
+        f1 = d.get_face()
+        f2 = d2.get_face()
+
+        self.del_triangle(d, d1, d11, f1)
+        self.del_triangle(d2, d21, d211, f2)
 
     def add_quad(self, n1: Node, n2: Node, n3: Node, n4: Node) -> Face:
         """

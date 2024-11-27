@@ -1,9 +1,9 @@
 from __future__ import annotations
 import numpy as np
 
-from model.mesh_struct.mesh_elements import Dart, Node
-from model.mesh_struct.mesh import Mesh
-from model.mesh_analysis import find_opposite_node, node_in_mesh, isValidAction
+from mesh_model.mesh_struct.mesh_elements import Dart, Node
+from mesh_model.mesh_struct.mesh import Mesh
+from mesh_model.mesh_analysis import find_opposite_node, node_in_mesh, isValidAction
 from actions.triangular_actions import flip_edge_ids, split_edge_ids, collapse_edge_ids
 
 
@@ -88,11 +88,12 @@ def mesh_shuffle_flip(mesh: Mesh) -> Mesh:
 
 def mesh_shuffle(mesh: Mesh, num_nodes) -> Mesh:
     """
-    Performs random flip actions on mesh darts.
+    Performs random actions on mesh darts.
     :param mesh: the mesh to work with
+    :param num_nodes: number nodes of the mesh
     :return: a mesh with randomly flipped darts.
     """
-    nb_action_max = int(num_nodes*3)
+    nb_action_max = int(num_nodes)
     nb_action = 0
     active_darts_list = mesh.active_darts()
     i = 0
@@ -115,28 +116,6 @@ def mesh_shuffle(mesh: Mesh, num_nodes) -> Mesh:
         i += 1
         active_darts_list = mesh.active_darts()
     return mesh
-
-
-def old_mesh_shuffle(mesh: Mesh) -> Mesh:
-    """
-    Performs random flip actions on mesh darts.
-    :param mesh: the mesh to work with
-    :return: a mesh with randomly flipped darts.
-    """
-    nb_action = int(len(mesh.dart_info)/2)
-    nb_nodes = len(mesh.nodes)
-    for i in range(nb_action):
-        action = np.random.randint(1, 4)
-        i1 = np.random.randint(nb_nodes)
-        i2 = np.random.randint(nb_nodes)
-        if action == 1:
-            flip_edge_ids(mesh, i1, i2)
-        elif action == 2:
-            split_edge_ids(mesh, i1, i2)
-        elif action == 3:
-            collapse_edge_ids(mesh, i1, i2)
-    return mesh
-
 
 
 
