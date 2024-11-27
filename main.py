@@ -14,9 +14,10 @@ if __name__ == '__main__':
         user_game(int(sys.argv[1]))
     else:
         exploit()
-        """
+
+"""
         cmap = read_gmsh("mesh_files/irr_losange.msh")
         mesh_disp = MeshDisplay(cmap)
         g = Game(cmap, mesh_disp)
         g.run()
-        """
+"""

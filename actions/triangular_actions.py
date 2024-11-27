@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from mesh_model.mesh_struct.mesh import Mesh
 from mesh_model.mesh_struct.mesh_elements import Dart, Node
-from mesh_model.mesh_analysis import degree, isFlipOk, isCollapseOk, adjacent_darts
+from mesh_model.mesh_analysis import degree, isFlipOk, isCollapseOk, adjacent_darts, isSplitOk
 
 
 def flip_edge_ids(mesh: Mesh, id1: int, id2: int) -> True:
@@ -16,9 +16,6 @@ def flip_edge(mesh: Mesh, n1: Node, n2: Node) -> True:
         return False
 
     d2, d1, d11, d21, d211, n1, n2, n3, n4 = mesh.active_triangles(d)
-
-    test_degree(n3)
-    test_degree(n4)
 
     f1 = d.get_face()
     f2 = d2.get_face()
@@ -54,15 +51,10 @@ def split_edge_ids(mesh: Mesh, id1: int, id2: int) -> True:
 
 def split_edge(mesh: Mesh, n1: Node, n2: Node) -> True:
     found, d = mesh.find_inner_edge(n1, n2)
-    if not found:
+    if not found or not isFlipOk(d):
         return False
 
     d2, d1, d11, d21, d211, n1, n2, n3, n4 = mesh.active_triangles(d)
-
-    if not test_degree(n3):
-        return False
-    elif not test_degree(n4):
-        return False
 
     # create a new node in the middle of [n1, n2]
     N5 = mesh.add_node((n1.x() + n2.x()) / 2, (n1.y() + n2.y()) / 2)
@@ -97,10 +89,6 @@ def collapse_edge(mesh: Mesh, n1: Node, n2: Node) -> True:
     found, d = mesh.find_inner_edge(n1, n2)
 
     if not found or not isCollapseOk(d):
-        return False
-    elif not test_degree(n1):
-        return False
-    elif not test_boundary(n1, n2):
         return False
 
     d2, d1, d11, d21, d211, n1, n2, n3, n4 = mesh.active_triangles(d)
@@ -149,7 +137,6 @@ def collapse_edge(mesh: Mesh, n1: Node, n2: Node) -> True:
             ds = (ds2.get_beta(1)).get_beta(1)
             ds2 = ds.get_beta(2)
 
-
     #update beta2 relations
     if d112 is not None:
         d112.set_beta(2, d12)
@@ -164,23 +151,7 @@ def collapse_edge(mesh: Mesh, n1: Node, n2: Node) -> True:
     #delete n2 node
     mesh.del_node(n2)
 
-    #check for duplicate darts
-    if not check_double(mesh):
-        raise ValueError("double error")
-    if not check_beta2_relation(mesh):
-        raise ValueError("error beta2")
-    return True
-
-def test_degree(n: Node) -> bool:
-    """
-    Verify that the degree of a vertex is lower than 10
-    :param n: a Node
-    :return: True if the degree is lower than 10, False otherwise
-    """
-    if degree(n) > 10:
-        return False
-    else:
-        return True
+    return mesh_check(mesh)
 
 
 def test_boundary(n1: Node, n2: Node) -> bool:
@@ -203,9 +174,9 @@ def check_beta2_relation(mesh: Mesh) -> bool:
         d = dart_info[0]
         d2 = dart_info[2]
         if d2 >= 0 and mesh.dart_info[d2, 0] < 0:
-            return False
+            raise ValueError("error beta2")
         elif d2 >= 0 and mesh.dart_info[d2, 2] != d:
-            return False
+            raise ValueError("error beta2")
     return True
 
 
@@ -231,7 +202,10 @@ def check_double(mesh: Mesh) -> bool:
                     ns2 = ds2.get_node().id
 
                 if n1 == ns1 and n2 == ns2:
-                    return False
+                    raise ValueError("double error")
                 elif n2 == ns1 and n1 == ns2:
                     return False
     return True
+
+def mesh_check(mesh: Mesh) -> bool:
+    return check_double(mesh) and check_beta2_relation(mesh)
