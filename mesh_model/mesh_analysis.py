@@ -278,7 +278,10 @@ def isFlipOk(d: Dart) -> bool:
     if d.get_beta(2) is None:
         return False
     else:
-        d2, d1, d11, d21, d211, A, B, C, D = mesh.active_triangles(d)
+        _, _, _, _, _, A, B, C, D = mesh.active_triangles(d)
+
+    if not test_degree(A) or not test_degree(B):
+        return False
 
     # Check angle at d limits to avoid edge reversal
     angle_B = get_angle_by_coord(A.x(), A.y(), B.x(), B.y(), C.x(), C.y()) + get_angle_by_coord(A.x(), A.y(), B.x(), B.y(), D.x(), D.y())
@@ -309,6 +312,9 @@ def isSplitOk(d: Dart) -> bool:
         return False
     else:
         d2, d1, d11, d21, d211, A, B, C, D = mesh.active_triangles(d)
+
+    if not test_degree(A) or not test_degree(B):
+        return False
 
     newNode_x, newNode_y = (A.x() + B.x()) / 2, (A.y() + B.y()) / 2
 
@@ -345,7 +351,7 @@ def isSplitOk(d: Dart) -> bool:
 
 def isCollapseOk(d: Dart) -> bool:
     mesh = d.mesh
-    _, d1, d11, d21, d211, n1, n2, n3, n4 = mesh.active_triangles(d)
+    _, d1, d11, d21, d211, n1, n2, _, _ = mesh.active_triangles(d)
 
     d112 = d11.get_beta(2)
     d12 = d1.get_beta(2)
@@ -358,6 +364,8 @@ def isCollapseOk(d: Dart) -> bool:
     if d112 is None or d12 is None or d2112 is None or d212 is None:
         return False
     elif on_boundary(n1) or on_boundary(n2):
+        return False
+    elif not test_degree(n1):
         return False
     else:
         # search for all adjacent faces to n1 and n2
@@ -478,3 +486,13 @@ def angle_from_sides(a, b, c):
         raise ValueError("Math domain error : cos>1.01")
     return acos(cosA)
 
+def test_degree(n: Node) -> bool:
+    """
+    Verify that the degree of a vertex is lower than 10
+    :param n: a Node
+    :return: True if the degree is lower than 10, False otherwise
+    """
+    if degree(n) > 10:
+        return False
+    else:
+        return True
