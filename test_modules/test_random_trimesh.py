@@ -2,7 +2,7 @@ import unittest
 from mesh_model.random_trimesh import regular_mesh, random_mesh, random_flip_mesh, mesh_shuffle
 from mesh_model.mesh_struct.mesh import Mesh
 
-from plots.mesh_plotter import plot_mesh
+#from plots.mesh_plotter import plot_mesh
 
 
 class TestRandomTrimesh(unittest.TestCase):
