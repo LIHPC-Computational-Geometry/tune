@@ -350,8 +350,12 @@ def isSplitOk(d: Dart) -> bool:
 
 
 def isCollapseOk(d: Dart) -> bool:
+
     mesh = d.mesh
-    _, d1, d11, d21, d211, n1, n2, _, _ = mesh.active_triangles(d)
+    if d.get_beta(2) is None:
+        return False
+    else:
+        _, d1, d11, d21, d211, n1, n2, _, _ = mesh.active_triangles(d)
 
     d112 = d11.get_beta(2)
     d12 = d1.get_beta(2)

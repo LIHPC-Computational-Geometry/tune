@@ -4,6 +4,7 @@ from mesh_model.mesh_struct.mesh import Mesh
 from mesh_model.mesh_struct.mesh_elements import Dart
 import mesh_model.mesh_analysis as Mesh_analysis
 from actions.triangular_actions import split_edge_ids
+from plots.mesh_plotter import plot_mesh
 
 class TestMeshAnalysis(unittest.TestCase):
 
@@ -68,6 +69,26 @@ class TestMeshAnalysis(unittest.TestCase):
         self.assertFalse(Mesh_analysis.isFlipOk(dart_to_test))
         dart_to_test = Dart(cmap, 2)
         self.assertTrue(Mesh_analysis.isFlipOk(dart_to_test))
+
+    def test_isSplitOk(self):
+        nodes = [[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0], [2.0, 0.0]]
+        faces = [[0, 1, 2], [0, 2, 3], [1, 4, 2]]
+        cmap = Mesh(nodes, faces)
+        plot_mesh(cmap)
+        dart_to_test = Dart(cmap, 0)
+        self.assertFalse(Mesh_analysis.isSplitOk(dart_to_test))
+        dart_to_test = Dart(cmap, 2)
+        self.assertTrue(Mesh_analysis.isSplitOk(dart_to_test))
+
+    def test_isCollapseOk(self):
+        nodes = [[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0], [2.0, 0.0]]
+        faces = [[0, 1, 2], [0, 2, 3], [1, 4, 2]]
+        cmap = Mesh(nodes, faces)
+        plot_mesh(cmap)
+        dart_to_test = Dart(cmap, 0)
+        self.assertFalse(Mesh_analysis.isCollapseOk(dart_to_test))
+        dart_to_test = Dart(cmap, 2)
+        self.assertFalse(Mesh_analysis.isCollapseOk(dart_to_test))
 
 
 if __name__ == '__main__':
