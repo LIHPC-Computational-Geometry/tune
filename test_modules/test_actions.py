@@ -1,8 +1,10 @@
 import unittest
 import mesh_model.mesh_struct.mesh as mesh
 from mesh_model.mesh_struct.mesh_elements import Dart, Node
-
+from mesh_model.random_trimesh import regular_mesh
 from actions.triangular_actions import split_edge, flip_edge, collapse_edge
+from plots.mesh_plotter import plot_mesh
+
 
 class TestActions(unittest.TestCase):
 
@@ -61,14 +63,22 @@ class TestActions(unittest.TestCase):
         nodes = [[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0]]
         faces = [[0, 1, 2], [0, 2, 3]]
         cmap = mesh.Mesh(nodes, faces)
+        plot_mesh(cmap)
         n00 = Node(cmap, 0)
         n11 = Node(cmap, 2)
         split_edge(cmap, n00, n11)
+        plot_mesh(cmap)
         n5 = Node(cmap, 4)
         collapse_edge(cmap, n00, n5)
         d1_to_test = Dart(cmap, 7)
         d2_to_test = Dart(cmap, 0)
         self.assertEqual(collapse_edge(cmap, n00, n5), False)
+        # Test possible collapse
+        cmap = regular_mesh(16)
+        d = Dart(cmap, 0)
+        n0 = d.get_node()
+        n1 = d.get_beta(1).get_node()
+        self.assertEqual(collapse_edge(cmap, n0, n1), True)
 
     def test_split_collapse_split(self):
         nodes = [[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0]]

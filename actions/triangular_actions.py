@@ -147,21 +147,6 @@ def collapse_edge(mesh: Mesh, n1: Node, n2: Node) -> True:
     return mesh_check(mesh)
 
 
-def test_boundary(n1: Node, n2: Node) -> bool:
-    boundary_darts_n1 = []
-    boundary_darts_n2 = []
-    for d in adjacent_darts(n1):
-        if d.get_beta(2) is None:
-            boundary_darts_n1.append(d)
-    for d in adjacent_darts(n2):
-        if d.get_beta(2) is None:
-            boundary_darts_n2.append(d)
-    if (len(boundary_darts_n1) + len(boundary_darts_n2)) > 3:
-        return False
-    else:
-        return True
-
-
 def check_beta2_relation(mesh: Mesh) -> bool:
     for dart_info in mesh.active_darts():
         d = dart_info[0]
