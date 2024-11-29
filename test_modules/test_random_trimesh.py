@@ -31,7 +31,7 @@ class TestRandomTrimesh(unittest.TestCase):
     def test_mesh_suffle(self):
         m = regular_mesh(15)
         mesh = mesh_shuffle(m, 15)
-        plot_mesh(mesh)
+        #plot_mesh(mesh)
 
 
 

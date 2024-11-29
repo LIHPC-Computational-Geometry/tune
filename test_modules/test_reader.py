@@ -4,8 +4,6 @@ from mesh_model.reader import read_gmsh
 
 import os
 
-from plots.mesh_plotter import plot_mesh
-
 TESTFILE_FOLDER = os.path.join(os.path.dirname(__file__), '../mesh_files/')
 
 class TestReader(unittest.TestCase):
