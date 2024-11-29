@@ -93,6 +93,7 @@ class Mesh:
         :param ni: a node
         """
         ni.set_x(sys.float_info.max)
+        self.del_node(ni)
 
     def add_triangle(self, n1: Node, n2: Node, n3: Node) -> Face:
         """

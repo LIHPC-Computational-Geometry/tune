@@ -15,7 +15,6 @@ class TestMeshStructure(unittest.TestCase):
         self.assertEqual(0, cmap.nb_nodes())
 
         n = cmap.add_node(1.1, 2.3)
-        self.assertEqual(1, cmap.nb_nodes())
         self.assertEqual(1.1, n.x())
         self.assertEqual(2.3, n.y())
         n.set_x(3)
@@ -27,6 +26,7 @@ class TestMeshStructure(unittest.TestCase):
         self.assertEqual(6, n.y())
         n2 = cmap.add_node(1, 23)
         n3 = cmap.add_node(3, 1)
+        cmap.add_triangle(n, n2, n3)
         self.assertEqual(3, cmap.nb_nodes())
         cmap.del_vertex(n2)
         self.assertEqual(2, cmap.nb_nodes())

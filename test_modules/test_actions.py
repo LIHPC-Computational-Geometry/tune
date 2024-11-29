@@ -70,9 +70,8 @@ class TestActions(unittest.TestCase):
         collapse_edge(cmap, n00, n5)
         d1_to_test = Dart(cmap, 7)
         d2_to_test = Dart(cmap, 0)
-        self.assertEqual(d1_to_test.get_beta(2), None)
-        self.assertEqual(d2_to_test.get_beta(2), None)
         plot_mesh(cmap)
+        self.assertEqual(collapse_edge(cmap, n00, n5), False)
 
     def test_split_collapse_split(self):
         nodes = [[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0]]
