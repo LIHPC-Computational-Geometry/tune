@@ -121,6 +121,7 @@ def collapse_edge(mesh: Mesh, n1: Node, n2: Node) -> True:
             else:
                 ds = d2s.get_beta(1)
                 ds.set_node(n1)
+    """
     elif d12 is None and d2112 is not None:
         d2112.set_node(n1)
         ds = (d2112.get_beta(1)).get_beta(1)
@@ -129,7 +130,7 @@ def collapse_edge(mesh: Mesh, n1: Node, n2: Node) -> True:
             ds2.set_node(n1)
             ds = (ds2.get_beta(1)).get_beta(1)
             ds2 = ds.get_beta(2)
-
+    """
     #update beta2 relations
     if d112 is not None:
         d112.set_beta(2, d12)

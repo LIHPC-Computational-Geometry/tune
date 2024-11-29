@@ -147,8 +147,6 @@ def degree(n: Node) -> int:
         else:
             adjacency += 0.5
     if adjacency != int(adjacency):
-        print(adjacency)
-        print(n.id)
         raise ValueError("Adjacency error")
     return adjacency
 
@@ -166,21 +164,6 @@ def get_boundary_darts(m: Mesh) -> list[Dart]:
         if d_twin is None:
             boundary_darts.append(d)
     return boundary_darts
-
-
-def get_boundary_nodes(m: Mesh) -> list[Node]:
-    """
-    Find all boundary nodes
-    :param m: a mesh
-    :return: a list of all boundary nodes
-    """
-    boundary_nodes = []
-    for n_id in range(0, len(m.nodes)):
-        if m.nodes[n_id, 2] >= 0:
-            n = Node(m, n_id)
-            if on_boundary(n):
-                boundary_nodes.append(n)
-    return boundary_nodes
 
 
 def find_opposite_node(d: Dart) -> (int, int):
@@ -500,3 +483,19 @@ def test_degree(n: Node) -> bool:
         return False
     else:
         return True
+
+"""
+def get_boundary_nodes(m: Mesh) -> list[Node]:
+    #
+    Find all boundary nodes
+    :param m: a mesh
+    :return: a list of all boundary nodes
+    #
+    boundary_nodes = []
+    for n_id in range(0, len(m.nodes)):
+        if m.nodes[n_id, 2] >= 0:
+            n = Node(m, n_id)
+            if on_boundary(n):
+                boundary_nodes.append(n)
+    return boundary_nodes
+"""
