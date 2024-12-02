@@ -1,6 +1,6 @@
 from view.window import Game
 
-import model.random_trimesh as TM
+import mesh_model.random_trimesh as TM
 from mesh_display import MeshDisplay
 
 
@@ -18,7 +18,7 @@ def user_game(mesh_size):
         g = Game(cmap, mesh_disp)
         g.run()
     """
-    cmap = TM.random_mesh(mesh_size)
+    cmap = TM.regular_mesh(mesh_size)
     mesh_disp = MeshDisplay(cmap)
     g = Game(cmap, mesh_disp)
     g.run()

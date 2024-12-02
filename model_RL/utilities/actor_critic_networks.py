@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 from torch.optim import Adam
 from torch.distributions import Categorical
-from model.mesh_analysis import isValidAction
+from mesh_model.mesh_analysis import isValidAction
 
 
 class NaNExceptionActor(Exception):
@@ -33,11 +33,20 @@ class Actor(nn.Module):
         self.optimizer = Adam(self.parameters(), lr=self.optimizer.defaults['lr'], weight_decay=self.optimizer.defaults['weight_decay'])
 
     def select_action(self, state):
-
         if np.random.rand() < self.eps:
             X, dart_indices = self.env.get_x(state, None)
-            action = np.random.randint(5)
-            dart_id = dart_indices[action]
+            action = np.random.randint(5*3) # random choice of 3 actions on 3 darts
+            dart_id = dart_indices[int(action/3)]
+            action_type = action % 3
+            prob = 1/3
+            i = 0
+            while not isValidAction(state, dart_id, action_type):
+                if i > 15:
+                    return None, None
+                action = np.random.randint(5 * 3)  # random choice of 3 actions on 3 darts
+                dart_id = dart_indices[int(action / 3)]
+                action_type = action % 3
+                i += 1
         else:
             X, dart_indices = self.env.get_x(state, None)
             X = torch.tensor(X, dtype=torch.float32)
@@ -45,16 +54,25 @@ class Actor(nn.Module):
             dist = Categorical(pmf)
             action = dist.sample()
             action = action.tolist()
-            dart_id = dart_indices[action]
+            prob = pmf[action]
+            action_darts = int(action/3)
+            action_type = action % 3
+            dart_id = dart_indices[action_darts]
             i = 0
-            while not isValidAction(state, dart_id) and i < 10:
+            while not isValidAction(state, dart_id, action_type):
+                if i > 15:
+                    return None, None
                 pmf = self.forward(X)
                 dist = Categorical(pmf)
                 action = dist.sample()
                 action = action.tolist()
-                dart_id = dart_indices[action]
+                prob = pmf[action]
+                action_darts = int(action/3)
+                action_type = action % 3
+                dart_id = dart_indices[action_darts]
                 i += 1
-        return action, dart_id
+        action_list = [action, dart_id, action_type]
+        return action_list, prob
 
     def forward(self, x):
         x = torch.relu(self.fc1(x))

@@ -1,6 +1,6 @@
 import string
 
-from model.mesh_struct.mesh import Mesh
+from mesh_model.mesh_struct.mesh import Mesh
 
 
 def read_medit(filename: string) -> Mesh:
@@ -103,7 +103,7 @@ def read_gmsh(filename: string) -> Mesh:
                         faces.append([n0 - 1, n1 - 1, n2 - 1, n3 - 1])
                     elif elem_type == 1:  # skip 2-node line elements
                         continue
-                    elif elem_type == 15:  # skip 1-node point elements
+                    elif elem_type == 15: # skip 1-node point elements
                         continue
                     else:
                         print("element_type " + str(elem_type) + " not handled")

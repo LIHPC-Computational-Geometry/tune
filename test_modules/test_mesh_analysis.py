@@ -1,10 +1,10 @@
 import unittest
 
-from model.mesh_struct.mesh import Mesh
-from model.mesh_struct.mesh_elements import Dart
-import model.mesh_analysis as Mesh_analysis
+from mesh_model.mesh_struct.mesh import Mesh
+from mesh_model.mesh_struct.mesh_elements import Dart
+import mesh_model.mesh_analysis as Mesh_analysis
 from actions.triangular_actions import split_edge_ids
-
+from plots.mesh_plotter import plot_mesh
 
 class TestMeshAnalysis(unittest.TestCase):
 
@@ -38,9 +38,9 @@ class TestMeshAnalysis(unittest.TestCase):
         faces = [[0, 1, 2], [0, 2, 3], [1, 4, 2]]
         cmap = Mesh(nodes, faces)
         split_edge_ids(cmap, 0, 2)
-        split_edge_ids(cmap, 1, 2)
+        split_edge_ids(cmap, 1, 2) # split impossible
         nodes_score, mesh_score, mesh_ideal_score = Mesh_analysis.global_score(cmap)
-        self.assertEqual((5, 1), (mesh_score, mesh_ideal_score))
+        self.assertEqual((3, 1), (mesh_score, mesh_ideal_score))
 
     def test_find_template_opposite_node_not_found(self):
         nodes = [[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0], [2.0, 0.0]]
@@ -57,8 +57,9 @@ class TestMeshAnalysis(unittest.TestCase):
         nodes = [[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0], [2.0, 0.0]]
         faces = [[0, 1, 2], [0, 2, 3], [1, 4, 2]]
         cmap = Mesh(nodes, faces)
-        self.assertEqual(Mesh_analysis.isValidAction(cmap, 0), False)
-        self.assertEqual(Mesh_analysis.isValidAction(cmap, 2), True)
+        self.assertEqual(Mesh_analysis.isValidAction(cmap, 0, 3), False)
+        self.assertEqual(Mesh_analysis.isValidAction(cmap, 2, 0), True)
+        self.assertEqual(Mesh_analysis.isValidAction(cmap, 2, 3), False)
 
     def test_isFlipOk(self):
         nodes = [[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0], [2.0, 0.0]]
@@ -68,6 +69,26 @@ class TestMeshAnalysis(unittest.TestCase):
         self.assertFalse(Mesh_analysis.isFlipOk(dart_to_test))
         dart_to_test = Dart(cmap, 2)
         self.assertTrue(Mesh_analysis.isFlipOk(dart_to_test))
+
+    def test_isSplitOk(self):
+        nodes = [[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0], [2.0, 0.0]]
+        faces = [[0, 1, 2], [0, 2, 3], [1, 4, 2]]
+        cmap = Mesh(nodes, faces)
+        plot_mesh(cmap)
+        dart_to_test = Dart(cmap, 0)
+        self.assertFalse(Mesh_analysis.isSplitOk(dart_to_test))
+        dart_to_test = Dart(cmap, 2)
+        self.assertTrue(Mesh_analysis.isSplitOk(dart_to_test))
+
+    def test_isCollapseOk(self):
+        nodes = [[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0], [2.0, 0.0]]
+        faces = [[0, 1, 2], [0, 2, 3], [1, 4, 2]]
+        cmap = Mesh(nodes, faces)
+        plot_mesh(cmap)
+        dart_to_test = Dart(cmap, 0)
+        self.assertFalse(Mesh_analysis.isCollapseOk(dart_to_test))
+        dart_to_test = Dart(cmap, 2)
+        self.assertFalse(Mesh_analysis.isCollapseOk(dart_to_test))
 
 
 if __name__ == '__main__':

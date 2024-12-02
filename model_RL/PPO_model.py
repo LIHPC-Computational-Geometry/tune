@@ -1,5 +1,5 @@
 from model_RL.utilities.actor_critic_networks import NaNExceptionActor, NaNExceptionCritic, Actor, Critic
-from model.mesh_analysis import global_score
+from mesh_model.mesh_analysis import global_score
 import copy
 import torch
 import random
@@ -9,7 +9,7 @@ from tqdm import tqdm
 class PPO:
     def __init__(self, env, lr, gamma, nb_iterations, nb_episodes_per_iteration, nb_epochs, batch_size):
         self.env = env
-        self.actor = Actor(env, 30, 5, lr=0.0001)
+        self.actor = Actor(env, 30, 15, lr=0.0001)
         self.critic = Critic(30, lr=0.0001)
         self.lr = lr
         self.gamma = gamma
@@ -43,8 +43,9 @@ class PPO:
                     next_value = torch.tensor(0.0, dtype=torch.float32) if done else self.critic(next_X)
                     delta = r + 0.9 * next_value - value
                     G = (r + 0.9 * G) / 10
-                    st = global_score(s)[1]
-                    ideal_s = global_score(s)[2]
+                    _, st, ideal_s = global_score(s)
+                    if st == ideal_s:
+                        continue
                     advantage = 1 if done else G / (st - ideal_s)
                     ratio = torch.exp(log_prob - torch.log(old_prob).detach())
                     actor_loss1 = advantage * ratio
@@ -68,7 +69,7 @@ class PPO:
 
     def train(self):
         """
-        Train the PPO model
+        Train the PPO mesh_model
         :return: the actor policy, training rewards, training wins, len of episodes
         """
         rewards = []
@@ -80,18 +81,17 @@ class PPO:
                 print('ITERATION', iteration)
                 rollouts = []
                 dataset = []
-                for _ in range(self.nb_episodes_per_iteration):
+                for _ in tqdm(range(self.nb_episodes_per_iteration)):
                     self.env.reset()
                     trajectory = []
                     ep_reward = 0
                     done = False
                     while True:
                         state = copy.deepcopy(self.env.mesh)
-                        action = self.actor.select_action(state)
-                        X, _ = self.env.get_x(state, None)
-                        X = torch.tensor(X, dtype=torch.float32)
-                        pmf = self.actor.forward(X)
-                        prob = pmf[action[0]]
+                        action, prob = self.actor.select_action(state)
+                        if action is None:
+                            wins.append(0)
+                            break
                         self.env.step(action)
                         next_state = copy.deepcopy(self.env.mesh)
                         R = self.env.reward
@@ -106,10 +106,11 @@ class PPO:
                                 trajectory.append((state, action, R, prob, next_state, done))
                             break
                         trajectory.append((state, action, R, prob, next_state, done))
-                    rewards.append(ep_reward)
-                    rollouts.append(trajectory)
-                    dataset.extend(trajectory)
-                    len_ep.append(len(trajectory))
+                    if len(trajectory) != 0:
+                        rewards.append(ep_reward)
+                        rollouts.append(trajectory)
+                        dataset.extend(trajectory)
+                        len_ep.append(len(trajectory))
 
                 self.train_epoch(dataset)
 

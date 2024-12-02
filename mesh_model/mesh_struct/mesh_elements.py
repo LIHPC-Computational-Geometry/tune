@@ -27,7 +27,10 @@ class Dart:
         :param a_dart: another dart
         :return: true if the darts are equal, false otherwise
         """
-        return self.mesh == a_dart.mesh and self.id == a_dart.id
+        if a_dart is None:
+            return False
+        else:
+            return self.mesh == a_dart.mesh and self.id == a_dart.id
 
     def get_beta(self, i: int) -> Dart:
         """
@@ -52,7 +55,10 @@ class Dart:
         """
         if i < 1 or i > 2:
             raise ValueError("Wrong alpha dimension")
-        self.mesh.dart_info[self.id, i] = dart_to.id
+        elif dart_to is None:
+            self.mesh.dart_info[self.id, i] = -1
+        else:
+            self.mesh.dart_info[self.id, i] = dart_to.id
 
     def get_node(self) -> Node:
         """
@@ -218,3 +224,12 @@ class Face:
         if d is None:
             raise ValueError("Try to connect a face to a non-existing dart")
         self.mesh.faces[self.id] = d.id
+
+    def get_surrounding(self) -> [Dart, Dart, Dart, Node, Node, Node]:
+        d = self.get_dart()
+        d1 = d.get_beta(1)
+        d11 = d1.get_beta(1)
+        A = d.get_node()
+        B = d1.get_node()
+        C = d11.get_node()
+        return d, d1, d11, A, B, C

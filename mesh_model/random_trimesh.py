@@ -1,10 +1,10 @@
 from __future__ import annotations
 import numpy as np
 
-from model.mesh_struct.mesh_elements import Dart, Node
-from model.mesh_struct.mesh import Mesh
-from model.mesh_analysis import find_opposite_node, node_in_mesh
-from actions.triangular_actions import flip_edge_ids, split_edge_ids
+from mesh_model.mesh_struct.mesh_elements import Dart, Node
+from mesh_model.mesh_struct.mesh import Mesh
+from mesh_model.mesh_analysis import find_opposite_node, node_in_mesh, isValidAction
+from actions.triangular_actions import flip_edge_ids, split_edge_ids, collapse_edge_ids
 
 
 def regular_mesh(num_nodes_max: int) -> Mesh:
@@ -59,6 +59,7 @@ def random_flip_mesh(num_nodes_max: int) -> Mesh:
     mesh_shuffle_flip(mesh)
     return mesh
 
+
 def random_mesh(num_nodes_max: int) -> Mesh:
     """
     Create a random mesh with a fixed number of nodes.
@@ -66,7 +67,7 @@ def random_mesh(num_nodes_max: int) -> Mesh:
     :return: a random mesh
     """
     mesh = regular_mesh(num_nodes_max)
-    mesh_shuffle_flip(mesh)
+    mesh_shuffle(mesh, num_nodes_max)
     return mesh
 
 
@@ -85,24 +86,36 @@ def mesh_shuffle_flip(mesh: Mesh) -> Mesh:
             flip_edge_ids(mesh, i1, i2)
     return mesh
 
-def mesh_shuffle(mesh: Mesh) -> Mesh:
+def mesh_shuffle(mesh: Mesh, num_nodes) -> Mesh:
     """
-    Performs random flip actions on mesh darts.
+    Performs random actions on mesh darts.
     :param mesh: the mesh to work with
+    :param num_nodes: number nodes of the mesh
     :return: a mesh with randomly flipped darts.
     """
-    nb_flip = len(mesh.dart_info)
-    nb_action =nb_flip * 2
-    nb_nodes = len(mesh.nodes)
-    for i in range(nb_action):
-        i1 = np.random.randint(nb_nodes)
-        i2 = np.random.randint(nb_nodes)
-        if i1 != i2 and i%2 == 0:
-            flip_edge_ids(mesh, i1, i2)
-        elif i1 !=i2 :
-            split_edge_ids(mesh, i1, i2)
+    nb_action_max = int(num_nodes)
+    nb_action = 0
+    active_darts_list = mesh.active_darts()
+    i = 0
+    while nb_action < nb_action_max and i < (nb_action_max + 30):
+        action_type = np.random.randint(0, 3)
+        d_id = np.random.randint(len(active_darts_list))
+        d_id = active_darts_list[d_id][0]
+        dart = Dart(mesh, d_id)
+        i1 = dart.get_node()
+        i2 = ((dart.get_beta(1)).get_beta(1)).get_node()
+        if action_type == 0 and isValidAction(mesh, d_id, action_type):
+            flip_edge_ids(mesh, i1.id, i2.id)
+            nb_action += 1
+        elif action_type == 1 and isValidAction(mesh, d_id, action_type):
+            split_edge_ids(mesh, i1.id, i2.id)
+            nb_action += 1
+        elif action_type == 2 and isValidAction(mesh, d_id, action_type):
+            collapse_edge_ids(mesh, i1.id, i2.id)
+            nb_action += 1
+        i += 1
+        active_darts_list = mesh.active_darts()
     return mesh
-
 
 
 

@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
-from model.mesh_struct.mesh_elements import Dart
-from model.mesh_struct.mesh import Mesh
+from mesh_model.mesh_struct.mesh_elements import Dart
+from mesh_model.mesh_struct.mesh import Mesh
 import numpy as np
 
 
@@ -19,8 +19,8 @@ def subplot_mesh(mesh: Mesh) -> None:
     Plot a mesh using matplotlib for subplots with many meshes
     :param mesh: a Mesh
     """
-    faces = mesh.faces
-    nodes = mesh.nodes
+    faces = mesh.active_faces()
+    nodes = mesh.active_nodes()
     nodes = np.array([list[:2] for list in nodes])
 
     for dart_id in faces:
