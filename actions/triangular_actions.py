@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from mesh_model.mesh_struct.mesh import Mesh
 from mesh_model.mesh_struct.mesh_elements import Dart, Node
-from mesh_model.mesh_analysis import isFlipOk, isCollapseOk, adjacent_darts, isSplitOk
+from mesh_model.mesh_analysis import isFlipOk, isCollapseOk, isSplitOk
 
 
 def flip_edge_ids(mesh: Mesh, id1: int, id2: int) -> True:
