@@ -62,14 +62,28 @@ class TensorboardCallback(BaseCallback):
         self.current_episode_reward = 0
         self.episode_count = 0
         self.current_episode_length = 0
+        self.episode_valid_actions = 0
+        self.episode_invalid_topo = 0
+        self.episode_invalid_geo = 0
+        self.final_distance = 0
 
     def _on_step(self) -> bool:
         self.current_episode_reward += self.locals["rewards"][0]
         self.current_episode_length += 1
 
+        self.episode_valid_actions += self.locals["infos"][0].get("valid_action", 0.0)
+        self.episode_invalid_topo += self.locals["infos"][0].get("invalid_topo", 0.0)
+        self.episode_invalid_geo += self.locals["infos"][0].get("invalid_geo", 0.0)
+        self.distance = self.locals["infos"][0].get("distance", 0.0)
+        self.logger.record("distance", self.distance)
+
         if self.locals["dones"][0]:
             self.episode_rewards.append(self.current_episode_reward)
-
+            self.final_distance = self.distance
+            self.logger.record("final_distance", self.final_distance)
+            self.logger.record("n_valid_actions", self.episode_valid_actions)
+            self.logger.record("n_invalid_topo", self.episode_invalid_topo)
+            self.logger.record("n_invalid_geo", self.episode_invalid_geo)
             self.logger.record("episode_reward", self.current_episode_reward)
             self.logger.record("episode_length", self.current_episode_length)
 
@@ -79,7 +93,9 @@ class TensorboardCallback(BaseCallback):
             self.logger.dump(step=self.episode_count)
             self.current_episode_reward = 0  # Réinitialise la récompense de l'épisode
             self.current_episode_length = 0
-            is_success = 0.0
+            self.episode_valid_actions = 0
+            self.episode_invalid_geo = 0
+            self.episode_invalid_topo = 0
             self.episode_count += 1  # Incrémente le compteur d'épisodes
 
         # Log scalar value (here a random variable)
@@ -94,17 +110,17 @@ os.makedirs(log_dir, exist_ok=True)
 
 # Create and wrap the environment
 #env = make_vec_env('TrimeshFull-v0', n_envs=1, monitor_dir=log_dir)
-env = gym.make("TrimeshFull-v0", max_episode_steps=100)
+env = gym.make("TrimeshFull-v0", max_episode_steps=30)
 check_env(env, warn=True)
 
 plotting_callback = PlottingCallback()
 
-model = PPO("MultiInputPolicy", env, n_steps=1000, n_epochs=5, batch_size=8, learning_rate=1e-4, gamma=0.9,  verbose=1, tensorboard_log="/tmp/gym/") #./trimesh_tensorboard/
+model = PPO("MultiInputPolicy", env, n_steps=2048, n_epochs=10, batch_size=64, learning_rate=1e-4, gamma=0.9,  verbose=1, tensorboard_log="/tmp/gym/") #./trimesh_tensorboard/
 
 print("-----------Starting learning-----------")
-model.learn(total_timesteps=10000, callback=TensorboardCallback())
+model.learn(total_timesteps=3000000, callback=TensorboardCallback())
 print("-----------Learning ended------------")
-model.save("ppo_trimesh_v0")
+model.save("ppo_trimesh_vx")
 """
 
 model = PPO.load("ppo_trimesh_v0")

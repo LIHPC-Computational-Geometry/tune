@@ -222,7 +222,7 @@ def node_in_mesh(mesh: Mesh, x: float, y: float) -> (bool, int):
     return False, None
 
 
-def isValidAction(mesh: Mesh, dart_id: int, action: int) -> bool:
+def isValidAction(mesh: Mesh, dart_id: int, action: int) -> (bool, bool):
     flip = 0
     split = 1
     collapse = 2
@@ -230,7 +230,7 @@ def isValidAction(mesh: Mesh, dart_id: int, action: int) -> bool:
     d = Dart(mesh, dart_id)
     boundary_darts = get_boundary_darts(mesh)
     if d in boundary_darts:
-        return False
+        return False, True
     elif action == flip:
         return isFlipOk(d)
     elif action == split:
@@ -254,23 +254,27 @@ def get_angle_by_coord(x1: float, y1: float, x2: float, y2: float, x3:float, y3:
     return deg
 
 
-def isFlipOk(d: Dart) -> bool:
+def isFlipOk(d: Dart) -> (bool, bool):
     mesh = d.mesh
-
+    topo = True
+    geo = True
     #if d is on boundary, flip is not possible
     if d.get_beta(2) is None:
-        return False
+        topo = False
+        return topo, geo
     else:
         _, _, _, _, _, A, B, C, D = mesh.active_triangles(d)
 
     if not test_degree(A) or not test_degree(B):
-        return False
+        topo = False
+        return topo, geo
 
     # Check angle at d limits to avoid edge reversal
     angle_B = get_angle_by_coord(A.x(), A.y(), B.x(), B.y(), C.x(), C.y()) + get_angle_by_coord(A.x(), A.y(), B.x(), B.y(), D.x(), D.y())
     angle_A = get_angle_by_coord(B.x(), B.y(), A.x(), A.y(), C.x(), C.y()) + get_angle_by_coord(B.x(), B.y(), A.x(), A.y(), D.x(), D.y())
     if angle_B >= 180 or angle_A >= 180:
-        return False
+        topo = False
+        return topo, geo
 
     #Check if new triangle will be valid
 
@@ -284,20 +288,24 @@ def isFlipOk(d: Dart) -> bool:
     vect_BD = (D.x() - B.x(), D.y() - B.y())
 
     if not valid_triangle(vect_AC, vect_AD, vect_DC) or not valid_triangle(vect_BC, vect_BD, vect_DC):
-        return False
+        geo = False
+        return topo, geo
 
-    return True
+    return topo, geo
 
-def isSplitOk(d: Dart) -> bool:
+def isSplitOk(d: Dart) -> (bool, bool):
     mesh = d.mesh
-
+    topo = True
+    geo = True
     if d.get_beta(2) is None:
-        return False
+        topo = False
+        return topo, geo
     else:
         _, _, _, _, _, A, B, C, D = mesh.active_triangles(d)
 
     if not test_degree(A) or not test_degree(B):
-        return False
+        topo = False
+        return topo, geo
 
     newNode_x, newNode_y = (A.x() + B.x()) / 2, (A.y() + B.y()) / 2
 
@@ -308,35 +316,42 @@ def isSplitOk(d: Dart) -> bool:
     vect_AE = (newNode_x - A.x(), newNode_y - A.y())
     vect_EC = (C.x() - newNode_x, C.y() - newNode_y)
     if not valid_triangle(vect_AE, vect_AC, vect_EC):
-        return False
+        geo =  False
+        return topo, geo
 
     # Triangle ADE
     vect_AD = (D.x() - A.x(), D.y() - A.y())
     vect_ED = (D.x() - newNode_x, D.y() - newNode_y)
     if not valid_triangle(vect_AD, vect_AE, vect_ED):
-        return False
+        geo = False
+        return topo, geo
 
     # Triangle BCE
     vect_BC = (C.x() - B.x(), C.y() - B.y())
     vect_BE = (newNode_x - B.x(), newNode_y - B.y())
     vect_EC = (C.x() - newNode_x, C.y() - newNode_y)
     if not valid_triangle(vect_BC, vect_BE, vect_EC):
-        return False
+        geo = False
+        return topo, geo
 
     # Triangle BDE
     vect_BD = (D.x() - B.x(), D.y() - B.y())
     vect_ED = (D.x() - newNode_x, D.y() - newNode_y)
     if not valid_triangle(vect_BD, vect_BE, vect_ED):
-        return False
+        geo = False
+        return topo, geo
 
-    return True
+    return topo, geo
 
 
-def isCollapseOk(d: Dart) -> bool:
+def isCollapseOk(d: Dart) -> (bool, bool):
 
     mesh = d.mesh
+    topo = True
+    geo = True
     if d.get_beta(2) is None:
-        return False
+        topo = False
+        return topo, geo
     else:
         _, d1, d11, d21, d211, n1, n2, _, _ = mesh.active_triangles(d)
 
@@ -349,26 +364,30 @@ def isCollapseOk(d: Dart) -> bool:
     newNode_x, newNode_y = (n1.x() + n2.x()) / 2, (n1.y() + n2.y()) / 2
 
     if d112 is None or d12 is None or d2112 is None or d212 is None:
-        return False
+        topo = False
+        return topo, geo
     elif on_boundary(n1) or on_boundary(n2):
-        return False
+        topo = False
+        return topo, geo
     elif not test_degree(n1):
-        return False
+        topo = False
+        return topo, geo
     else:
         # search for all adjacent faces to n1 and n2
         if d12 is None and d2112 is None:
             adj_faces_n1 = get_adjacent_faces(n1, d212, d112)
-            return valid_faces_changes(adj_faces_n1, n1.id, newNode_x, newNode_y)
+            return topo, valid_faces_changes(adj_faces_n1, n1.id, newNode_x, newNode_y)
         elif d212 is None and d112 is None:
             adj_faces_n2 = get_adjacent_faces(n2, d12, d2112)
-            return valid_faces_changes(adj_faces_n2, n2.id, newNode_x, newNode_y)
+            return topo, valid_faces_changes(adj_faces_n2, n2.id, newNode_x, newNode_y)
         else:
             adj_faces_n1 = get_adjacent_faces(n1, d212, d112)
             adj_faces_n2 = get_adjacent_faces(n2, d12, d2112)
             if not valid_faces_changes(adj_faces_n1, n1.id, newNode_x, newNode_y) or not valid_faces_changes(adj_faces_n2, n2.id, newNode_x, newNode_y):
-                return False
+                geo = False
+                return topo, geo
             else:
-                return True
+                return topo, geo
 
 
 def get_adjacent_faces(n: Node, d_from: Dart, d_to: Dart) -> list:
@@ -483,6 +502,16 @@ def test_degree(n: Node) -> bool:
         return False
     else:
         return True
+
+
+def isTruncated(m: Mesh, obs)-> bool:
+    darts_list = obs["darts_list"]
+    for d_id in darts_list:
+        d = Dart(m, d_id)
+        if isFlipOk(d) or isSplitOk(d) or isCollapseOk(d):
+            return False
+    return True
+
 
 """
 def get_boundary_nodes(m: Mesh) -> list[Node]:
