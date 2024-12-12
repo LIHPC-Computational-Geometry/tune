@@ -1,0 +1,7 @@
+{
+    "env_name": "trimesh-v0",
+    "mesh_size": 12,
+    "max_episode_steps": 100,
+    "observation": "irregularities + degres",
+    "nb_darts_selected": 20
+}

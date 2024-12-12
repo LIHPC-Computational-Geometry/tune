@@ -7,7 +7,7 @@ import numpy as np
 from mesh_model.random_trimesh import random_mesh
 from mesh_model.mesh_struct.mesh_elements import Dart
 from mesh_model.mesh_analysis import global_score, isTruncated
-from environment.gymnasium_envs.trimesh_full_env.envs.mesh_conv import get_x_level_2
+from environment.gymnasium_envs.trimesh_full_env.envs.mesh_conv import get_x_level_2_deg
 from actions.triangular_actions import flip_edge, split_edge, collapse_edge
 
 from view.window import Game
@@ -27,7 +27,7 @@ class TriMeshEnvFull(gym.Env):
         self.mesh = mesh if mesh is not None else random_mesh(mesh_size)
         self.mesh_size = len(self.mesh.nodes)
         self.nb_darts = len(self.mesh.dart_info)
-        self._nodes_scores, self._mesh_score, self._ideal_score = global_score(self.mesh)
+        self._nodes_scores, self._mesh_score, self._ideal_score, _ = global_score(self.mesh)
         self.deep = 6
         self.n_darts_selected = 20  # actions restricted to 20 darts
         self.window_size = 512  # The size of the PyGame window
@@ -36,7 +36,7 @@ class TriMeshEnvFull(gym.Env):
 
         self.observation_space = spaces.Dict(
             {
-                "irregularities": spaces.Box(-15, 5, shape=(self.deep*self.n_darts_selected,), dtype=int), # nodes max degree : 15
+                "irregularities": spaces.Box(-15, 15, shape=(self.n_darts_selected, self.deep*2), dtype=int), # nodes max degree : 15
                 "darts_list": spaces.Box( 0, self.nb_darts*2, shape=(self.n_darts_selected,), dtype=int),
             }
         )
@@ -57,14 +57,15 @@ class TriMeshEnvFull(gym.Env):
         self.window = None
         self.clock = None
 
-    def reset(self, seed=None, mesh=None, options=None):
+    def reset(self, seed=None, options=None):
         # We need the following line to seed self.np_random
         super().reset(seed=seed)
-
-        # Generation of a new irregular mesh
-        self.mesh = mesh if mesh is not None else random_mesh(self.mesh_size)
+        if options is not None:
+            self.mesh = options.get("mesh", self.mesh)
+        else:
+            self.mesh = random_mesh(self.mesh_size)
         self.nb_darts = len(self.mesh.dart_info)
-        self._nodes_scores, self._mesh_score, self._ideal_score = global_score(self.mesh)
+        self._nodes_scores, self._mesh_score, self._ideal_score, _ = global_score(self.mesh)
         self.nb_invalid_actions = 0
         self.close()
         self.observation = self._get_obs()
@@ -77,7 +78,7 @@ class TriMeshEnvFull(gym.Env):
 
 
     def _get_obs(self):
-        irregularities, darts_list = get_x_level_2(self.mesh)
+        irregularities, darts_list = get_x_level_2_deg(self.mesh)
         return {"irregularities": irregularities, "darts_list": darts_list}
 
     def _get_info(self, terminated, valid_act):
@@ -88,6 +89,7 @@ class TriMeshEnvFull(gym.Env):
             "valid_action": 1.0 if valid_action else 0.0,
             "invalid_topo": 1.0 if not valid_topo else 0.0,
             "invalid_geo": 1.0 if  not valid_geo else 0.0,
+            "mesh" : self.mesh,
         }
 
     def _action_to_dart_id(self, action):
@@ -112,13 +114,13 @@ class TriMeshEnvFull(gym.Env):
 
         if valid_action:
             # An episode is done if the actual score is the same as the ideal
-            next_nodes_score, next_mesh_score, _ = global_score(self.mesh)
+            next_nodes_score, next_mesh_score, _, _ = global_score(self.mesh)
             terminated = np.array_equal(self._ideal_score, next_mesh_score)
-            reward = self._mesh_score - next_mesh_score
+            reward = (self._mesh_score - next_mesh_score)*10
             self._nodes_scores, self._mesh_score = next_nodes_score, next_mesh_score
             self.observation = self._get_obs()
         elif not valid_topo:
-            reward = -10
+            reward = -1
             terminated = False
             self.nb_invalid_actions += 1
         elif not valid_geo:

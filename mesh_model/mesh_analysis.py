@@ -10,27 +10,28 @@ def global_score(m: Mesh):
     Calculate the overall mesh score. The mesh cannot achieve a better score than the ideal one.
     And the current score is the mesh score.
     :param m: the mesh to be analyzed
-    :return: three return values: a list of the nodes score, the current mesh score and the ideal mesh score
+    :return: three return values: a list of the nodes score, the current mesh score and the ideal mesh score, and the adjacency
     """
     mesh_ideal_score = 0
     mesh_score = 0
     nodes_score = []
-    active_nodes_score = []
+    nodes_adjacency = []
     for i in range(len(m.nodes)):
         if m.nodes[i, 2] >= 0:
             n_id = i
             node = Node(m, n_id)
-            n_score = score_calculation(node)
+            n_score, adjacency= score_calculation(node)
             nodes_score.append(n_score)
-            active_nodes_score.append(n_score)
+            nodes_adjacency.append(adjacency)
             mesh_ideal_score += n_score
             mesh_score += abs(n_score)
         else:
             nodes_score.append(0)
-    return nodes_score, mesh_score, mesh_ideal_score
+            nodes_adjacency.append(6)
+    return nodes_score, mesh_score, mesh_ideal_score, nodes_adjacency
 
 
-def score_calculation(n: Node) -> int:
+def score_calculation(n: Node) -> list[int]:
     """
     Function to calculate the irregularity of a node in the mesh.
     :param n: a node in the mesh.
@@ -43,7 +44,7 @@ def score_calculation(n: Node) -> int:
     else:
         ideal_adjacency = 360/60
 
-    return ideal_adjacency-adjacency
+    return ideal_adjacency-adjacency, adjacency
 
 
 def get_angle(d1: Dart, d2: Dart, n: Node) -> float:
@@ -465,7 +466,7 @@ def valid_triangle(vect_AB, vect_AC, vect_BC) -> bool:
 
     L_max = max(dist_AB, dist_AC, dist_BC)
 
-    if target_mesh_size/1.5*sqrt(2) < L_max < target_mesh_size*1.5*sqrt(2):
+    if target_mesh_size/3*sqrt(2) < L_max < target_mesh_size*3*sqrt(2): #1.5
         pass
     else:
         return False
@@ -476,7 +477,7 @@ def valid_triangle(vect_AB, vect_AC, vect_BC) -> bool:
     angle_A = degrees(angle_from_sides(dist_BC, dist_AC, dist_AB))  # Angle au point C
 
     # Vérification que tous les angles sont supérieurs à 5°
-    if angle_A <= 5 or angle_B <= 5 or angle_C <= 5:
+    if angle_A <= 2 or angle_B <= 2 or angle_C <= 2:
         return False
     return True
 
@@ -498,7 +499,7 @@ def test_degree(n: Node) -> bool:
     :param n: a Node
     :return: True if the degree is lower than 10, False otherwise
     """
-    if degree(n) > 10:
+    if degree(n) > 12:
         return False
     else:
         return True

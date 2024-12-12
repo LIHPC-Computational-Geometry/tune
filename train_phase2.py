@@ -42,10 +42,7 @@ class TensorboardCallback(BaseCallback):
     def _on_training_start(self) -> None:
         with open("model_RL/parameters/ppo_config_200k.json", "r") as f:
             ppo_config = json.load(f)
-        with open("environment/parameters/environment_config.json", "r") as f:
-            env_config = json.load(f)
         self.logger.record("parameters/ppo", f"<pre>{json.dumps(ppo_config, indent=4)}</pre>")
-        self.logger.record("parameters/env", f"<pre>{json.dumps(env_config, indent=4)}</pre>")
         self.logger.dump(step=0)
 
 
@@ -93,56 +90,12 @@ os.makedirs(log_dir, exist_ok=True)
 with open("model_RL/parameters/ppo_config_200k.json", "r") as f:
     ppo_config = json.load(f)
 
-# Create and wrap the environment
-#env = make_vec_env('TrimeshFull-v0', n_envs=1, monitor_dir=log_dir)
-env = gym.make("TrimeshFull-v0", max_episode_steps=100)
+env = gym.make("TrimeshFull-v0", max_episode_steps=40)
 check_env(env, warn=True)
 
-model = PPO(
-    policy=ppo_config["policy"],
-    env=env,
-    n_steps=ppo_config["n_steps"],
-    n_epochs=ppo_config["n_epochs"],
-    batch_size=ppo_config["batch_size"],
-    learning_rate=ppo_config["learning_rate"],
-    gamma=ppo_config["gamma"],
-    verbose=ppo_config["verbose"],
-    tensorboard_log=ppo_config["tensorboard_log"]
-)
+model = PPO.load("ppo_trimesh_v5")
+model.set_env(env)
 print("-----------Starting learning-----------")
 model.learn(total_timesteps=ppo_config["total_timesteps"], callback=TensorboardCallback(model))
 print("-----------Learning ended------------")
-model.save("ppo_trimesh_no_flat_v2")
-"""
-
-model = PPO.load("ppo_trimesh_v0")
-
-
-env = gym.make("trimesh-v0", max_episode_steps=100, render_mode="human")
-m = PPO("MultiInputPolicy", env, verbose=1)
-vec_env = m.get_env()
-obs = vec_env.reset()
-avg_rewards = []
-ep_rewards = 0
-nb_episodes = 0
-for i in range(1000):
-    action, _states = model.predict(obs, deterministic=True)
-    obs, reward, done, info = vec_env.step(action)
-    vec_env.render("human")
-    time.sleep(1)
-    ep_rewards += reward
-    if done:
-        avg_rewards.append(ep_rewards)
-        ep_rewards = 0
-        nb_episodes += 1
-        obs = vec_env.reset()
-        #vec_env.close()
-"""
-"""
-plt.figure()
-plt.plot(avg_rewards)
-plt.xlabel('Episodes')
-plt.ylabel('Rewards')
-plt.title('Learning Rewards, nb_episodes={}'.format(nb_episodes))
-plt.legend(loc="best")
-plt.show()"""
+model.save("ppo_trimesh_v5_p2")
