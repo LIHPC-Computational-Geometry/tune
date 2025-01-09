@@ -11,7 +11,8 @@ from actions.triangular_actions import flip_edge
 
 from view.window import Game
 from mesh_display import MeshDisplay
-    
+
+
 class TriMeshEnvFlip(gym.Env):
     metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 60}
 
@@ -31,7 +32,13 @@ class TriMeshEnvFlip(gym.Env):
         self.nb_invalid_actions = 0
         self.darts_selected = []
 
-        self.observation_space = spaces.Box(-15, 15, shape=(self.n_darts_selected, self.deep*2 if self.degree_observation else self.deep), dtype=np.int64) # nodes max degree : 15
+        self.observation_space = spaces.Box(
+            low= -15, # nodes min degree : 15
+            high =15,  # nodes max degree : 15
+            shape=(self.n_darts_selected, self.deep*2 if self.degree_observation else self.deep),
+            dtype=np.int64
+        )
+
         self.observation = None
 
         # We have 1 action, flip

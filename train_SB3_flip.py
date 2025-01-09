@@ -12,11 +12,6 @@ from stable_baselines3.common.env_checker import check_env
 from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.logger import Figure
 
-from io import BytesIO
-from PIL import Image
-
-import numpy as np
-import matplotlib.pyplot as plt
 import gymnasium as gym
 
 class TensorboardCallback(BaseCallback):

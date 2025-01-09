@@ -14,12 +14,12 @@ from view.window import Game
 from mesh_display import MeshDisplay
 
 
-
 class Actions(Enum):
     FLIP = 0
     SPLIT = 1
     COLLAPSE = 2
-    
+
+
 class TriMeshEnvFull(gym.Env):
     metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 60}
 
@@ -39,7 +39,14 @@ class TriMeshEnvFull(gym.Env):
         self.nb_invalid_actions = 0
         self.darts_selected = [] # darts id observed
         deep = self.deep*2 if self.degree_observation else deep
-        self.observation_space = spaces.Box(-15, 15, shape=(self.n_darts_selected, self.deep*2 if self.degree_observation else self.deep), dtype=np.int64) # nodes max degree : 15
+
+        self.observation_space = spaces.Box(
+            low=-15,  # nodes min degree : 15
+            high=15,  # nodes max degree : 15
+            shape=(self.n_darts_selected, self.deep * 2 if self.degree_observation else self.deep),
+            dtype=np.int64
+        )
+
         self.observation = None
 
         # We have 3 action, flip, split, collapse

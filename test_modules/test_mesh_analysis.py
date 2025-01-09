@@ -13,7 +13,7 @@ class TestMeshAnalysis(unittest.TestCase):
         faces = [[0, 1, 2], [0, 2, 3], [3, 2, 4], [3, 5, 0], [0, 5, 6], [0, 6, 8], [6, 7, 8], [0, 8, 1]]
         cmap = Mesh(nodes,faces)
         nodes_score, mesh_score, mesh_ideal_score, adjacency = Mesh_analysis.global_score(cmap)
-        self.assertEqual((0,0), (mesh_score,mesh_ideal_score) )  # add assertion here
+        self.assertEqual((0,0), (mesh_score, mesh_ideal_score) )
 
     def test_mesh_with_irregularities(self):
         nodes = [[0.0, 0.0], [1.0, 0.0], [0.5, 1], [-0.5, 1.0], [0.0, 2.0], [-1.0, 2.0], [-2.0, 1.0], [-1.0, 0.0],
@@ -24,7 +24,7 @@ class TestMeshAnalysis(unittest.TestCase):
                  [14, 12, 13], [14, 13, 15], [1, 14, 15], [1, 15, 16], [1, 16, 17], [1, 17, 2], [2, 17, 18], [2, 18, 4]]
         cmap = Mesh(nodes, faces)
         nodes_score, mesh_score, mesh_ideal_score, adjacency = Mesh_analysis.global_score(cmap)
-        self.assertEqual((6, -2), (mesh_score,mesh_ideal_score) )  # add assertion here
+        self.assertEqual((6, -2), (mesh_score,mesh_ideal_score) )
 
     def test_mesh_bad_score(self):
         nodes = [[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0], [2.0, 0.0]]
@@ -57,14 +57,24 @@ class TestMeshAnalysis(unittest.TestCase):
         nodes = [[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0], [2.0, 0.0]]
         faces = [[0, 1, 2], [0, 2, 3], [1, 4, 2]]
         cmap = Mesh(nodes, faces)
-        self.assertEqual(Mesh_analysis.isValidAction(cmap, 0, 3), (False, True))
+
+        # Flip test
+        self.assertEqual(Mesh_analysis.isValidAction(cmap, 0, 0), (False, True))
         self.assertEqual(Mesh_analysis.isValidAction(cmap, 2, 0), (True, True))
+
+        #Split test
+        self.assertEqual(Mesh_analysis.isValidAction(cmap, 0, 1), (False, True))
+        self.assertEqual(Mesh_analysis.isValidAction(cmap, 2, 1), (True, True))
+
+        #Collapse test
+        self.assertEqual(Mesh_analysis.isValidAction(cmap, 0, 3), (False, True))
         self.assertEqual(Mesh_analysis.isValidAction(cmap, 2, 3), (False, False))
 
     def test_isFlipOk(self):
         nodes = [[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0], [2.0, 0.0]]
         faces = [[0, 1, 2], [0, 2, 3], [1, 4, 2]]
         cmap = Mesh(nodes, faces)
+        plot_mesh(cmap)
         dart_to_test = Dart(cmap, 0)
         self.assertFalse(Mesh_analysis.isFlipOk(dart_to_test)[0])
         dart_to_test = Dart(cmap, 2)
@@ -76,9 +86,9 @@ class TestMeshAnalysis(unittest.TestCase):
         cmap = Mesh(nodes, faces)
         plot_mesh(cmap)
         dart_to_test = Dart(cmap, 0)
-        self.assertFalse(Mesh_analysis.isSplitOk(dart_to_test)[0])
+        self.assertEqual(Mesh_analysis.isSplitOk(dart_to_test), (False, False))
         dart_to_test = Dart(cmap, 2)
-        self.assertTrue(Mesh_analysis.isSplitOk(dart_to_test))
+        self.assertEqual(Mesh_analysis.isSplitOk(dart_to_test), (True, True))
 
     def test_isCollapseOk(self):
         nodes = [[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0], [2.0, 0.0]]
