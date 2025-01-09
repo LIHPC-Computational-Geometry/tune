@@ -6,7 +6,7 @@ import json
 from environment.gymnasium_envs.trimesh_flip_env import TriMeshEnvFlip
 import mesh_model.random_trimesh as TM
 from plots.mesh_plotter import dataset_plt
-from test_SB3_policy import testPolicy
+from exploit_SB3_policy import testPolicy
 from stable_baselines3 import PPO, SAC
 from stable_baselines3.common.env_checker import check_env
 from stable_baselines3.common.callbacks import BaseCallback
