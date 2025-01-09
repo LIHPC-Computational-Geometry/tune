@@ -140,6 +140,21 @@ class TestMeshAnalysis(unittest.TestCase):
         vect_BC = (-1.5, 3.0)
         self.assertTrue(Mesh_analysis.valid_triangle(vect_AB, vect_AC, vect_BC))
 
+    def test_isTruncated(self):
+        nodes = [[0.0, 0.0], [1.0, 0.0], [1.0, 1.0]]
+        faces = [[0, 1, 2]]
+        cmap = Mesh(nodes, faces)
+        darts_list = []
+        for d_info in cmap.active_darts():
+            darts_list.append(d_info[0])
+        self.assertTrue(Mesh_analysis.isTruncated(cmap, darts_list))
+        nodes = [[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0], [2.0, 0.0]]
+        faces = [[0, 1, 2], [0, 2, 3], [1, 4, 2]]
+        cmap = Mesh(nodes, faces)
+        darts_list = []
+        for d_info in cmap.active_darts():
+            darts_list.append(d_info[0])
+        self.assertFalse(Mesh_analysis.isTruncated(cmap, darts_list))
 
 if __name__ == '__main__':
     unittest.main()
