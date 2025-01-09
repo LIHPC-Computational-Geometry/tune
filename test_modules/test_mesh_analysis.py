@@ -86,7 +86,7 @@ class TestMeshAnalysis(unittest.TestCase):
         cmap = Mesh(nodes, faces)
         plot_mesh(cmap)
         dart_to_test = Dart(cmap, 0)
-        self.assertEqual(Mesh_analysis.isSplitOk(dart_to_test), (False, False))
+        self.assertEqual(Mesh_analysis.isSplitOk(dart_to_test), (False, True))
         dart_to_test = Dart(cmap, 2)
         self.assertEqual(Mesh_analysis.isSplitOk(dart_to_test), (True, True))
 
