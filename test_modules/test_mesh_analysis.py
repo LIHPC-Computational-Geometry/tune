@@ -70,6 +70,14 @@ class TestMeshAnalysis(unittest.TestCase):
         self.assertEqual(Mesh_analysis.isValidAction(cmap, 0, 3), (False, True))
         self.assertEqual(Mesh_analysis.isValidAction(cmap, 2, 3), (False, False))
 
+        #All action test
+        self.assertEqual(Mesh_analysis.isValidAction(cmap, 0, 3), (False, True))
+        self.assertEqual(Mesh_analysis.isValidAction(cmap, 2, 3), (False, False))
+
+        #One action test
+        self.assertEqual(Mesh_analysis.isValidAction(cmap, 0, 4), (False, True))
+        self.assertEqual(Mesh_analysis.isValidAction(cmap, 2, 4), (True, True))
+
     def test_isFlipOk(self):
         nodes = [[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0], [2.0, 0.0]]
         faces = [[0, 1, 2], [0, 2, 3], [1, 4, 2]]
@@ -99,6 +107,23 @@ class TestMeshAnalysis(unittest.TestCase):
         self.assertFalse(Mesh_analysis.isCollapseOk(dart_to_test)[0])
         dart_to_test = Dart(cmap, 2)
         self.assertFalse(Mesh_analysis.isCollapseOk(dart_to_test)[0])
+
+    def test_valid_triangle(self):
+        # test Lmax invalid
+        vect_AB = (5.0, 0.0)
+        vect_AC = (2.5, 5.0)
+        vect_BC = (-2.5, 5.0)
+        self.assertFalse(Mesh_analysis.valid_triangle(vect_AB, vect_AC, vect_BC))
+        # test invalid angles
+        vect_AB = (3.0, 0.0)
+        vect_AC = (1.5, 0.05)
+        vect_BC = (-1.5, 0.05)
+        self.assertFalse(Mesh_analysis.valid_triangle(vect_AB, vect_AC, vect_BC))
+        # test valid triangle
+        vect_AB = (3.0, 0.0)
+        vect_AC = (1.5, 3.0)
+        vect_BC = (-1.5, 3.0)
+        self.assertTrue(Mesh_analysis.valid_triangle(vect_AB, vect_AC, vect_BC))
 
 
 if __name__ == '__main__':

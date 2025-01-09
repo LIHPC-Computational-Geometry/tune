@@ -446,7 +446,6 @@ def valid_faces_changes(faces: list[Face], n_id: int, new_x: float, new_y: float
     """
     Check the orientation of triangles adjacent to node n = Node(mesh, n_id) if the latter is moved to coordinates new_x, new_y.
     Also checks that no triangle will become flat
-    :param mesh: a mesh
     :param faces: adjacents faces to node of id n_id
     :param n_id: node id
     :param new_x: new x coordinate
@@ -488,7 +487,7 @@ def valid_triangle(vect_AB, vect_AC, vect_BC) -> bool:
 
     L_max = max(dist_AB, dist_AC, dist_BC)
 
-    if target_mesh_size/3*sqrt(2) < L_max < target_mesh_size*3*sqrt(2): #1.5
+    if target_mesh_size/3*sqrt(2) < L_max < target_mesh_size*3*sqrt(2): #4.24
         pass
     else:
         return False
@@ -498,7 +497,7 @@ def valid_triangle(vect_AB, vect_AC, vect_BC) -> bool:
     angle_C = degrees(angle_from_sides(dist_AB, dist_BC, dist_AC))  # Angle au point B
     angle_A = degrees(angle_from_sides(dist_BC, dist_AC, dist_AB))  # Angle au point C
 
-    # Vérification que tous les angles sont supérieurs à 5°
+    # Vérification que tous les angles sont supérieurs à 2°
     if angle_A <= 2 or angle_B <= 2 or angle_C <= 2:
         return False
     return True
