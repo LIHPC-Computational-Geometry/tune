@@ -10,7 +10,7 @@ def global_score(m: Mesh):
     Calculate the overall mesh score. The mesh cannot achieve a better score than the ideal one.
     And the current score is the mesh score.
     :param m: the mesh to be analyzed
-    :return: three return values: a list of the nodes score, the current mesh score and the ideal mesh score, and the adjacency
+    :return: 4 return: a list of the nodes score, the current mesh score and the ideal mesh score, and the adjacency
     """
     mesh_ideal_score = 0
     mesh_score = 0
@@ -228,6 +228,7 @@ def isValidAction(mesh: Mesh, dart_id: int, action: int) -> (bool, bool):
     split = 1
     collapse = 2
     test_all = 3
+    one_valid = 4
     d = Dart(mesh, dart_id)
     boundary_darts = get_boundary_darts(mesh)
     if d in boundary_darts:
@@ -239,7 +240,28 @@ def isValidAction(mesh: Mesh, dart_id: int, action: int) -> (bool, bool):
     elif action == collapse:
         return isCollapseOk(d)
     elif action == test_all:
-        return isFlipOk(d) and isCollapseOk(d) and isSplitOk(d)
+        topo, geo = isFlipOk(d)
+        if not (topo and geo):
+            return False, False
+        topo, geo = isSplitOk(d)
+        if not (topo and geo):
+            return False, False
+        topo, geo = isCollapseOk(d)
+        if not (topo and geo):
+            return False, False
+        elif topo and geo:
+            return True, True
+    elif action == one_valid:
+        topo_flip, geo_flip = isFlipOk(d)
+        if (topo_flip and geo_flip):
+            return True, True
+        topo_split, geo_split = isSplitOk(d)
+        if (topo_split and geo_split):
+            return True, True
+        topo_collapse, geo_collapse = isCollapseOk(d)
+        if (topo_collapse and geo_collapse):
+            return True, True
+        return False, False
     else:
         raise ValueError("No valid action")
 
@@ -505,8 +527,7 @@ def test_degree(n: Node) -> bool:
         return True
 
 
-def isTruncated(m: Mesh, obs)-> bool:
-    darts_list = obs["darts_list"]
+def isTruncated(m: Mesh, darts_list)-> bool:
     for d_id in darts_list:
         d = Dart(m, d_id)
         if isFlipOk(d) or isSplitOk(d) or isCollapseOk(d):

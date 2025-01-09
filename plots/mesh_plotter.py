@@ -59,3 +59,24 @@ def plot_dataset(dataset: list[Mesh]) -> None:
         plt.title('Mesh {}'.format(i))
     plt.tight_layout()
     plt.show()
+
+def dataset_plt(dataset: list[Mesh]):
+    """
+    Plot all the meshes of a dataset with subplot.
+    :param dataset: a list with all the meshes
+    """
+    nb_mesh = len(dataset)
+    sqrt_mesh = np.sqrt(nb_mesh)
+    if float(sqrt_mesh).is_integer():
+        nb_lines = int(sqrt_mesh)
+        nb_columns = int(sqrt_mesh)
+    else:
+        nb_lines = round(sqrt_mesh)
+        nb_columns = int(sqrt_mesh) +1
+    fig, _ = plt.subplots(nb_lines, nb_columns)
+    for i, mesh in enumerate(dataset, 1):
+        plt.subplot(nb_lines, nb_columns, i)
+        subplot_mesh(mesh)
+        plt.title('Mesh {}'.format(i))
+    plt.tight_layout()
+    return fig

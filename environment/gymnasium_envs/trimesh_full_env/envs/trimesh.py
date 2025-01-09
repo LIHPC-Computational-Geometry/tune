@@ -7,7 +7,7 @@ import numpy as np
 from mesh_model.random_trimesh import random_mesh
 from mesh_model.mesh_struct.mesh_elements import Dart
 from mesh_model.mesh_analysis import global_score, isTruncated
-from environment.gymnasium_envs.trimesh_full_env.envs.mesh_conv import get_x_level_2_deg
+from environment.gymnasium_envs.trimesh_full_env.envs.mesh_conv import get_x
 from actions.triangular_actions import flip_edge, split_edge, collapse_edge
 
 from view.window import Game
@@ -23,26 +23,27 @@ class Actions(Enum):
 class TriMeshEnvFull(gym.Env):
     metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 60}
 
-    def __init__(self, mesh=None, mesh_size=12, render_mode=None, size=5):
+    def __init__(self, mesh=None, mesh_size=16, n_darts_selected=20, deep=6, with_degree_obs=True, action_restriction=False, render_mode=None):
         self.mesh = mesh if mesh is not None else random_mesh(mesh_size)
         self.mesh_size = len(self.mesh.nodes)
         self.nb_darts = len(self.mesh.dart_info)
-        self._nodes_scores, self._mesh_score, self._ideal_score, _ = global_score(self.mesh)
-        self.deep = 6
-        self.n_darts_selected = 20  # actions restricted to 20 darts
+        self._nodes_scores, self._mesh_score, self._ideal_score, self._nodes_adjacency = global_score(self.mesh)
+        self._ideal_rewards = (self._mesh_score - self._ideal_score)*10
+        self.next_mesh_score = 0
+        self.deep = deep
+        self.n_darts_selected = n_darts_selected
+        self.restricted = action_restriction
+        self.degree_observation = with_degree_obs
         self.window_size = 512  # The size of the PyGame window
         self.g = None
         self.nb_invalid_actions = 0
-
-        self.observation_space = spaces.Dict(
-            {
-                "irregularities": spaces.Box(-15, 15, shape=(self.n_darts_selected, self.deep*2), dtype=int), # nodes max degree : 15
-                "darts_list": spaces.Box( 0, self.nb_darts*2, shape=(self.n_darts_selected,), dtype=int),
-            }
-        )
+        self.darts_selected = [] # darts id observed
+        deep = self.deep*2 if self.degree_observation else deep
+        self.observation_space = spaces.Box(-15, 15, shape=(self.n_darts_selected, self.deep*2 if self.degree_observation else self.deep), dtype=np.int64) # nodes max degree : 15
         self.observation = None
+
         # We have 3 action, flip, split, collapse
-        self.action_space = spaces.Box(low=0, high=np.array([3,self.n_darts_selected-1]), dtype=np.int64)
+        self.action_space = spaces.MultiDiscrete([3, self.n_darts_selected])
 
         assert render_mode is None or render_mode in self.metadata["render_modes"]
         self.render_mode = render_mode
@@ -65,11 +66,12 @@ class TriMeshEnvFull(gym.Env):
         else:
             self.mesh = random_mesh(self.mesh_size)
         self.nb_darts = len(self.mesh.dart_info)
-        self._nodes_scores, self._mesh_score, self._ideal_score, _ = global_score(self.mesh)
+        self._nodes_scores, self._mesh_score, self._ideal_score, self._nodes_adjacency = global_score(self.mesh)
+        self._ideal_rewards = (self._mesh_score - self._ideal_score) * 10
         self.nb_invalid_actions = 0
         self.close()
         self.observation = self._get_obs()
-        info = self._get_info(terminated=False,valid_act=(None,None,None))
+        info = self._get_info(terminated=False,valid_act=(None,None,None), action=(None,None), mesh_reward=None)
 
         if self.render_mode == "human":
             self._render_frame()
@@ -78,26 +80,38 @@ class TriMeshEnvFull(gym.Env):
 
 
     def _get_obs(self):
-        irregularities, darts_list = get_x_level_2_deg(self.mesh)
-        return {"irregularities": irregularities, "darts_list": darts_list}
+        irregularities, darts_list = get_x(self.mesh, self.n_darts_selected, self.deep, self.degree_observation, self.restricted, self._nodes_scores, self._nodes_adjacency)
+        self.darts_selected = darts_list
+        return irregularities
 
-    def _get_info(self, terminated, valid_act):
+    def _get_info(self, terminated, valid_act, action, mesh_reward):
         valid_action, valid_topo, valid_geo = valid_act
         return {
             "distance": self._mesh_score - self._ideal_score,
+            "mesh_reward" : mesh_reward,
+            "mesh_ideal_rewards" : self._ideal_rewards,
             "is_success": 1.0 if terminated else 0.0,
             "valid_action": 1.0 if valid_action else 0.0,
             "invalid_topo": 1.0 if not valid_topo else 0.0,
             "invalid_geo": 1.0 if  not valid_geo else 0.0,
+            "flip": 1.0 if action[0]==Actions.FLIP.value else 0.0,
+            "split": 1.0 if action[0]==Actions.SPLIT.value else 0.0,
+            "collapse": 1.0 if action[0]==Actions.COLLAPSE.value else 0.0,
+            "invalid_flip": 1.0 if action[0]==Actions.FLIP.value and not valid_action else 0.0,
+            "invalid_split": 1.0 if action[0]==Actions.SPLIT.value and not valid_action else 0.0,
+            "invalid_collapse": 1.0 if action[0]==Actions.COLLAPSE.value and not valid_action else 0.0,
             "mesh" : self.mesh,
         }
 
-    def _action_to_dart_id(self, action):
-        obs = self.observation
-        darts_list = obs["darts_list"]
-        return darts_list[int(action[1])]
+    def _action_to_dart_id(self, action: np.ndarray) -> int:
+        """
+        Converts an action ID into the dart ID on which to perform the action
+        :param action: action ID
+        :return: the dart ID on which to perform the action
+        """
+        return self.darts_selected[int(action[1])]
 
-    def step(self, action):
+    def step(self, action: np.ndarray):
         dart_id = self._action_to_dart_id(action)
         d = Dart(self.mesh, dart_id)
         d1 = d.get_beta(1)
@@ -111,30 +125,36 @@ class TriMeshEnvFull(gym.Env):
             valid_action, valid_topo, valid_geo = split_edge(self.mesh, n1, n2)
         elif action[0] == Actions.COLLAPSE.value:
             valid_action, valid_topo, valid_geo = collapse_edge(self.mesh, n1, n2)
+        else:
+            raise ValueError("Action not defined")
 
         if valid_action:
             # An episode is done if the actual score is the same as the ideal
-            next_nodes_score, next_mesh_score, _, _ = global_score(self.mesh)
-            terminated = np.array_equal(self._ideal_score, next_mesh_score)
-            reward = (self._mesh_score - next_mesh_score)*10
-            self._nodes_scores, self._mesh_score = next_nodes_score, next_mesh_score
+            next_nodes_score, self.next_mesh_score, _, next_nodes_adjacency = global_score(self.mesh)
+            terminated = np.array_equal(self._ideal_score, self.next_mesh_score)
+            mesh_reward = (self._mesh_score - self.next_mesh_score)*10
+            reward = mesh_reward
+            self._nodes_scores, self._mesh_score, self._nodes_adjacency = next_nodes_score, self.next_mesh_score, next_nodes_adjacency
             self.observation = self._get_obs()
+            self.nb_invalid_actions = 0
         elif not valid_topo:
-            reward = -1
+            reward = -10
+            mesh_reward = 0
             terminated = False
             self.nb_invalid_actions += 1
         elif not valid_geo:
+            mesh_reward = 0
             terminated = False
             reward = 0
             self.nb_invalid_actions += 1
         else:
             raise ValueError("Invalid action")
         if self.nb_invalid_actions > 10 :
-            truncated = isTruncated(self.mesh, self.observation)
+            truncated = isTruncated(self.mesh, self.darts_selected)
         else:
             truncated = False
         valid_act = valid_action, valid_topo, valid_geo
-        info = self._get_info(terminated, valid_act)
+        info = self._get_info(terminated, valid_act, action, mesh_reward)
 
         if self.render_mode == "human":
             self._render_frame()
@@ -142,7 +162,7 @@ class TriMeshEnvFull(gym.Env):
         return self.observation, reward, terminated, truncated, info
 
     def render(self):
-        if self.render_mode == "human": #ou rgb par défaut
+        if self.render_mode == "human":
             return self._render_frame()
 
     def _render_frame(self):

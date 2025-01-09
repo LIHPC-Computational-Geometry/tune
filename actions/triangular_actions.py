@@ -16,7 +16,7 @@ def flip_edge(mesh: Mesh, n1: Node, n2: Node) -> True:
         if not geo or not topo:
             return False, topo, geo
     else:
-        return False, True, False
+        return False, False, False
 
     d2, d1, d11, d21, d211, n1, n2, n3, n4 = mesh.active_triangles(d)
 
@@ -100,7 +100,7 @@ def collapse_edge(mesh: Mesh, n1: Node, n2: Node) -> True:
         if not geo or not topo:
             return False, topo, geo
     else:
-        return False, True, False
+        return False, False, False
 
     _, d1, d11, d21, d211, n1, n2, _, _ = mesh.active_triangles(d)
 

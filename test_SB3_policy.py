@@ -1,7 +1,9 @@
 from numpy import ndarray
 
 import gymnasium as gym
+import json
 
+from environment.gymnasium_envs.trimesh_flip_env import TriMeshEnvFlip
 from environment.gymnasium_envs.trimesh_full_env import TriMeshEnvFull
 from stable_baselines3 import PPO
 from mesh_model.mesh_analysis import global_score
@@ -17,8 +19,9 @@ from tqdm import tqdm
 def testPolicy(
         model,
         n_eval_episodes: int,
+        env_config,
         dataset: list[Mesh]
-) -> tuple[ndarray, ndarray, ndarray, list[Mesh]]:
+) -> tuple[ndarray, ndarray, ndarray, ndarray, list[Mesh]]:
     """
     Tests policy on each mesh of a dataset with n_eval_episodes.
     :param policy: the policy to test
@@ -29,16 +32,24 @@ def testPolicy(
     """
     print('Testing policy')
     avg_length = np.zeros(len(dataset))
-    avg_rewards = np.zeros(len(dataset))
+    avg_mesh_rewards = np.zeros(len(dataset))
+    avg_normalized_return = np.zeros(len(dataset))
     nb_wins = np.zeros(len(dataset))
     final_meshes = []
     for i, mesh in tqdm(enumerate(dataset, 1)):
-        best_mesh = None
-        env = gym.make("TrimeshFull-v0", mesh=mesh, max_episode_steps=200)
+        best_mesh = mesh
+        env = gym.make(
+            env_config["env_name"],
+            max_episode_steps=30,
+            n_darts_selected=env_config["n_darts_selected"],
+            deep= env_config["deep"],
+            action_restriction=env_config["action_restriction"],
+            with_degree_obs=env_config["with_degree_observation"]
+        )
         for _ in range(n_eval_episodes):
             terminated = False
             truncated = False
-            ep_rewards: int = 0
+            ep_mesh_rewards: int = 0
             ep_length: int = 0
             obs, info = env.reset(options={"mesh": mesh})
             while terminated == False and truncated == False:
@@ -47,18 +58,20 @@ def testPolicy(
                     env.terminal = True
                     break
                 obs, reward, terminated, truncated, info = env.step(action)
-                ep_rewards += reward
+                ep_mesh_rewards += info['mesh_reward']
                 ep_length += 1
             if terminated:
                 nb_wins[i-1] += 1
             if isBetterMesh(best_mesh, info['mesh']):
                 best_mesh = copy.deepcopy(info['mesh'])
             avg_length[i-1] += ep_length
-            avg_rewards[i-1] += ep_rewards
+            avg_mesh_rewards[i-1] += ep_mesh_rewards
+            avg_normalized_return[i-1] += ep_mesh_rewards/info['mesh_ideal_rewards']
         final_meshes.append(best_mesh)
         avg_length[i-1] = avg_length[i-1]/n_eval_episodes
-        avg_rewards[i-1] = avg_rewards[i-1]/n_eval_episodes
-    return avg_length, nb_wins, avg_rewards, final_meshes
+        avg_mesh_rewards[i-1] = avg_mesh_rewards[i-1]/n_eval_episodes
+        avg_normalized_return[i-1] = avg_normalized_return[i-1]/n_eval_episodes
+    return avg_length, nb_wins, avg_mesh_rewards, avg_normalized_return, final_meshes
 
 
 def isBetterPolicy(actual_best_policy, policy_to_test):
@@ -73,9 +86,11 @@ def isBetterMesh(best_mesh, actual_mesh):
 
 
 dataset = [TM.random_mesh(30) for _ in range(9)]
+with open("environment/parameters/environment_config.json", "r") as f:
+    env_config = json.load(f)
 plot_dataset(dataset)
-model = PPO.load("ppo_trimesh_v5_p2")
-avg_steps, avg_wins, avg_rewards, final_meshes = testPolicy(model, 10, dataset)
+model = PPO.load("policy_saved/final-2.zip")
+avg_steps, avg_wins, avg_rewards, avg_normalized_return, final_meshes = testPolicy(model, 5, env_config, dataset)
 
-plot_test_results(avg_rewards, avg_wins, avg_steps)
+plot_test_results(avg_rewards, avg_wins, avg_steps, avg_normalized_return)
 plot_dataset(final_meshes)
