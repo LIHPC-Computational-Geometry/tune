@@ -326,7 +326,7 @@ def isSplitOk(d: Dart) -> (bool, bool):
     else:
         _, _, _, _, _, A, B, C, D = mesh.active_triangles(d)
 
-    if not test_degree(A) or not test_degree(B):
+    if not test_degree(C) or not test_degree(D):
         topo = False
         return topo, geo
 
@@ -487,7 +487,7 @@ def valid_triangle(vect_AB, vect_AC, vect_BC) -> bool:
 
     L_max = max(dist_AB, dist_AC, dist_BC)
 
-    if target_mesh_size/3*sqrt(2) < L_max < target_mesh_size*3*sqrt(2): #4.24
+    if target_mesh_size/2*sqrt(2) < L_max and L_max < target_mesh_size*3*sqrt(2): # 0.35<Lmax<4.24
         pass
     else:
         return False
@@ -497,8 +497,8 @@ def valid_triangle(vect_AB, vect_AC, vect_BC) -> bool:
     angle_C = degrees(angle_from_sides(dist_AB, dist_BC, dist_AC))  # Angle au point B
     angle_A = degrees(angle_from_sides(dist_BC, dist_AC, dist_AB))  # Angle au point C
 
-    # Vérification que tous les angles sont supérieurs à 2°
-    if angle_A <= 2 or angle_B <= 2 or angle_C <= 2:
+    # Vérification que tous les angles sont supérieurs à 5°
+    if angle_A <= 5 or angle_B <= 5 or angle_C <= 5:
         return False
     return True
 
@@ -520,7 +520,7 @@ def test_degree(n: Node) -> bool:
     :param n: a Node
     :return: True if the degree is lower than 10, False otherwise
     """
-    if degree(n) > 12:
+    if degree(n) > 10:
         return False
     else:
         return True
