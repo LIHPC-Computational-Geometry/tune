@@ -528,7 +528,6 @@ def test_degree(n: Node) -> bool:
 
 def isTruncated(m: Mesh, darts_list)-> bool:
     for d_id in darts_list:
-        d = Dart(m, d_id)
         if isValidAction(m, d_id, 4)[0]:
             return False
     return True

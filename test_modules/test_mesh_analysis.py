@@ -87,10 +87,12 @@ class TestMeshAnalysis(unittest.TestCase):
 
         #All action test
         self.assertEqual(Mesh_analysis.isValidAction(cmap, 2, 3), (False, False))
+        self.assertEqual(Mesh_analysis.isValidAction(cmap, 26, 3), (False, False))
         self.assertEqual(Mesh_analysis.isValidAction(cmap, 9, 3), (True, True))
 
         #One action test
         self.assertEqual(Mesh_analysis.isValidAction(cmap, 0, 4), (True, True))
+        self.assertEqual(Mesh_analysis.isValidAction(cmap, 9, 4), (True, True))
         self.assertEqual(Mesh_analysis.isValidAction(cmap, 94, 4), (False, False))
 
     def test_isFlipOk(self):

@@ -60,6 +60,7 @@ def plot_dataset(dataset: list[Mesh]) -> None:
     plt.tight_layout()
     plt.show()
 
+
 def dataset_plt(dataset: list[Mesh]):
     """
     Plot all the meshes of a dataset with subplot.
