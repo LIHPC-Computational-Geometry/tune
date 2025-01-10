@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from mesh_model.mesh_struct.mesh import Mesh
 from mesh_model.mesh_struct.mesh_elements import Dart, Node
-from mesh_model.mesh_analysis import isFlipOk, isCollapseOk, adjacent_darts, isSplitOk
+from mesh_model.mesh_analysis import isFlipOk, isCollapseOk, isSplitOk
 
 
 def flip_edge_ids(mesh: Mesh, id1: int, id2: int) -> True:
@@ -11,9 +11,12 @@ def flip_edge_ids(mesh: Mesh, id1: int, id2: int) -> True:
 
 def flip_edge(mesh: Mesh, n1: Node, n2: Node) -> True:
     found, d = mesh.find_inner_edge(n1, n2)
-
-    if not found or not isFlipOk(d):
-        return False
+    if found:
+        topo, geo = isFlipOk(d)
+        if not geo or not topo:
+            return False, topo, geo
+    else:
+        return False, False, False
 
     d2, d1, d11, d21, d211, n1, n2, n3, n4 = mesh.active_triangles(d)
 
@@ -42,7 +45,7 @@ def flip_edge(mesh: Mesh, n1: Node, n2: Node) -> True:
     d2.set_node(n4)
     d211.set_face(f1)
     d11.set_face(f2)
-    return True
+    return True, topo, geo
 
 
 def split_edge_ids(mesh: Mesh, id1: int, id2: int) -> True:
@@ -51,8 +54,13 @@ def split_edge_ids(mesh: Mesh, id1: int, id2: int) -> True:
 
 def split_edge(mesh: Mesh, n1: Node, n2: Node) -> True:
     found, d = mesh.find_inner_edge(n1, n2)
-    if not found or not isSplitOk(d):
-        return False
+
+    if found:
+        topo, geo = isSplitOk(d)
+        if not geo or not topo:
+            return False, topo, geo
+    else:
+        return False, True, False
 
     d2, d1, _, d21, _, n1, n2, n3, n4 = mesh.active_triangles(d)
 
@@ -78,7 +86,7 @@ def split_edge(mesh: Mesh, n1: Node, n2: Node) -> True:
     db2 = d.get_beta(2)
     db21 = db2.get_beta(1)
     mesh.set_beta2(db21)
-    return True
+    return True, topo, geo
 
 
 def collapse_edge_ids(mesh: Mesh, id1: int, id2: int) -> True:
@@ -87,9 +95,12 @@ def collapse_edge_ids(mesh: Mesh, id1: int, id2: int) -> True:
 
 def collapse_edge(mesh: Mesh, n1: Node, n2: Node) -> True:
     found, d = mesh.find_inner_edge(n1, n2)
-
-    if not found or not isCollapseOk(d):
-        return False
+    if found:
+        topo, geo = isCollapseOk(d)
+        if not geo or not topo:
+            return False, topo, geo
+    else:
+        return False, False, False
 
     _, d1, d11, d21, d211, n1, n2, _, _ = mesh.active_triangles(d)
 
@@ -145,7 +156,7 @@ def collapse_edge(mesh: Mesh, n1: Node, n2: Node) -> True:
     #delete n2 node
     mesh.del_node(n2)
 
-    return mesh_check(mesh)
+    return mesh_check(mesh), topo, geo
 
 
 def check_beta2_relation(mesh: Mesh) -> bool:
