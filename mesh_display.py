@@ -35,5 +35,5 @@ class MeshDisplay:
         Calculates the irregularities of each node and the real and ideal score of the mesh
         :return: a list of three elements (nodes_score, mesh_score, ideal_mesh_score)
         """
-        nodes_score, mesh_score, ideal_mesh_score = global_score(self.mesh)
+        nodes_score, mesh_score, ideal_mesh_score, adjacency = global_score(self.mesh)
         return [nodes_score, mesh_score, ideal_mesh_score]

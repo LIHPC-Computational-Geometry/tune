@@ -69,7 +69,7 @@ class TriMeshEnvFull(gym.Env):
         # We need the following line to seed self.np_random
         super().reset(seed=seed)
         if options is not None:
-            self.mesh = options.get("mesh", self.mesh)
+            self.mesh = options['mesh']
         else:
             self.mesh = random_mesh(self.mesh_size)
         self.nb_darts = len(self.mesh.dart_info)
