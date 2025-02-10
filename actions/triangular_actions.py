@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from mesh_model.mesh_struct.mesh import Mesh
 from mesh_model.mesh_struct.mesh_elements import Dart, Node
-from mesh_model.mesh_analysis import isFlipOk, isCollapseOk, isSplitOk
+from mesh_model.mesh_analysis.mesh_analysis import mesh_check
+from mesh_model.mesh_analysis.trimesh_analysis import isFlipOk, isCollapseOk, isSplitOk
 
 
 def flip_edge_ids(mesh: Mesh, id1: int, id2: int) -> True:
@@ -78,11 +79,11 @@ def split_edge(mesh: Mesh, n1: Node, n2: Node) -> True:
     F4 = mesh.add_triangle(N5, n1, n4)
 
     # update beta2 relations
-    mesh.set_face_beta2(F3, (d1, d2))
+    mesh.set_face_beta2(F3, [d1, d2])
     d2b2 = d2.get_beta(2)
     d2b21 = d2b2.get_beta(1)
     mesh.set_beta2(d2b21)
-    mesh.set_face_beta2(F4, (d, d21))
+    mesh.set_face_beta2(F4, [d, d21])
     db2 = d.get_beta(2)
     db21 = db2.get_beta(1)
     mesh.set_beta2(db21)
@@ -157,45 +158,3 @@ def collapse_edge(mesh: Mesh, n1: Node, n2: Node) -> True:
     mesh.del_node(n2)
 
     return mesh_check(mesh), topo, geo
-
-
-def check_beta2_relation(mesh: Mesh) -> bool:
-    for dart_info in mesh.active_darts():
-        d = dart_info[0]
-        d2 = dart_info[2]
-        if d2 >= 0 and mesh.dart_info[d2, 0] < 0:
-            raise ValueError("error beta2")
-        elif d2 >= 0 and mesh.dart_info[d2, 2] != d:
-            raise ValueError("error beta2")
-    return True
-
-
-def check_double(mesh: Mesh) -> bool:
-    for dart_info in mesh.active_darts():
-        d = Dart(mesh, dart_info[0])
-        d2 = Dart(mesh, dart_info[2]) if dart_info[2] >= 0 else None
-        n1 = dart_info[3]
-        if d2 is None:
-            d1 = d.get_beta(1)
-            n2 = d1.get_node().id
-        else:
-            n2 = d2.get_node().id
-        for dart_info2 in mesh.active_darts():
-            ds = Dart(mesh, dart_info2[0])
-            ds2 = Dart(mesh, dart_info2[2]) if dart_info2[2] >= 0 else None
-            if d != ds and d != ds2:
-                ns1 = dart_info2[3]
-                if ds2 is None:
-                    ds1 = ds.get_beta(1)
-                    ns2 = ds1.get_node().id
-                else:
-                    ns2 = ds2.get_node().id
-
-                if n1 == ns1 and n2 == ns2:
-                    raise ValueError("double error")
-                elif n2 == ns1 and n1 == ns2:
-                    return False
-    return True
-
-def mesh_check(mesh: Mesh) -> bool:
-    return check_double(mesh) and check_beta2_relation(mesh)

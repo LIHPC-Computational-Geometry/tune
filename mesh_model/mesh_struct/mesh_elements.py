@@ -123,7 +123,7 @@ class Node:
     def set_dart(self, dart: Dart) -> None:
         """
         Update the dart value associated with this node
-        :param dart_index: the index of the dart in self.mesh_struct
+        :param dart: the dart to be associated to the node
         """
         if dart is None:
             raise ValueError("Try to connect a node to a non-existing dart")
@@ -225,7 +225,7 @@ class Face:
             raise ValueError("Try to connect a face to a non-existing dart")
         self.mesh.faces[self.id] = d.id
 
-    def get_surrounding(self) -> [Dart, Dart, Dart, Node, Node, Node]:
+    def get_surrounding_triangle(self) -> [Dart, Dart, Dart, Node, Node, Node]:
         d = self.get_dart()
         d1 = d.get_beta(1)
         d11 = d1.get_beta(1)

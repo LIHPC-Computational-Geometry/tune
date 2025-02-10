@@ -3,7 +3,7 @@
     "mesh_size": 16,
     "max_episode_steps": 30,
     "n_darts_selected": 20,
-    "deep": 3,
+    "deep": 6,
     "action_restriction": false,
     "with_degree_observation": false
 }

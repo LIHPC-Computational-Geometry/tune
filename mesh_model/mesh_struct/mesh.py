@@ -194,6 +194,15 @@ class Mesh:
 
         return quad
 
+    def del_quad(self, d1: Dart, d2: Dart, d3: Dart, d4: Dart, f: Face) -> None:
+        self.del_dart(d1)
+        self.del_dart(d2)
+        self.del_dart(d3)
+        self.del_dart(d4)
+
+        self.faces[f.id] = -self.first_free_face - 1
+        self.first_free_face = f.id
+
     def set_twin_pointers(self) -> None:
         """
         This function search for the inner darts to connect and connect them with beta2.
@@ -248,11 +257,12 @@ class Mesh:
             nf_end = df_current.get_beta(1).get_node()
 
             for d in darts:
-                nd_start = d.get_node()
-                nd_end = d.get_beta(1).get_node()
-                if nf_start == nd_end and nf_end == nd_start:
-                    d.set_beta(2, df_current)
-                    df_current.set_beta(2, d)
+                if d is not None:
+                    nd_start = d.get_node()
+                    nd_end = d.get_beta(1).get_node()
+                    if nf_start == nd_end and nf_end == nd_start:
+                        d.set_beta(2, df_current)
+                        df_current.set_beta(2, d)
 
             df_current = df_current.get_beta(1)
             end = (df_current.id == f.get_dart().id)
@@ -330,4 +340,54 @@ class Mesh:
 
         return d2, d1, d11, d21, d211, n1, n2, n3, n4
 
+    def active_quadrangles(self, d: Dart) -> tuple[Dart, Dart, Dart, Dart, Dart, Dart, Dart, Node, Node, Node, Node, Node, Node]:
+        """
+        Return the darts and nodes around selected dart
+        :param mesh: the mesh
+        :param d: selected dart
+        :return: a tuple of darts and nodes
+        """
+        d2 = d.get_beta(2)
+        d1 = d.get_beta(1)
+        d11 = d1.get_beta(1)
+        d111 = d11.get_beta(1)
+        d21 = d2.get_beta(1)
+        d211 = d21.get_beta(1)
+        d2111 = d211.get_beta(1)
+        n1 = d.get_node()
+        n2 = d2.get_node()
+        n3 = d11.get_node()
+        n4 = d111.get_node()
+        n5 = d211.get_node()
+        n6 = d2111.get_node()
 
+        return d2, d1, d11, d111, d21, d211, d2111, n1, n2, n3, n4, n5, n6
+
+    def find_parallel_darts(self, d: Dart) -> list[Dart]:
+        parallel_darts = []
+        dp = d
+        #sens 1
+        while dp is not None:
+            dp2 = dp.get_beta(2)
+            if dp2 is None:
+                dp = None
+            else:
+                dp21 = dp2.get_beta(1)
+                dp = dp21.get_beta(1)
+                if dp not in parallel_darts :
+                    parallel_darts.append(dp)
+                else:
+                    dp = None
+
+        #sens 2
+        dp = d
+        while dp is not None:
+            if dp not in parallel_darts :
+                parallel_darts.append(dp)
+                dp1 = dp.get_beta(1)
+                dp11 = dp1.get_beta(1)
+                dp = dp11.get_beta(2)
+            else :
+                dp = None
+
+        return parallel_darts

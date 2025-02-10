@@ -153,7 +153,8 @@ model = PPO(
     verbose=ppo_config["verbose"],
     tensorboard_log=log_dir
 )
+
 print("-----------Starting learning-----------")
 model.learn(total_timesteps=ppo_config["total_timesteps"], callback=TensorboardCallback(model))
 print("-----------Learning ended------------")
-model.save("final-2")
+model.save("policy_saved/final/final-PPO-4")

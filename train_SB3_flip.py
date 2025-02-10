@@ -83,7 +83,7 @@ class TensorboardCallback(BaseCallback):
 
     def _on_training_end(self) -> None:
         """
-        Records policy evaluation results : before and after dataset images
+        Records policy evaluation trimesh_results : before and after dataset images
         """
         dataset = [TM.random_mesh(30) for _ in range(9)]  # dataset of 9 meshes of size 30
         before = dataset_plt(dataset)  # plot the datasat as image
