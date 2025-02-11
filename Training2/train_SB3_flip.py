@@ -94,9 +94,9 @@ class TensorboardCallback(BaseCallback):
         self.logger.dump(step=0)
 
 
-with open("model_RL/parameters/ppo_config.json", "r") as f:
+with open("../model_RL/parameters/ppo_config.json", "r") as f:
     ppo_config = json.load(f)
-with open("environment/parameters/environment_config.json", "r") as f:
+with open("../environment/parameters/environment_config.json", "r") as f:
     env_config = json.load(f)
 
 # Create log dir

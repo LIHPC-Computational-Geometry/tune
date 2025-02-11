@@ -6,7 +6,7 @@ import numpy as np
 
 from mesh_model.random_trimesh import random_mesh
 from mesh_model.mesh_struct.mesh_elements import Dart
-from mesh_model.mesh_analysis import global_score, isTruncated
+from mesh_model.mesh_analysis.trimesh_analysis import global_score, isTruncated
 from environment.gymnasium_envs.trimesh_full_env.envs.mesh_conv import get_x
 from actions.triangular_actions import flip_edge, split_edge, collapse_edge
 

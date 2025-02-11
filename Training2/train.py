@@ -35,7 +35,7 @@ def train():
     if rewards is not None:
         plot_training_results(rewards, wins, steps)
 
-    torch.save(actor.state_dict(), 'policy_saved/actor_network.pth')
+    torch.save(actor.state_dict(), '../policy_saved/actor_network.pth')
     avg_steps, avg_wins, avg_rewards, final_meshes = testPolicy(actor, 5, dataset, 60)
 
     if rewards is not None:

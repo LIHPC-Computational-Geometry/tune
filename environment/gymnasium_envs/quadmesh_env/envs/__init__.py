@@ -1,1 +1,1 @@
-from environment.gymnasium_envs.trimesh_full_env.envs.trimesh import TriMeshEnvFull
+from environment.gymnasium_envs.quadmesh_env.envs.quadmesh import QuadMeshEnv

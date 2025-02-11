@@ -3,8 +3,9 @@ from __future__ import annotations
 import os
 import json
 
-from environment.gymnasium_envs.trimesh_full_env import TriMeshEnvFull
-import mesh_model.random_trimesh as TM
+
+import mesh_model.random_quadmesh as QM
+from environment.gymnasium_envs.quadmesh_env import QuadMeshEnv
 from plots.mesh_plotter import dataset_plt
 from exploit_SB3_policy import testPolicy
 from stable_baselines3 import PPO,SAC
@@ -33,9 +34,11 @@ class TensorboardCallback(BaseCallback):
             "nb_flip" : 0,
             "nb_split": 0,
             "nb_collapse": 0,
+            "nb_cleanup": 0,
             "nb_invalid_flip": 0,
             "nb_invalid_split": 0,
             "nb_invalid_collapse": 0,
+            "nb_invalid_cleanup": 0,
         }
         self.final_distance = 0
         self.normalized_return = 0
@@ -61,9 +64,11 @@ class TensorboardCallback(BaseCallback):
         self.actions_info["nb_flip"] += self.locals["infos"][0].get("flip", 0.0)
         self.actions_info["nb_split"] += self.locals["infos"][0].get("split", 0.0)
         self.actions_info["nb_collapse"] += self.locals["infos"][0].get("collapse", 0.0)
+        self.actions_info["nb_cleanup"] += self.locals["infos"][0].get("cleanup", 0.0)
         self.actions_info["nb_invalid_flip"] += self.locals["infos"][0].get("invalid_flip", 0.0)
         self.actions_info["nb_invalid_split"] += self.locals["infos"][0].get("invalid_split", 0.0)
         self.actions_info["nb_invalid_collapse"] += self.locals["infos"][0].get("invalid_collapse", 0.0)
+        self.actions_info["nb_invalid_cleanup"] += self.locals["infos"][0].get("invalid_cleanup", 0.0)
 
         self.mesh_reward += self.locals["infos"][0].get("mesh_reward", 0.0)
 
@@ -84,10 +89,11 @@ class TensorboardCallback(BaseCallback):
             self.logger.record("nb_flip", self.actions_info["nb_flip"])
             self.logger.record("nb_split", self.actions_info["nb_split"])
             self.logger.record("nb_collapse", self.actions_info["nb_collapse"])
+            self.logger.record("nb_cleanup", self.actions_info["nb_cleanup"])
             self.logger.record("invalid_flip", self.actions_info["nb_invalid_flip"]*100/self.actions_info["nb_flip"] if self.actions_info["nb_flip"] > 0 else 0)
             self.logger.record("invalid_split", self.actions_info["nb_invalid_split"]*100/self.actions_info["nb_split"] if self.actions_info["nb_split"] > 0 else 0)
             self.logger.record("invalid_collapse", self.actions_info["nb_invalid_collapse"]*100/self.actions_info["nb_collapse"]if self.actions_info["nb_collapse"] > 0 else 0)
-
+            self.logger.record("invalid_cleanup", self.actions_info["nb_invalid_cleanup"]*100/self.actions_info["nb_cleanup"]if self.actions_info["nb_cleanup"] > 0 else 0)
             self.logger.record("episode_mesh_reward", self.mesh_reward)
             self.logger.record("episode_reward", self.current_episode_reward)
             self.logger.record("normalized_return", self.normalized_return)
@@ -111,7 +117,7 @@ class TensorboardCallback(BaseCallback):
         """
         Records policy evaluation results : before and after dataset images
         """
-        dataset = [TM.random_mesh(30) for _ in range(9)] # dataset of 9 meshes of size 30
+        dataset = [QM.random_mesh() for _ in range(9)] # dataset of 9 meshes of size 30
         before = dataset_plt(dataset) # plot the datasat as image
         length, wins, rewards, normalized_return, final_meshes = testPolicy(self.model, 10, env_config, dataset) # test model policy on the dataset
         after = dataset_plt(final_meshes)
@@ -120,9 +126,9 @@ class TensorboardCallback(BaseCallback):
         self.logger.dump(step=0)
 
 
-with open("model_RL/parameters/ppo_config.json", "r") as f:
+with open("../model_RL/parameters/ppo_config.json", "r") as f:
     ppo_config = json.load(f)
-with open("environment/parameters/environment_config.json", "r") as f:
+with open("../environment/parameters/environment_config.json", "r") as f:
     env_config = json.load(f)
 
 # Create log dir
@@ -132,7 +138,6 @@ os.makedirs(log_dir, exist_ok=True)
 # Create the environment
 env = gym.make(
     env_config["env_name"],
-    mesh_size=env_config["mesh_size"],
     max_episode_steps=env_config["max_episode_steps"],
     n_darts_selected=env_config["n_darts_selected"],
     deep= env_config["deep"],
@@ -157,4 +162,4 @@ model = PPO(
 print("-----------Starting learning-----------")
 model.learn(total_timesteps=ppo_config["total_timesteps"], callback=TensorboardCallback(model))
 print("-----------Learning ended------------")
-model.save("policy_saved/final/final-PPO-4")
+model.save("policy_saved/quad/test3")

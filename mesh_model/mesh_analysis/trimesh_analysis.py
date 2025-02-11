@@ -3,7 +3,49 @@ import numpy as np
 
 from mesh_model.mesh_struct.mesh_elements import Dart, Node, Face
 from mesh_model.mesh_struct.mesh import Mesh
-from mesh_model.mesh_analysis.mesh_analysis import get_boundary_darts, test_degree, on_boundary, get_angle_by_coord, angle_from_sides
+from mesh_model.mesh_analysis.mesh_analysis import get_boundary_darts, test_degree, on_boundary, get_angle_by_coord, angle_from_sides, degree, get_boundary_angle
+
+
+def global_score(m: Mesh):
+    """
+    Calculate the overall mesh score. The mesh cannot achieve a better score than the ideal one.
+    And the current score is the mesh score.
+    :param m: the mesh to be analyzed
+    :return: 4 return: a list of the nodes score, the current mesh score and the ideal mesh score, and the adjacency
+    """
+    mesh_ideal_score = 0
+    mesh_score = 0
+    nodes_score = []
+    nodes_adjacency = []
+    for i in range(len(m.nodes)):
+        if m.nodes[i, 2] >= 0:
+            n_id = i
+            node = Node(m, n_id)
+            n_score, adjacency= score_calculation(node)
+            nodes_score.append(n_score)
+            nodes_adjacency.append(adjacency)
+            mesh_ideal_score += n_score
+            mesh_score += abs(n_score)
+        else:
+            nodes_score.append(0)
+            nodes_adjacency.append(6)
+    return nodes_score, mesh_score, mesh_ideal_score, nodes_adjacency
+
+
+def score_calculation(n: Node) -> (int, int):
+    """
+    Function to calculate the irregularity of a node in the mesh.
+    :param n: a node in the mesh.
+    :return: the irregularity of the node
+    """
+    adjacency = degree(n)
+    if on_boundary(n):
+        angle = get_boundary_angle(n)
+        ideal_adjacency = max(round(angle/60)+1, 2)
+    else:
+        ideal_adjacency = 360/60
+
+    return ideal_adjacency-adjacency, adjacency
 
 
 def isValidAction(mesh: Mesh, dart_id: int, action: int) -> (bool, bool):
@@ -313,3 +355,10 @@ def find_template_opposite_node(d: Dart) -> int:
         return node_opposite.id
     else:
         return None
+
+
+def isTruncated(m: Mesh, darts_list)-> bool:
+    for d_id in darts_list:
+        if isValidAction(m, d_id, 4)[0]:
+            return False
+    return True

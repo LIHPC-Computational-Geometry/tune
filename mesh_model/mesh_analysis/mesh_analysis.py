@@ -1,51 +1,9 @@
 from math import sqrt, degrees, radians, cos, sin, acos
 import numpy as np
 
-from mesh_model.mesh_analysis.trimesh_analysis import isValidAction
-from mesh_model.mesh_struct.mesh_elements import Dart, Node
+from mesh_model.mesh_struct.mesh_elements import Dart, Node, Face
 from mesh_model.mesh_struct.mesh import Mesh
-
-
-def global_score(m: Mesh):
-    """
-    Calculate the overall mesh score. The mesh cannot achieve a better score than the ideal one.
-    And the current score is the mesh score.
-    :param m: the mesh to be analyzed
-    :return: 4 return: a list of the nodes score, the current mesh score and the ideal mesh score, and the adjacency
-    """
-    mesh_ideal_score = 0
-    mesh_score = 0
-    nodes_score = []
-    nodes_adjacency = []
-    for i in range(len(m.nodes)):
-        if m.nodes[i, 2] >= 0:
-            n_id = i
-            node = Node(m, n_id)
-            n_score, adjacency= score_calculation(node)
-            nodes_score.append(n_score)
-            nodes_adjacency.append(adjacency)
-            mesh_ideal_score += n_score
-            mesh_score += abs(n_score)
-        else:
-            nodes_score.append(0)
-            nodes_adjacency.append(6)
-    return nodes_score, mesh_score, mesh_ideal_score, nodes_adjacency
-
-
-def score_calculation(n: Node) -> (int, int):
-    """
-    Function to calculate the irregularity of a node in the mesh.
-    :param n: a node in the mesh.
-    :return: the irregularity of the node
-    """
-    adjacency = degree(n)
-    if on_boundary(n):
-        angle = get_boundary_angle(n)
-        ideal_adjacency = max(round(angle/60)+1, 2)
-    else:
-        ideal_adjacency = 360/60
-
-    return ideal_adjacency-adjacency, adjacency
+from plots.mesh_plotter import plot_mesh
 
 
 def get_angle(d1: Dart, d2: Dart, n: Node) -> float:
@@ -150,6 +108,15 @@ def adjacent_darts(n: Node) -> list[Dart]:
             adj_darts.append(d)
     return adj_darts
 
+def adjacent_faces(n: Node) -> list[Face]:
+    adj_darts = adjacent_darts(n)
+    adj_faces = []
+    for d in adj_darts:
+        f = d.get_face()
+        if f not in adj_faces:
+            adj_faces.append(f)
+    return adj_faces
+
 
 def degree(n: Node) -> int:
     """
@@ -250,21 +217,17 @@ def check_double(mesh: Mesh) -> bool:
                     ns2 = ds2.get_node().id
 
                 if n1 == ns1 and n2 == ns2:
+                    plot_mesh(mesh)
                     raise ValueError("double error")
                 elif n2 == ns1 and n1 == ns2:
-                    return False
+                    plot_mesh(mesh)
+                    raise ValueError("double error")
     return True
 
 
 def mesh_check(mesh: Mesh) -> bool:
     return check_double(mesh) and check_beta2_relation(mesh)
 
-
-def isTruncated(m: Mesh, darts_list)-> bool:
-    for d_id in darts_list:
-        if isValidAction(m, d_id, 4)[0]:
-            return False
-    return True
 
 """
 def get_boundary_nodes(m: Mesh) -> list[Node]:

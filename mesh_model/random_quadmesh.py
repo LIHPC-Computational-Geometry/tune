@@ -32,7 +32,7 @@ def mesh_shuffle(mesh: Mesh, num_nodes) -> Mesh:
     active_darts_list = mesh.active_darts()
     i = 0
     while i < nb_action_max:
-        action_type = np.random.randint(0, 3)
+        action_type = np.random.randint(0, 2)
         d_id = np.random.randint(len(active_darts_list))
         d_id = active_darts_list[d_id][0]
         dart = Dart(mesh, d_id)

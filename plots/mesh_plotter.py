@@ -11,7 +11,7 @@ def plot_mesh(mesh: Mesh) -> None:
     """
     _, _ = plt.subplots()
     subplot_mesh(mesh)
-    plt.show()
+    plt.show(block=True)
 
 
 def subplot_mesh(mesh: Mesh) -> None:

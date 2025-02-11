@@ -6,8 +6,8 @@ import numpy as np
 
 from mesh_model.random_quadmesh import random_mesh
 from mesh_model.mesh_struct.mesh_elements import Dart
-from mesh_model.mesh_analysis.mesh_analysis import global_score, isTruncated
-from environment.gymnasium_envs.trimesh_full_env.envs.mesh_conv import get_x
+from mesh_model.mesh_analysis.quadmesh_analysis import global_score, isTruncated
+from environment.gymnasium_envs.quadmesh_env.envs.mesh_conv import get_x
 from actions.quadrangular_actions import flip_edge, split_edge, collapse_edge, cleanup_edge
 
 from view.window import Game
@@ -24,7 +24,7 @@ class Actions(Enum):
 class QuadMeshEnv(gym.Env):
     metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 60}
 
-    def __init__(self, mesh=None, mesh_size=16, n_darts_selected=20, deep=6, with_degree_obs=True, action_restriction=False, render_mode=None):
+    def __init__(self, mesh=None, n_darts_selected=20, deep=6, with_degree_obs=True, action_restriction=False, render_mode=None):
         self.mesh = mesh if mesh is not None else random_mesh()
         self.mesh_size = len(self.mesh.nodes)
         self.nb_darts = len(self.mesh.dart_info)
@@ -51,7 +51,7 @@ class QuadMeshEnv(gym.Env):
         self.observation = None
 
         # We have 4 actions, flip, split, collapse, cleanup
-        self.action_space = spaces.MultiDiscrete([4, self.n_darts_selected])
+        self.action_space = spaces.MultiDiscrete([3, self.n_darts_selected])
 
 
     def reset(self, seed=None, options=None):
@@ -60,7 +60,7 @@ class QuadMeshEnv(gym.Env):
         if options is not None:
             self.mesh = options['mesh']
         else:
-            self.mesh = random_mesh(self.mesh_size)
+            self.mesh = random_mesh()
         self.nb_darts = len(self.mesh.dart_info)
         self._nodes_scores, self._mesh_score, self._ideal_score, self._nodes_adjacency = global_score(self.mesh)
         self._ideal_rewards = (self._mesh_score - self._ideal_score) * 10
@@ -93,9 +93,11 @@ class QuadMeshEnv(gym.Env):
             "flip": 1.0 if action[0]==Actions.FLIP.value else 0.0,
             "split": 1.0 if action[0]==Actions.SPLIT.value else 0.0,
             "collapse": 1.0 if action[0]==Actions.COLLAPSE.value else 0.0,
+            "cleanup": 1.0 if action[0]==Actions.CLEANUP.value else 0.0,
             "invalid_flip": 1.0 if action[0]==Actions.FLIP.value and not valid_action else 0.0,
             "invalid_split": 1.0 if action[0]==Actions.SPLIT.value and not valid_action else 0.0,
             "invalid_collapse": 1.0 if action[0]==Actions.COLLAPSE.value and not valid_action else 0.0,
+            "invalid_cleanup": 1.0 if action[0]==Actions.CLEANUP.value and not valid_action else 0.0,
             "mesh" : self.mesh,
         }
 
@@ -121,6 +123,8 @@ class QuadMeshEnv(gym.Env):
             valid_action, valid_topo, valid_geo = split_edge(self.mesh, n1, n2)
         elif action[0] == Actions.COLLAPSE.value:
             valid_action, valid_topo, valid_geo = collapse_edge(self.mesh, n1, n2)
+        elif action[0] == Actions.CLEANUP.value:
+            valid_action, valid_topo, valid_geo = cleanup_edge(self.mesh, n1, n2)
         else:
             raise ValueError("Action not defined")
 
@@ -152,32 +156,4 @@ class QuadMeshEnv(gym.Env):
         valid_act = valid_action, valid_topo, valid_geo
         info = self._get_info(terminated, valid_act, action, mesh_reward)
 
-        if self.render_mode == "human":
-            self._render_frame()
-
         return self.observation, reward, terminated, truncated, info
-
-    def render(self):
-        if self.render_mode == "human":
-            return self._render_frame()
-
-    def _render_frame(self):
-        if self.g is None and self.render_mode == "human":
-            mesh_disp = MeshDisplay(self.mesh)
-            self.g = Game(self.mesh, mesh_disp)
-            self.window = True
-            self.g.control_events()
-            self.g.window.fill((255, 255, 255))
-            self.g.draw()
-            pygame.display.flip()
-        if self.clock is None and self.render_mode == "human":
-            self.clock = pygame.time.Clock()
-        if self.render_mode == "human":
-            self.g.mesh_disp = MeshDisplay(self.mesh)
-            self.g.control_events()
-
-    def close(self):
-        if self.window is not None:
-            pygame.display.quit()
-            pygame.quit()
-            self.g = None

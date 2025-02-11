@@ -190,8 +190,6 @@ def cleanup_edge(mesh: Mesh, n1: Node, n2: Node) -> True:
 
         mesh.del_quad(d, d1, d11, d111, f)
 
-
-
         adj_darts = adjacent_darts(n_from)
 
         for d in adj_darts:
