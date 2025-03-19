@@ -3,7 +3,7 @@ import numpy as np
 
 from mesh_model.mesh_struct.mesh_elements import Dart, Node, Face
 from mesh_model.mesh_struct.mesh import Mesh
-from mesh_model.mesh_analysis.mesh_analysis import get_boundary_darts, test_degree, on_boundary, get_angle_by_coord, angle_from_sides, degree, get_boundary_angle
+from mesh_model.mesh_analysis.global_mesh_analysis import get_boundary_darts, test_degree, on_boundary, get_angle_by_coord, angle_from_sides, degree, get_boundary_angle
 
 
 def global_score(m: Mesh):

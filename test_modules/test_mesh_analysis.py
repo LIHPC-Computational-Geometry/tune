@@ -3,8 +3,8 @@ import unittest
 from mesh_model.mesh_struct.mesh import Mesh
 from mesh_model.mesh_struct.mesh_elements import Dart
 import mesh_model.mesh_analysis as Mesh_analysis
-from actions.triangular_actions import split_edge_ids, collapse_edge, collapse_edge_ids
-from plots.mesh_plotter import plot_mesh
+from environment.actions.triangular_actions import split_edge_ids
+from view.mesh_plotter import plot_mesh
 
 class TestMeshAnalysis(unittest.TestCase):
 

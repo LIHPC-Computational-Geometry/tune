@@ -3,7 +3,7 @@ from pygame import math
 from pygame.locals import *
 from view import graph
 from mesh_display import MeshDisplay
-from actions.triangular_actions import split_edge_ids, flip_edge_ids, collapse_edge_ids
+from environment.actions.triangular_actions import split_edge_ids, flip_edge_ids, collapse_edge_ids
 import sys
 
 color1 = pygame.Color(30, 30, 30)  # Dark Grey

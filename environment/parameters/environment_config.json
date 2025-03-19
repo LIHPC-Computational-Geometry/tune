@@ -1,9 +1,0 @@
-{
-    "env_name": "Quadmesh-v0",
-    "mesh_size": 16,
-    "max_episode_steps": 30,
-    "n_darts_selected": 10,
-    "deep": 8,
-    "action_restriction": false,
-    "with_degree_observation": false
-}

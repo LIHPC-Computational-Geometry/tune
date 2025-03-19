@@ -3,7 +3,7 @@ import numpy as np
 
 from mesh_model.mesh_struct.mesh_elements import Dart, Node, Face
 from mesh_model.mesh_struct.mesh import Mesh
-from mesh_model.mesh_analysis.mesh_analysis import test_degree, on_boundary, get_angle_by_coord, degree, \
+from mesh_model.mesh_analysis.global_mesh_analysis import test_degree, on_boundary, get_angle_by_coord, degree, \
     get_boundary_angle, adjacent_darts, adjacent_faces
 
 
@@ -109,14 +109,20 @@ def isFlipOk(d: Dart) -> (bool, bool):
         topo = False
         return topo, geo
 
+    if d211.get_node() == d111.get_node() or d11.get_node() == d2111.get_node():
+        topo = False
+        return topo, geo
+
     topo = isValidQuad(n5, n6, n2, n3) and isValidQuad(n1, n5, n3, n4)
 
+    """
     # Check angle at d limits to avoid edge reversal
     angle_A = get_angle_by_coord(n5.x(), n5.y(), n1.x(), n1.y(), n3.x(), n3.y())
 
     if angle_A <= 90 or angle_A >= 180:
         topo = False
         return topo, geo
+    """
 
     return topo, geo
 
@@ -132,6 +138,10 @@ def isSplitOk(d: Dart) -> (bool, bool):
         d2, d1, d11, d111, d21, d211, d2111, n1, n2, n3, n4, n5, n6 = mesh.active_quadrangles(d)
 
     if not test_degree(n4) or not test_degree(n2):
+        topo = False
+        return topo, geo
+
+    if d211.get_node() == d111.get_node() or d11.get_node() == d2111.get_node():
         topo = False
         return topo, geo
 
@@ -157,6 +167,16 @@ def isCollapseOk(d: Dart) -> (bool, bool):
 
     if not test_degree(n3):
         topo = False
+        return topo, geo
+
+    f1 = d2.get_face()
+    f2 = (d1.get_beta(2)).get_face()
+    f3 = (d11.get_beta(2)).get_face()
+    f4 = (d111.get_beta(2)).get_face()
+    adjacent_faces_lst=[f1.id, f2.id, f3.id, f4.id]
+    if len(adjacent_faces_lst) != len(set(adjacent_faces_lst)):
+        topo = False
+        return topo, geo
 
     adj_faces = adjacent_faces(n3)
     adj_faces.extend(adjacent_faces(n1))
@@ -236,6 +256,7 @@ def isValidQuad(A: Node, B: Node, C: Node, D: Node):
     cp_C = cross_product(-1*u2, u3)
     cp_D = cross_product(-1*u3, u4)
 
+    """
     if cp_A<=0 and cp_B<=0 and cp_C<=0 and cp_D<=0:
         return True
     else:
@@ -246,7 +267,7 @@ def isValidQuad(A: Node, B: Node, C: Node, D: Node):
         return True
     else:
         return False
-    """
+
 
 
 def orientation(p, q, r):

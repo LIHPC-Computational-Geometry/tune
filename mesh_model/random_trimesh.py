@@ -4,8 +4,8 @@ import numpy as np
 from mesh_model.mesh_struct.mesh_elements import Dart, Node
 from mesh_model.mesh_struct.mesh import Mesh
 from mesh_model.mesh_analysis.trimesh_analysis import find_opposite_node, isValidAction
-from mesh_model.mesh_analysis.mesh_analysis import node_in_mesh
-from actions.triangular_actions import flip_edge_ids, split_edge_ids, collapse_edge_ids
+from mesh_model.mesh_analysis.global_mesh_analysis import node_in_mesh
+from environment.actions.triangular_actions import flip_edge_ids, split_edge_ids, collapse_edge_ids
 
 
 def regular_mesh(num_nodes_max: int) -> Mesh:

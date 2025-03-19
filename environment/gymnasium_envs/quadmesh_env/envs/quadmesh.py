@@ -1,17 +1,14 @@
 from enum import Enum
 import gymnasium as gym
 from gymnasium import spaces
-import pygame
 import numpy as np
+import copy
 
 from mesh_model.random_quadmesh import random_mesh
 from mesh_model.mesh_struct.mesh_elements import Dart
 from mesh_model.mesh_analysis.quadmesh_analysis import global_score, isTruncated
 from environment.gymnasium_envs.quadmesh_env.envs.mesh_conv import get_x
-from actions.quadrangular_actions import flip_edge, split_edge, collapse_edge, cleanup_edge
-
-from view.window import Game
-from mesh_display import MeshDisplay
+from environment.actions.quadrangular_actions import flip_edge, split_edge, collapse_edge, cleanup_edge
 
 
 class Actions(Enum):
@@ -25,7 +22,12 @@ class QuadMeshEnv(gym.Env):
     metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 60}
 
     def __init__(self, mesh=None, n_darts_selected=20, deep=6, with_degree_obs=True, action_restriction=False, render_mode=None):
-        self.mesh = mesh if mesh is not None else random_mesh()
+        if mesh is not None:
+            self.config = {"mesh": mesh}
+            self.mesh = copy.deepcopy(mesh)
+        else :
+            self.config = {"mesh": None}
+            self.mesh = random_mesh()
         self.mesh_size = len(self.mesh.nodes)
         self.nb_darts = len(self.mesh.dart_info)
         self._nodes_scores, self._mesh_score, self._ideal_score, self._nodes_adjacency = global_score(self.mesh)
@@ -40,7 +42,6 @@ class QuadMeshEnv(gym.Env):
         self.nb_invalid_actions = 0
         self.darts_selected = [] # darts id observed
         deep = self.deep*2 if self.degree_observation else deep
-
         self.observation_space = spaces.Box(
             low=-15,  # nodes min degree : -15
             high=15,  # nodes max degree : 15
@@ -59,6 +60,8 @@ class QuadMeshEnv(gym.Env):
         super().reset(seed=seed)
         if options is not None:
             self.mesh = options['mesh']
+        elif self.config["mesh"] is not None:
+            self.mesh = copy.deepcopy(self.config["mesh"])
         else:
             self.mesh = random_mesh()
         self.nb_darts = len(self.mesh.dart_info)

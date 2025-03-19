@@ -1,5 +1,5 @@
 from model_RL.utilities.actor_critic_networks import NaNExceptionActor, NaNExceptionCritic, Actor, Critic
-from mesh_model.mesh_analysis import global_score
+from mesh_model.mesh_analysis.global_mesh_analysis import global_score
 import copy
 import torch
 import random
@@ -21,7 +21,7 @@ class PPO:
 
     def train_epoch(self, dataset):
         num_samples = len(dataset)
-        print('Training on {}'.format(num_samples))
+        print('training on {}'.format(num_samples))
         for _ in range(self.nb_epochs):
             start = 0
             dataset_rd = random.sample(dataset, num_samples)
@@ -43,7 +43,7 @@ class PPO:
                     next_value = torch.tensor(0.0, dtype=torch.float32) if done else self.critic(next_X)
                     delta = r + 0.9 * next_value - value
                     G = (r + 0.9 * G) / 10
-                    _, st, ideal_s = global_score(s)
+                    _, st, ideal_s, _ = global_score(s)
                     if st == ideal_s:
                         continue
                     advantage = 1 if done else G / (st - ideal_s)

@@ -1,10 +1,9 @@
-from typing import Any
 import math
 import numpy as np
-from mesh_model.mesh_analysis import global_score, find_template_opposite_node
+from mesh_model.mesh_analysis.trimesh_analysis import global_score, find_template_opposite_node
 from mesh_model.mesh_struct.mesh_elements import Dart
 from mesh_model.mesh_struct.mesh import Mesh
-from actions.triangular_actions import flip_edge, split_edge, collapse_edge
+from environment.actions.triangular_actions import flip_edge, split_edge, collapse_edge
 from mesh_model.random_trimesh import random_flip_mesh, random_mesh
 
 # possible actions
@@ -23,7 +22,7 @@ class TriMesh:
         self.reward = 0
         self.steps = 0
         self.max_steps = max_steps
-        self.nodes_scores, self.mesh_score, self.ideal_score = global_score(self.mesh)
+        self.nodes_scores, self.mesh_score, self.ideal_score, _ = global_score(self.mesh)
         self.terminal = False
         self.feat = feat
         self.won = 0
@@ -34,7 +33,7 @@ class TriMesh:
         self.terminal = False
         self.mesh = mesh if mesh is not None else random_mesh(self.mesh_size)
         self.size = len(self.mesh.dart_info)
-        self.nodes_scores, self.mesh_score, self.ideal_score = global_score(self.mesh)
+        self.nodes_scores, self.mesh_score, self.ideal_score, _ = global_score(self.mesh)
         self.won = 0
 
     def step(self, action):
@@ -50,7 +49,7 @@ class TriMesh:
         elif action[2] == COLLAPSE:
             collapse_edge(self.mesh, n1, n2)
         self.steps += 1
-        next_nodes_score, next_mesh_score, _ = global_score(self.mesh)
+        next_nodes_score, next_mesh_score, _, _ = global_score(self.mesh)
         self.nodes_scores = next_nodes_score
         self.reward = (self.mesh_score - next_mesh_score) * 10
         if self.steps >= self.max_steps or next_mesh_score == self.ideal_score:

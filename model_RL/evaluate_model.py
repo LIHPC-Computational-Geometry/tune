@@ -1,7 +1,7 @@
 from numpy import ndarray
 
 from environment.trimesh_env import TriMesh
-from mesh_model.mesh_analysis import global_score
+from mesh_model.mesh_analysis.global_mesh_analysis import global_score
 from mesh_model.mesh_struct.mesh import Mesh
 import numpy as np
 import copy
