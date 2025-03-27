@@ -126,7 +126,6 @@ class TestQuadActions(unittest.TestCase):
         filename = os.path.join(TESTFILE_FOLDER, 't1_quad.msh')
         cmap = read_gmsh(filename)
         plot_mesh(cmap)
-
         mesh = random_mesh()
         plot_mesh(mesh)
 
