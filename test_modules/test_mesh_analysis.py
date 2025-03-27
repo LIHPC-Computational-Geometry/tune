@@ -4,7 +4,7 @@ from mesh_model.mesh_struct.mesh import Mesh
 from mesh_model.mesh_struct.mesh_elements import Dart
 import mesh_model.mesh_analysis as Mesh_analysis
 from environment.actions.triangular_actions import split_edge_ids
-from view.mesh_plotter import plot_mesh
+from view.mesh_plotter.mesh_plots import plot_mesh
 
 class TestMeshAnalysis(unittest.TestCase):
 

@@ -3,12 +3,12 @@ import os
 import mesh_model.mesh_struct.mesh as mesh
 from mesh_model.mesh_struct.mesh_elements import Dart, Node
 from mesh_model.random_quadmesh import random_mesh
-from environment.actions import flip_edge, split_edge, collapse_edge, cleanup_edge
-from view.mesh_plotter import plot_mesh
+from environment.actions.quadrangular_actions import flip_edge, split_edge, collapse_edge, cleanup_edge
+from view.mesh_plotter.mesh_plots import plot_mesh
 from mesh_model.reader import read_gmsh
 
 
-class TestActions(unittest.TestCase):
+class TestQuadActions(unittest.TestCase):
 
     def test_flip(self):
         cmap = mesh.Mesh()

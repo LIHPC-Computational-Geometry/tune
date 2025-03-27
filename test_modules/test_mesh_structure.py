@@ -70,9 +70,9 @@ class TestMeshStructure(unittest.TestCase):
     def test_single_quad(self):
         cmap = mesh.Mesh()
         n1 = cmap.add_node(0, 0)
-        n2 = cmap.add_node(0, 1)
+        n2 = cmap.add_node(1, 0)
         n3 = cmap.add_node(1, 1)
-        n4 = cmap.add_node(1, 0)
+        n4 = cmap.add_node(0, 1)
         t = cmap.add_quad(n1, n2, n3, n4)
 
         nodes_of_t = t.get_nodes()

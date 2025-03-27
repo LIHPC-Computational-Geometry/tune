@@ -3,7 +3,7 @@ import mesh_model.mesh_struct.mesh as mesh
 from mesh_model.mesh_struct.mesh_elements import Dart, Node
 from mesh_model.random_trimesh import regular_mesh
 from environment.actions.triangular_actions import split_edge, flip_edge, collapse_edge
-from view.mesh_plotter import plot_mesh
+from view.mesh_plotter.mesh_plots import plot_mesh
 
 
 class TestActions(unittest.TestCase):
