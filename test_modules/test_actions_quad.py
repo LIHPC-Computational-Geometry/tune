@@ -7,6 +7,7 @@ from environment.actions.quadrangular_actions import flip_edge, split_edge, coll
 from view.mesh_plotter.mesh_plots import plot_mesh
 from mesh_model.reader import read_gmsh
 
+TESTFILE_FOLDER = os.path.join(os.path.dirname(__file__), '../mesh_files/')
 
 class TestQuadActions(unittest.TestCase):
 
@@ -106,7 +107,7 @@ class TestQuadActions(unittest.TestCase):
 
 
     def test_actions(self):
-        filename = os.path.join('../mesh_files/', 't1_quad.msh')
+        filename = os.path.join(TESTFILE_FOLDER, 't1_quad.msh')
         cmap = read_gmsh(filename)
         plot_mesh(cmap)
         d = Dart(cmap, 14)
@@ -122,7 +123,7 @@ class TestQuadActions(unittest.TestCase):
         plot_mesh(cmap)
 
     def test_random_quad(self):
-        filename = os.path.join('../mesh_files/', 't1_quad.msh')
+        filename = os.path.join(TESTFILE_FOLDER, 't1_quad.msh')
         cmap = read_gmsh(filename)
         plot_mesh(cmap)
 
