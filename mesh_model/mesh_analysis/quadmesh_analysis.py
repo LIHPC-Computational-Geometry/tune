@@ -104,7 +104,7 @@ def isFlipOk(d: Dart) -> (bool, bool):
         return topo, geo
     else:
         d2, d1, d11, d111, d21, d211, d2111, n1, n2, n3, n4, n5, n6 = mesh.active_quadrangles(d)
-
+    # if degree are
     if not test_degree(n5) or not test_degree(n3):
         topo = False
         return topo, geo
@@ -112,7 +112,6 @@ def isFlipOk(d: Dart) -> (bool, bool):
     if d211.get_node() == d111.get_node() or d11.get_node() == d2111.get_node():
         topo = False
         return topo, geo
-
     topo = isValidQuad(n5, n6, n2, n3) and isValidQuad(n1, n5, n3, n4)
 
     """
@@ -174,6 +173,8 @@ def isCollapseOk(d: Dart) -> (bool, bool):
     f3 = (d11.get_beta(2)).get_face()
     f4 = (d111.get_beta(2)).get_face()
     adjacent_faces_lst=[f1.id, f2.id, f3.id, f4.id]
+
+    # Check that there are no adjacent faces in common
     if len(adjacent_faces_lst) != len(set(adjacent_faces_lst)):
         topo = False
         return topo, geo
@@ -251,6 +252,13 @@ def isValidQuad(A: Node, B: Node, C: Node, D: Node):
     u3 = np.array([D.x() - C.x(), D.y() - C.y()]) # vect(CD)
     u4 = np.array([A.x() - D.x(), A.y() - D.y()]) # vect(DA)
 
+    # Checking for near-zero vectors (close to (0,0))
+    if (np.linalg.norm(u1) < 1e-5 or
+            np.linalg.norm(u2) < 1e-5 or
+            np.linalg.norm(u3) < 1e-5 or
+            np.linalg.norm(u4) < 1e-5):
+        return False  # Quad invalid because one side is almost zero
+
     cp_A = cross_product(-1*u4, u1)
     cp_B = cross_product(-1*u1, u2)
     cp_C = cross_product(-1*u2, u3)
@@ -263,11 +271,10 @@ def isValidQuad(A: Node, B: Node, C: Node, D: Node):
         return False
 
     """
-    if signe(cp_A)+signe(cp_B)+signe(cp_C)+signe(cp_D)<2:
+    if 0< signe(cp_A)+signe(cp_B)+signe(cp_C)+signe(cp_D) <2 :
         return True
     else:
         return False
-
 
 
 def orientation(p, q, r):

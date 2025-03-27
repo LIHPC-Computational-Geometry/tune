@@ -7,5 +7,5 @@
     "gamma": 0.9,
     "verbose": 1,
     "tensorboard_log": "./results/quad/",
-    "total_timesteps": 500000
+    "total_timesteps": 2000
 }

@@ -9,6 +9,7 @@ from mesh_model.mesh_struct.mesh_elements import Dart
 from mesh_model.mesh_analysis.quadmesh_analysis import global_score, isTruncated
 from environment.gymnasium_envs.quadmesh_env.envs.mesh_conv import get_x
 from environment.actions.quadrangular_actions import flip_edge, split_edge, collapse_edge, cleanup_edge
+from environment.observation_register import ObservationRegistry
 
 
 class Actions(Enum):
@@ -21,7 +22,7 @@ class Actions(Enum):
 class QuadMeshEnv(gym.Env):
     metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 60}
 
-    def __init__(self, mesh=None, n_darts_selected=20, deep=6, with_degree_obs=True, action_restriction=False, render_mode=None):
+    def __init__(self, mesh=None, max_episode_steps=30, n_darts_selected=20, deep=6, with_degree_obs=True, action_restriction=False, render_mode=None):
         if mesh is not None:
             self.config = {"mesh": mesh}
             self.mesh = copy.deepcopy(mesh)
@@ -33,21 +34,22 @@ class QuadMeshEnv(gym.Env):
         self._nodes_scores, self._mesh_score, self._ideal_score, self._nodes_adjacency = global_score(self.mesh)
         self._ideal_rewards = (self._mesh_score - self._ideal_score)*10
         self.next_mesh_score = 0
-        self.deep = deep
         self.n_darts_selected = n_darts_selected
         self.restricted = action_restriction
         self.degree_observation = with_degree_obs
         self.window_size = 512  # The size of the PyGame window
         self.g = None
         self.nb_invalid_actions = 0
+        self.max_steps = max_episode_steps
         self.darts_selected = [] # darts id observed
-        deep = self.deep*2 if self.degree_observation else deep
+        self.deep = deep*2 if self.degree_observation else deep
         self.observation_space = spaces.Box(
-            low=-15,  # nodes min degree : -15
-            high=15,  # nodes max degree : 15
-            shape=(self.n_darts_selected, self.deep * 2 if self.degree_observation else self.deep),
+            low=-6,  # nodes min degree : -15
+            high=2,  # nodes max degree : 15
+            shape=(self.n_darts_selected, deep),
             dtype=np.int64
         )
+        self.observation_count = ObservationRegistry(self.n_darts_selected, self.deep, -6, 2)
 
         self.observation = None
 
@@ -102,6 +104,8 @@ class QuadMeshEnv(gym.Env):
             "invalid_collapse": 1.0 if action[0]==Actions.COLLAPSE.value and not valid_action else 0.0,
             "invalid_cleanup": 1.0 if action[0]==Actions.CLEANUP.value and not valid_action else 0.0,
             "mesh" : self.mesh,
+            "darts_selected" : self.darts_selected,
+            "observation_count" : self.observation_count,
         }
 
     def _action_to_dart_id(self, action: np.ndarray) -> int:
@@ -131,6 +135,7 @@ class QuadMeshEnv(gym.Env):
         else:
             raise ValueError("Action not defined")
 
+        self.observation_count.register_observation(self.observation)
         if valid_action:
             # An episode is done if the actual score is the same as the ideal
             next_nodes_score, self.next_mesh_score, _, next_nodes_adjacency = global_score(self.mesh)

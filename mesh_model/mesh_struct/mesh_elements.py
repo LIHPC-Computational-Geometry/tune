@@ -1,5 +1,5 @@
 from __future__ import annotations
-
+import numpy as np
 
 class Dart:
     _mesh_type: type = None
@@ -19,6 +19,8 @@ class Dart:
         :param id: a index, that corresponds to the location of the dart data in the mesh_struct dart container
         """
         self.mesh = m
+        if not isinstance(dart_id, (int, np.integer)):
+            raise ValueError(f"The id must be an integer, {dart_id} is type {type(dart_id)}.")
         self.id = dart_id
 
     def __eq__(self, a_dart: Dart) -> bool:
@@ -40,7 +42,6 @@ class Dart:
         """
         if i < 1 or i > 2:
             raise ValueError("Wrong alpha dimension")
-
         if self.mesh.dart_info[self.id, i] == -1:
             return None
 
@@ -135,7 +136,7 @@ class Node:
         Get the dart value associated with this node
         :return: a dart
         """
-        return Dart(self.mesh, self.mesh.nodes[self.id, 2])
+        return Dart(self.mesh, int(self.mesh.nodes[self.id, 2]))
 
     def x(self) -> float:
         """

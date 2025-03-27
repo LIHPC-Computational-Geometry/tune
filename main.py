@@ -1,7 +1,7 @@
 import sys
 
 from user_game import user_game
-from training.train import train
+from training.train_quadmesh import train
 from training.exploit import exploit
 #from mesh_model.reader import read_gmsh
 #from mesh_display import MeshDisplay

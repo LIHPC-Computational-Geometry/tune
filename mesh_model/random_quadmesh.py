@@ -15,8 +15,8 @@ def random_mesh() -> Mesh:
     :param num_nodes_max: number of nodes of the final mesh
     :return: a random mesh
     """
-    filename = os.path.join('../mesh_files/', 't1_quad.msh')
-    mesh = read_gmsh(filename)
+    #filename = os.path.join('../mesh_files/', 't1_quad.msh')
+    mesh = read_gmsh("/home/ropercha/PycharmProjects/tune/mesh_files/t1_quad.msh")
     mesh_shuffle(mesh, 10)
     return mesh
 

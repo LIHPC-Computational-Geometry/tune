@@ -39,10 +39,14 @@ def score_calculation(n: Node) -> (int, int):
     :return: the irregularity of the node
     """
     adjacency = degree(n)
-    m = n.mesh
     # Check if the mesh is triangular or quad
-    d = Dart(m, m.dart_info[0,0])
-    triangular = d.get_beta(1).get_beta(1).get_beta(1) == d
+    d = n.get_dart()
+    if d.id <0:
+        raise ValueError("No existing dart")
+    d1 = d.get_beta(1)
+    d11 = d1.get_beta(1)
+    d111 = d11.get_beta(1)
+    triangular = (d111.id == d.id)
     if on_boundary(n):
         angle = get_boundary_angle(n)
         if triangular:
@@ -85,6 +89,7 @@ def get_angle(d1: Dart, d2: Dart, n: Node) -> float:
     cos_theta = np.clip(cos_theta, -1, 1)
     angle = np.arccos(cos_theta)
     if np.isnan(angle):
+        plot_mesh(n.mesh)
         raise ValueError("Angle error")
     return degrees(angle)
 

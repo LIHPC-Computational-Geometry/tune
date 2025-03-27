@@ -118,6 +118,19 @@ class TensorboardCallback(BaseCallback):
         """
         Records policy evaluation results : before and after dataset images
         """
+        filename = "counts.json"
+        counts_registry = self.locals["infos"][0].get("observation_count", 0.0)
+        counts = counts_registry.counts
+
+        # Convertir les clés tuple en chaînes de caractères
+        counts_str_keys = {v: str(k) for k, v in counts.items()}
+
+        # Écriture dans un fichier JSON
+        with open(filename, "w") as file:
+            json.dump(counts_str_keys, file, indent=4)
+
+        print(f"Counts saved at {filename}")
+
         dataset = [QM.random_mesh() for _ in range(9)] # dataset of 9 meshes of size 30
         before = dataset_plt(dataset) # plot the datasat as image
         length, wins, rewards, normalized_return, final_meshes = testPolicy(self.model, 10, env_config, dataset) # test model policy on the dataset
