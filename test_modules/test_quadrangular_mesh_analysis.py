@@ -59,38 +59,21 @@ class TestMeshAnalysis(unittest.TestCase):
         with self.assertRaises(ValueError):
             QMA.isValidAction(cmap, 0, 6)
 
-    def test_valid_triangle(self):
-        # test Lmax invalid
-        vect_AB = (5.0, 0.0)
-        vect_AC = (2.5, 5.0)
-        vect_BC = (-2.5, 5.0)
-        self.assertFalse(QMA.valid_triangle(vect_AB, vect_AC, vect_BC))
-        # test invalid angles
-        vect_AB = (3.0, 0.0)
-        vect_AC = (1.5, 0.05)
-        vect_BC = (-1.5, 0.05)
-        self.assertFalse(QMA.valid_triangle(vect_AB, vect_AC, vect_BC))
-        # test valid triangle
-        vect_AB = (3.0, 0.0)
-        vect_AC = (1.5, 3.0)
-        vect_BC = (-1.5, 3.0)
-        self.assertTrue(QMA.valid_triangle(vect_AB, vect_AC, vect_BC))
-
     def test_isTruncated(self):
-        nodes = [[0.0, 0.0], [1.0, 0.0], [1.0, 1.0]]
-        faces = [[0, 1, 2]]
+        filename = os.path.join(TESTFILE_FOLDER, 't1_quad.msh')
+        cmap = read_gmsh(filename)
+        darts_list = []
+        for d_info in cmap.active_darts():
+            darts_list.append(d_info[0])
+        self.assertFalse(QMA.isTruncated(cmap, darts_list))
+
+        nodes = [[0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [1.0, 1.0]]
+        faces = [[0, 1, 3, 2]]
         cmap = Mesh(nodes, faces)
         darts_list = []
         for d_info in cmap.active_darts():
             darts_list.append(d_info[0])
         self.assertTrue(QMA.isTruncated(cmap, darts_list))
-        nodes = [[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0], [2.0, 0.0]]
-        faces = [[0, 1, 2], [0, 2, 3], [1, 4, 2]]
-        cmap = Mesh(nodes, faces)
-        darts_list = []
-        for d_info in cmap.active_darts():
-            darts_list.append(d_info[0])
-        self.assertFalse(QMA.isTruncated(cmap, darts_list))
 
 if __name__ == '__main__':
     unittest.main()
