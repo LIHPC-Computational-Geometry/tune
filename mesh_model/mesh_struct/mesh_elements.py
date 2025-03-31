@@ -1,5 +1,5 @@
 from __future__ import annotations
-
+import numpy as np
 
 class Dart:
     _mesh_type: type = None
@@ -19,6 +19,8 @@ class Dart:
         :param id: a index, that corresponds to the location of the dart data in the mesh_struct dart container
         """
         self.mesh = m
+        if not isinstance(dart_id, (int, np.integer)):
+            raise ValueError(f"The id must be an integer, {dart_id} is type {type(dart_id)}.")
         self.id = dart_id
 
     def __eq__(self, a_dart: Dart) -> bool:
@@ -40,7 +42,6 @@ class Dart:
         """
         if i < 1 or i > 2:
             raise ValueError("Wrong alpha dimension")
-
         if self.mesh.dart_info[self.id, i] == -1:
             return None
 
@@ -123,7 +124,7 @@ class Node:
     def set_dart(self, dart: Dart) -> None:
         """
         Update the dart value associated with this node
-        :param dart_index: the index of the dart in self.mesh_struct
+        :param dart: the dart to be associated to the node
         """
         if dart is None:
             raise ValueError("Try to connect a node to a non-existing dart")
@@ -135,7 +136,7 @@ class Node:
         Get the dart value associated with this node
         :return: a dart
         """
-        return Dart(self.mesh, self.mesh.nodes[self.id, 2])
+        return Dart(self.mesh, int(self.mesh.nodes[self.id, 2]))
 
     def x(self) -> float:
         """
@@ -225,7 +226,7 @@ class Face:
             raise ValueError("Try to connect a face to a non-existing dart")
         self.mesh.faces[self.id] = d.id
 
-    def get_surrounding(self) -> [Dart, Dart, Dart, Node, Node, Node]:
+    def get_surrounding_triangle(self) -> [Dart, Dart, Dart, Node, Node, Node]:
         d = self.get_dart()
         d1 = d.get_beta(1)
         d11 = d1.get_beta(1)

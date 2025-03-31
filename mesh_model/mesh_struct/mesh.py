@@ -174,6 +174,11 @@ class Mesh:
         :return: the id of the quad
         """
         nodes = [n1, n2, n3, n4]
+        if inverseQuad(n1, n2, n3, n4):
+            nodes = [n4, n3, n2, n1]
+        elif not isValidQuad(n1, n2, n3, n4):
+            raise ValueError("Quad not valid")
+
         # create 4 darts
         darts = [self.add_dart() for i in range(4)]
 
@@ -193,6 +198,15 @@ class Mesh:
             d.set_face(quad)
 
         return quad
+
+    def del_quad(self, d1: Dart, d2: Dart, d3: Dart, d4: Dart, f: Face) -> None:
+        self.del_dart(d1)
+        self.del_dart(d2)
+        self.del_dart(d3)
+        self.del_dart(d4)
+
+        self.faces[f.id] = -self.first_free_face - 1
+        self.first_free_face = f.id
 
     def set_twin_pointers(self) -> None:
         """
@@ -248,11 +262,12 @@ class Mesh:
             nf_end = df_current.get_beta(1).get_node()
 
             for d in darts:
-                nd_start = d.get_node()
-                nd_end = d.get_beta(1).get_node()
-                if nf_start == nd_end and nf_end == nd_start:
-                    d.set_beta(2, df_current)
-                    df_current.set_beta(2, d)
+                if d is not None:
+                    nd_start = d.get_node()
+                    nd_end = d.get_beta(1).get_node()
+                    if nf_start == nd_end and nf_end == nd_start:
+                        d.set_beta(2, df_current)
+                        df_current.set_beta(2, d)
 
             df_current = df_current.get_beta(1)
             end = (df_current.id == f.get_dart().id)
@@ -330,4 +345,101 @@ class Mesh:
 
         return d2, d1, d11, d21, d211, n1, n2, n3, n4
 
+    def active_quadrangles(self, d: Dart) -> tuple[Dart, Dart, Dart, Dart, Dart, Dart, Dart, Node, Node, Node, Node, Node, Node]:
+        """
+        Return the darts and nodes around selected dart
+        :param mesh: the mesh
+        :param d: selected dart
+        :return: a tuple of darts and nodes
+        """
+        d2 = d.get_beta(2)
+        d1 = d.get_beta(1)
+        d11 = d1.get_beta(1)
+        d111 = d11.get_beta(1)
+        d21 = d2.get_beta(1)
+        d211 = d21.get_beta(1)
+        d2111 = d211.get_beta(1)
+        n1 = d.get_node()
+        n2 = d2.get_node()
+        n3 = d11.get_node()
+        n4 = d111.get_node()
+        n5 = d211.get_node()
+        n6 = d2111.get_node()
 
+        return d2, d1, d11, d111, d21, d211, d2111, n1, n2, n3, n4, n5, n6
+
+    def find_parallel_darts(self, d: Dart) -> list[Dart]:
+        parallel_darts = []
+        dp = d
+        #sens 1
+        while dp is not None:
+            dp2 = dp.get_beta(2)
+            if dp2 is None:
+                dp = None
+            else:
+                dp21 = dp2.get_beta(1)
+                dp = dp21.get_beta(1)
+                if dp not in parallel_darts :
+                    parallel_darts.append(dp)
+                else:
+                    dp = None
+
+        #sens 2
+        dp = d
+        while dp is not None:
+            if dp not in parallel_darts :
+                parallel_darts.append(dp)
+                dp1 = dp.get_beta(1)
+                dp11 = dp1.get_beta(1)
+                dp = dp11.get_beta(2)
+            else :
+                dp = None
+
+        return parallel_darts
+
+def inverseQuad(A: Node, B: Node, C: Node, D: Node):
+    u1 = numpy.array([B.x() - A.x(), B.y() - A.y()]) # vect(AB)
+    u2 = numpy.array([C.x() - B.x(), C.y() - B.y()]) # vect(BC)
+    u3 = numpy.array([D.x() - C.x(), D.y() - C.y()]) # vect(CD)
+    u4 = numpy.array([A.x() - D.x(), A.y() - D.y()]) # vect(DA)
+
+    cp_A = cross_product(-1*u4, u1)
+    cp_B = cross_product(-1*u1, u2)
+    cp_C = cross_product(-1*u2, u3)
+    cp_D = cross_product(-1*u3, u4)
+
+    if cp_A >=0 and cp_B>=0 and cp_C>=0 and cp_D>=0:
+        return True
+    else:
+        return False
+
+def cross_product(vect_AB, vect_AC):
+    """ Return the cross product between AB et AC.
+        0 means A, B and C are coolinear
+        > 0 mean A, B and C are "sens des aiguilles d'une montre"
+        < 0 sens inverse
+    """
+    val = vect_AB[0] * vect_AC[1] - vect_AB[1] * vect_AC[0]
+    return val
+
+def signe(a: int):
+    if a<=0:
+        return 0
+    else:
+        return 1
+
+def isValidQuad(A: Node, B: Node, C: Node, D: Node):
+    u1 = numpy.array([B.x() - A.x(), B.y() - A.y()]) # vect(AB)
+    u2 = numpy.array([C.x() - B.x(), C.y() - B.y()]) # vect(BC)
+    u3 = numpy.array([D.x() - C.x(), D.y() - C.y()]) # vect(CD)
+    u4 = numpy.array([A.x() - D.x(), A.y() - D.y()]) # vect(DA)
+
+    cp_A = cross_product(-1*u4, u1)
+    cp_B = cross_product(-1*u1, u2)
+    cp_C = cross_product(-1*u2, u3)
+    cp_D = cross_product(-1*u3, u4)
+
+    if signe(cp_A)+signe(cp_B)+signe(cp_C)+signe(cp_D)<2:
+        return True
+    else:
+        return False
