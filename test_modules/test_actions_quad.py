@@ -33,10 +33,11 @@ class TestQuadActions(unittest.TestCase):
         self.assertEqual(d2.get_node(), n10)
 
 
-        flip_edge(cmap, n11, n10)
+        self.assertEqual(flip_edge(cmap, n11, n10), (True,True,True))
         self.assertEqual(2, cmap.nb_faces())
         self.assertEqual(6, cmap.nb_nodes())
         plot_mesh(cmap)
+        self.assertFalse(flip_edge(cmap, n11, n10)[0])
 
     def test_split(self):
         cmap = mesh.Mesh()
@@ -56,8 +57,13 @@ class TestQuadActions(unittest.TestCase):
         q4 = cmap.add_quad(n01, n11, n12, n02)
         cmap.set_twin_pointers()
         plot_mesh(cmap)
-        split_edge(cmap, n11, n21)
+        found, d = cmap.find_inner_edge(n11, n21)
+        self.assertTrue(found)
+        self.assertEqual(split_edge(cmap, n11, n21), (True,True,True))
+        self.assertEqual(10, cmap.nb_nodes())
+        self.assertEqual(5, cmap.nb_faces())
         plot_mesh(cmap)
+        self.assertFalse(split_edge(cmap, n20, n21)[0])
 
     def test_collapse(self):
         cmap = mesh.Mesh()
@@ -79,8 +85,14 @@ class TestQuadActions(unittest.TestCase):
         q5 = cmap.add_quad(n051, n10, n151, n12)
         cmap.set_twin_pointers()
         plot_mesh(cmap)
-        collapse_edge(cmap, n151, n12)
+        found, d = cmap.find_inner_edge(n151, n12)
+        self.assertTrue(found)
         plot_mesh(cmap)
+        self.assertEqual(collapse_edge(cmap, n151, n12), (True, True, True))
+        self.assertEqual(9, cmap.nb_nodes())
+        self.assertEqual(4, cmap.nb_faces())
+        plot_mesh(cmap)
+        self.assertFalse(split_edge(cmap, n20, n21)[0])
 
     def test_cleanup(self):
         cmap = mesh.Mesh()
@@ -102,7 +114,11 @@ class TestQuadActions(unittest.TestCase):
         q5 = cmap.add_quad(n051, n10, n151, n12)
         cmap.set_twin_pointers()
         plot_mesh(cmap)
-        cleanup_edge(cmap, n151, n21)
+        found, d = cmap.find_inner_edge(n151, n12)
+        self.assertTrue(found)
+        self.assertEqual(cleanup_edge(cmap, n151, n21), (True, True, True))
+        self.assertEqual(7, cmap.nb_nodes())
+        self.assertEqual(3, cmap.nb_faces())
         plot_mesh(cmap)
 
 
@@ -113,12 +129,12 @@ class TestQuadActions(unittest.TestCase):
         d = Dart(cmap, 14)
         n1= d.get_node()
         n2 = (d.get_beta(1)).get_node()
-        collapse_edge(cmap, n1, n2)
+        self.assertEqual(collapse_edge(cmap, n1, n2), (True,True,True))
         plot_mesh(cmap)
         d = Dart(cmap, 32)
         n1 = d.get_node()
         n2 = (d.get_beta(1)).get_node()
-        flip_edge(cmap, n1, n2)
+        self.assertEqual(flip_edge(cmap, n1, n2), (True,True,True))
 
         plot_mesh(cmap)
 

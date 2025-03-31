@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from mesh_model.mesh_struct.mesh import Mesh
-from mesh_model.mesh_struct.mesh_elements import Dart, Node
+from mesh_model.mesh_struct.mesh_elements import Node
 from mesh_model.mesh_analysis.global_mesh_analysis import mesh_check
 from mesh_model.mesh_analysis.trimesh_analysis import isFlipOk, isCollapseOk, isSplitOk
 

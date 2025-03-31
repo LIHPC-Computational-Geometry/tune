@@ -1,6 +1,7 @@
 import math
 import numpy as np
-from mesh_model.mesh_analysis.trimesh_analysis import global_score, find_template_opposite_node
+from mesh_model.mesh_analysis.trimesh_analysis import find_template_opposite_node
+from mesh_model.mesh_analysis.global_mesh_analysis import global_score
 from mesh_model.mesh_struct.mesh_elements import Dart
 from mesh_model.mesh_struct.mesh import Mesh
 from environment.actions.triangular_actions import flip_edge, split_edge, collapse_edge

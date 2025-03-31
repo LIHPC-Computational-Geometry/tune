@@ -1,3 +1,4 @@
+import copy
 import unittest
 from mesh_model.random_trimesh import regular_mesh, random_mesh, random_flip_mesh, mesh_shuffle
 from mesh_model.mesh_struct.mesh import Mesh
@@ -30,8 +31,9 @@ class TestRandomTrimesh(unittest.TestCase):
 
     def test_mesh_suffle(self):
         m = regular_mesh(15)
-        mesh = mesh_shuffle(m, 15)
-        #plot_mesh(mesh)
+        reg_m = copy.deepcopy(m)
+        mesh_shuffle(m, 15)
+        self.assertIsNot(m, reg_m)
 
 
 

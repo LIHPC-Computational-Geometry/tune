@@ -1,52 +1,8 @@
-from math import sqrt, degrees, radians, cos, sin, acos
 import numpy as np
 
 from mesh_model.mesh_struct.mesh_elements import Dart, Node, Face
 from mesh_model.mesh_struct.mesh import Mesh
-from mesh_model.mesh_analysis.global_mesh_analysis import test_degree, on_boundary, get_angle_by_coord, degree, \
-    get_boundary_angle, adjacent_darts, adjacent_faces
-
-
-def global_score(m: Mesh):
-    """
-    Calculate the overall mesh score. The mesh cannot achieve a better score than the ideal one.
-    And the current score is the mesh score.
-    :param m: the mesh to be analyzed
-    :return: 4 return: a list of the nodes score, the current mesh score and the ideal mesh score, and the adjacency
-    """
-    mesh_ideal_score = 0
-    mesh_score = 0
-    nodes_score = []
-    nodes_adjacency = []
-    for i in range(len(m.nodes)):
-        if m.nodes[i, 2] >= 0:
-            n_id = i
-            node = Node(m, n_id)
-            n_score, adjacency= score_calculation(node)
-            nodes_score.append(n_score)
-            nodes_adjacency.append(adjacency)
-            mesh_ideal_score += n_score
-            mesh_score += abs(n_score)
-        else:
-            nodes_score.append(0)
-            nodes_adjacency.append(6)
-    return nodes_score, mesh_score, mesh_ideal_score, nodes_adjacency
-
-
-def score_calculation(n: Node) -> (int, int):
-    """
-    Function to calculate the irregularity of a node in the mesh.
-    :param n: a node in the mesh.
-    :return: the irregularity of the node
-    """
-    adjacency = degree(n)
-    if on_boundary(n):
-        angle = get_boundary_angle(n)
-        ideal_adjacency = max(round(angle/90)+1, 2)
-    else:
-        ideal_adjacency = 360/90
-
-    return ideal_adjacency-adjacency, adjacency
+from mesh_model.mesh_analysis.global_mesh_analysis import test_degree, on_boundary, adjacent_faces
 
 
 def isValidAction(mesh: Mesh, dart_id: int, action: int) -> (bool, bool):
@@ -271,50 +227,7 @@ def isValidQuad(A: Node, B: Node, C: Node, D: Node):
         return False
 
     """
-    if 0< signe(cp_A)+signe(cp_B)+signe(cp_C)+signe(cp_D) <2 :
+    if 0<= signe(cp_A)+signe(cp_B)+signe(cp_C)+signe(cp_D) <2 :
         return True
     else:
         return False
-
-
-def orientation(p, q, r):
-    """ Calcule l'orientation de trois points.
-        Retourne :
-        0 si colinéaire,
-        1 si sens anti-horaire,
-        2 si sens horaire.
-    """
-    val = (q[1] - p[1]) * (r[0] - q[0]) - (q[0] - p[0]) * (r[1] - q[1])
-    if val == 0:
-        return 0
-    return 1 if val > 0 else 2
-
-def do_intersect(p1, q1, p2, q2):
-    """ Vérifie si les segments [p1,q1] et [p2,q2] s'intersectent """
-    o1 = orientation(p1, q1, p2)
-    o2 = orientation(p1, q1, q2)
-    o3 = orientation(p2, q2, p1)
-    o4 = orientation(p2, q2, q1)
-
-    # Cas général : les orientations sont différentes
-    if o1 != o2 and o3 != o4:
-        return True
-
-    return False  # Pas d'intersection
-
-def is_self_intersecting_quadrilateral(A, B, C, D):
-    """ Vérifie si le quadrilatère ABCD est croisé """
-    return do_intersect(A, C, B, D)  # Vérifie l'intersection des diagonales
-
-
-"""
-d12 = d1.get_beta(2)
-d112 = d11.get_beta(2)
-d1112 = d111.get_beta(2)
-n7 = ((d1112.get_beta(1)).get_beta(1)).get_node()
-n8 = ((d112.get_beta(1)).get_beta(1)).get_node()
-n9 = (((d112.get_beta(1)).get_beta(1)).get_beta(1)).get_node()
-n11 = ((d12.get_beta(1)).get_beta(1)).get_node()
-n10 = mesh.add_node((n1.x() + n3.x()) / 2, (n1.y() + n3.y()) / 2)
-topo = isValidQuad(n10, n5, n6, n2) and isValidQuad(n4, n10, n2, n3) and isValidQuad(n10, n5, n6, n2)
-"""

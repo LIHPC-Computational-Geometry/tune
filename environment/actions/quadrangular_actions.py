@@ -84,12 +84,6 @@ def split_edge(mesh: Mesh, n1: Node, n2: Node) -> True:
     # update beta2 relations
     mesh.set_face_beta2(f5,[d111,d1112,d21,d212])
 
-    adj_n1 = adjacent_darts(n1)
-    adj_n2 = adjacent_darts(N10)
-
-    deg1 = degree(n1)
-    deg2 = degree(N10)
-
     return True, topo, geo
 
 
