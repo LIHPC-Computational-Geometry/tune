@@ -199,7 +199,7 @@ class PPO:
                     p.requires_grad = True
                 start = stop + 1
 
-    def learn(self):
+    def learn(self, writer):
         """
         Train the PPO mesh_model
         :return: the actor policy, training rewards, training wins, len of episodes
@@ -207,6 +207,8 @@ class PPO:
         rewards = []
         wins = []
         len_ep = []
+        global_step = 0
+        nb_episodes = 0
 
         try:
             for iteration in tqdm(range(self.nb_iterations)):
@@ -217,6 +219,8 @@ class PPO:
                     next_obs, info = self.env.reset()
                     trajectory = []
                     ep_reward = 0
+                    ep_mesh_reward = 0
+                    ideal_reward = info["mesh_ideal_rewards"]
                     done = False
                     step = 0
                     while step < 40:
@@ -229,6 +233,7 @@ class PPO:
                         gym_action = [action[2],int(action[0]/3)]
                         next_obs, reward, terminated, truncated, info = self.env.step(gym_action)
                         ep_reward += reward
+                        ep_mesh_reward += info["mesh_reward"]
                         if terminated:
                             if truncated:
                                 wins.append(0)
@@ -245,6 +250,10 @@ class PPO:
                         rollouts.append(trajectory)
                         dataset.extend(trajectory)
                         len_ep.append(len(trajectory))
+                    nb_episodes += 1
+                    writer.add_scalar("episode_reward", ep_reward, nb_episodes)
+                    writer.add_scalar("normalized return", (ep_reward/ideal_reward), nb_episodes)
+                    writer.add_scalar("len_episodes", len(trajectory), nb_episodes)
 
                 self.train(dataset)
 

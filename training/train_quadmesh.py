@@ -10,19 +10,25 @@ from model_RL.evaluate_model import testPolicy
 from model_RL.PPO_model_pers import PPO
 
 import gymnasium as gym
+from torch.utils.tensorboard import SummaryWriter
+import random
+import torch
+import numpy as np
+import time
+import wandb
 import json
+import os
 
+if __name__ == '__main__':
 
-def train():
-    mesh_size = 30
-    lr = 0.0001
-    gamma = 0.9
-
-    #dataset = [random_mesh() for _ in range(9)]
-    #plot_dataset(dataset)
-
+    with open("model_RL/parameters/ppo_config.json", "r") as f:
+        ppo_config = json.load(f)
     with open("environment/environment_config.json", "r") as f:
         env_config = json.load(f)
+
+    # Create log dir
+    log_dir = ppo_config["tensorboard_log"]
+    os.makedirs(log_dir, exist_ok=True)
 
     # Create the environment
     env = gym.make(
@@ -35,16 +41,40 @@ def train():
         with_degree_obs=env_config["with_degree_observation"]
     )
 
-    model = PPO(env, lr, gamma, nb_iterations=15, nb_episodes_per_iteration=100, nb_epochs=5, batch_size=8)
-    actor, rewards, wins, steps = model.learn()
+    model = PPO(
+        env=env,
+        lr=ppo_config["learning_rate"],
+        gamma=ppo_config["gamma"],
+        nb_iterations=20,
+        nb_episodes_per_iteration=100,
+        nb_epochs=5,
+        batch_size=8
+    )
+
+    run_name = f"{env_config['env_name']}__{1}__{int(time.time())}"
+    # Create log dir
+    log_dir = ppo_config["tensorboard_log"]
+    os.makedirs(log_dir, exist_ok=True)
+
+    # SEEDING
+    seed = 1
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.backends.cudnn.deterministic = True
+
+    writer = SummaryWriter(f"results/runs/{run_name}")
+    writer.add_text(
+        "Environment config",
+        "|param|value|\n|-|-|\n%s" % ("\n".join([f"|{key}|{value}|" for key, value in env_config.items()])),
+    )
+    writer.add_text(
+        "PPO config",
+        "|param|value|\n|-|-|\n%s" % ("\n".join([f"|{key}|{value}|" for key, value in ppo_config.items()])),
+    )
+
+    actor, rewards, wins, steps = model.learn(writer)
+    writer.close()
     if rewards is not None:
         plot_training_results(rewards, wins, steps)
-
-"""
     # torch.save(actor.state_dict(), 'policy_saved/actor_network.pth')
-    avg_steps, avg_wins, avg_rewards, final_meshes = testPolicy(actor, 5, dataset, 60)
-
-    if rewards is not None:
-        plot_test_results(avg_rewards, avg_wins, avg_steps, avg_rewards)
-    plot_dataset(final_meshes)
-"""
