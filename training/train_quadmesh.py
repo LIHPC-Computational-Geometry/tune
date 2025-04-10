@@ -21,6 +21,13 @@ import os
 
 if __name__ == '__main__':
 
+    # SEEDING
+    seed = 1
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.backends.cudnn.deterministic = True
+
     with open("model_RL/parameters/ppo_config.json", "r") as f:
         ppo_config = json.load(f)
     with open("environment/environment_config.json", "r") as f:
@@ -33,7 +40,7 @@ if __name__ == '__main__':
     # Create the environment
     env = gym.make(
         env_config["env_name"],
-        mesh=read_gmsh("mesh_files/exemple.msh"),
+        mesh=read_gmsh("mesh_files/simple_quad.msh"),
         max_episode_steps=env_config["max_episode_steps"],
         n_darts_selected=env_config["n_darts_selected"],
         deep=env_config["deep"],
@@ -55,13 +62,6 @@ if __name__ == '__main__':
     # Create log dir
     log_dir = ppo_config["tensorboard_log"]
     os.makedirs(log_dir, exist_ok=True)
-
-    # SEEDING
-    seed = 1
-    random.seed(seed)
-    np.random.seed(seed)
-    torch.manual_seed(seed)
-    torch.backends.cudnn.deterministic = True
 
     writer = SummaryWriter(f"results/runs/{run_name}")
     writer.add_text(

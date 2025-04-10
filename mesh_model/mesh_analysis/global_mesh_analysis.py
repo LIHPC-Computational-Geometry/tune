@@ -163,13 +163,13 @@ def adjacent_darts(n: Node) -> list[Dart]:
             adj_darts.append(d)
     return adj_darts
 
-def adjacent_faces(n: Node) -> list[Face]:
+def adjacent_faces_id(n: Node) -> list[int]:
     adj_darts = adjacent_darts(n)
     adj_faces = []
     for d in adj_darts:
         f = d.get_face()
-        if f not in adj_faces:
-            adj_faces.append(f)
+        if f.id not in adj_faces:
+            adj_faces.append(f.id)
     return adj_faces
 
 

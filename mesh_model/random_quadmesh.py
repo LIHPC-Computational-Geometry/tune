@@ -5,7 +5,7 @@ import os
 from mesh_model.mesh_struct.mesh_elements import Dart
 from mesh_model.mesh_struct.mesh import Mesh
 from mesh_model.mesh_analysis.quadmesh_analysis import isValidAction
-from environment.actions.quadrangular_actions import flip_edge_ids, split_edge_ids, collapse_edge_ids
+from environment.actions.quadrangular_actions import flip_edge_cntcw_ids, split_edge_ids, collapse_edge_ids
 from mesh_model.reader import read_gmsh
 
 
@@ -42,7 +42,7 @@ def mesh_shuffle(mesh: Mesh, num_nodes) -> Mesh:
         i2 = (dart.get_beta(1)).get_node()
         #plot_mesh(mesh)
         if action_type == 0 and isValidAction(mesh, d_id, action_type)[0]:
-            flip_edge_ids(mesh, i1.id, i2.id)
+            flip_edge_cntcw_ids(mesh, i1.id, i2.id)
             nb_action += 1
         elif action_type == 1: # and isValidAction(mesh, d_id, action_type)[0]
             split_edge_ids(mesh, i1.id, i2.id)

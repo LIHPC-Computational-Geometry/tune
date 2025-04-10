@@ -15,6 +15,9 @@ from stable_baselines3.common.logger import Figure
 from environment.gymnasium_envs import quadmesh_env
 
 import gymnasium as gym
+import random
+import numpy as np
+import torch
 
 class TensorboardCallback(BaseCallback):
     """
@@ -131,7 +134,8 @@ class TensorboardCallback(BaseCallback):
 
         print(f"Counts saved at {filename}")
 
-        dataset = [QM.random_mesh() for _ in range(9)] # dataset of 9 meshes of size 30
+        mesh = read_gmsh("../mesh_files/simple_quad.msh")
+        dataset = [mesh for _ in range(9)] # dataset of 9 meshes of size 30
         before = dataset_plt(dataset) # plot the datasat as image
         length, wins, rewards, normalized_return, final_meshes = testPolicy(self.model, 10, env_config, dataset) # test model policy on the dataset
         after = dataset_plt(final_meshes)
@@ -139,6 +143,13 @@ class TensorboardCallback(BaseCallback):
         self.logger.record("figures/after", Figure(after, close=True), exclude=("stdout", "log"))
         self.logger.dump(step=0)
 
+
+# SEEDING
+seed = 1
+random.seed(seed)
+np.random.seed(seed)
+torch.manual_seed(seed)
+torch.backends.cudnn.deterministic = True
 
 with open("../model_RL/parameters/ppo_config.json", "r") as f:
     ppo_config = json.load(f)
@@ -152,7 +163,7 @@ os.makedirs(log_dir, exist_ok=True)
 # Create the environment
 env = gym.make(
     env_config["env_name"],
-    mesh = read_gmsh("../mesh_files/exemple.msh"),
+    mesh = read_gmsh("../mesh_files/simple_quad.msh"),
     max_episode_steps=env_config["max_episode_steps"],
     n_darts_selected=env_config["n_darts_selected"],
     deep= env_config["deep"],
@@ -177,4 +188,4 @@ model = PPO(
 print("-----------Starting learning-----------")
 model.learn(total_timesteps=ppo_config["total_timesteps"], callback=TensorboardCallback(model))
 print("-----------Learning ended------------")
-model.save("policy_saved/quad/test3")
+model.save("policy_saved/quad/4-actions-quad-simple-PPO43")
