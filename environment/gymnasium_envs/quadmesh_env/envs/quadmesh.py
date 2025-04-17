@@ -9,15 +9,16 @@ from mesh_model.mesh_struct.mesh_elements import Dart
 from mesh_model.mesh_analysis.global_mesh_analysis import global_score
 from mesh_model.mesh_analysis.quadmesh_analysis import isTruncated
 from environment.gymnasium_envs.quadmesh_env.envs.mesh_conv import get_x
-from environment.actions.quadrangular_actions import flip_edge, split_edge, collapse_edge, cleanup_edge
+from environment.actions.quadrangular_actions import flip_edge_cntcw, flip_edge_cw, split_edge, collapse_edge, cleanup_edge
 from environment.observation_register import ObservationRegistry
 
 
 class Actions(Enum):
-    FLIP = 0
-    SPLIT = 1
-    COLLAPSE = 2
-    CLEANUP = 3
+    FLIP_CW = 0
+    FLIP_CNTCW = 1
+    SPLIT = 2
+    COLLAPSE = 3
+    CLEANUP = 4
 
 
 class QuadMeshEnv(gym.Env):
@@ -45,8 +46,8 @@ class QuadMeshEnv(gym.Env):
         self.darts_selected = [] # darts id observed
         self.deep = deep*2 if self.degree_observation else deep
         self.observation_space = spaces.Box(
-            low=-6,  # nodes min degree : -15
-            high=2,  # nodes max degree : 15
+            low=-6,  # nodes min degree : -6
+            high=2,  # nodes max degree : 2
             shape=(self.n_darts_selected, deep),
             dtype=np.int64
         )
@@ -54,8 +55,8 @@ class QuadMeshEnv(gym.Env):
 
         self.observation = None
 
-        # We have 4 actions, flip, split, collapse, cleanup
-        self.action_space = spaces.MultiDiscrete([3, self.n_darts_selected])
+        # We have 4 actions, flip clockwise, flip counterclockwise, split, collapse, cleanup
+        self.action_space = spaces.MultiDiscrete([4, self.n_darts_selected])
 
 
     def reset(self, seed=None, options=None):
@@ -96,11 +97,12 @@ class QuadMeshEnv(gym.Env):
             "valid_action": 1.0 if valid_action else 0.0,
             "invalid_topo": 1.0 if not valid_topo else 0.0,
             "invalid_geo": 1.0 if  not valid_geo else 0.0,
-            "flip": 1.0 if action[0]==Actions.FLIP.value else 0.0,
+            "flip_cw": 1.0 if action[0]==Actions.FLIP_CW.value else 0.0,
+            "flip_cntcw": 1.0 if action[0]==Actions.FLIP_CNTCW.value else 0.0,
             "split": 1.0 if action[0]==Actions.SPLIT.value else 0.0,
             "collapse": 1.0 if action[0]==Actions.COLLAPSE.value else 0.0,
             "cleanup": 1.0 if action[0]==Actions.CLEANUP.value else 0.0,
-            "invalid_flip": 1.0 if action[0]==Actions.FLIP.value and not valid_action else 0.0,
+            "invalid_flip": 1.0 if (action[0]==Actions.FLIP_CW.value or action[0]==Actions.FLIP_CNTCW.value) and not valid_action else 0.0,
             "invalid_split": 1.0 if action[0]==Actions.SPLIT.value and not valid_action else 0.0,
             "invalid_collapse": 1.0 if action[0]==Actions.COLLAPSE.value and not valid_action else 0.0,
             "invalid_cleanup": 1.0 if action[0]==Actions.CLEANUP.value and not valid_action else 0.0,
@@ -125,8 +127,10 @@ class QuadMeshEnv(gym.Env):
         n2 = d1.get_node()
         valid_action, valid_topo, valid_geo = False, False, False
 
-        if action[0] == Actions.FLIP.value:
-            valid_action, valid_topo, valid_geo = flip_edge(self.mesh, n1, n2)
+        if action[0] == Actions.FLIP_CW.value:
+            valid_action, valid_topo, valid_geo = flip_edge_cw(self.mesh, n1, n2)
+        elif action[0] == Actions.FLIP_CNTCW.value:
+            valid_action, valid_topo, valid_geo = flip_edge_cntcw(self.mesh, n1, n2)
         elif action[0] == Actions.SPLIT.value:
             valid_action, valid_topo, valid_geo = split_edge(self.mesh, n1, n2)
         elif action[0] == Actions.COLLAPSE.value:

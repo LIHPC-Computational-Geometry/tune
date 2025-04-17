@@ -2,29 +2,43 @@ import numpy as np
 
 from mesh_model.mesh_struct.mesh_elements import Dart, Node, Face
 from mesh_model.mesh_struct.mesh import Mesh
-from mesh_model.mesh_analysis.global_mesh_analysis import test_degree, on_boundary, adjacent_faces
+from mesh_model.mesh_analysis.global_mesh_analysis import test_degree, on_boundary, adjacent_faces_id, degree
+
+FLIP_CW = 0 # flip clockwise
+FLIP_CCW = 1 # flip counterclockwise
+SPLIT = 2
+COLLAPSE = 3
+CLEANUP = 4
+TEST_ALL = 5 # test if all actions are valid
+ONE_VALID = 6 # test if at least one action is valid
 
 
 def isValidAction(mesh: Mesh, dart_id: int, action: int) -> (bool, bool):
-    flip = 0
-    split = 1
-    collapse = 2
-    cleanup =3
-    test_all = 4
-    one_valid = 5
+    """
+    Test if an action is valid. You can select the ype of action between {flip clockwise, flip counterclockwise, split, collapse, cleanup, all action, one action no matter wich one}.    :param mesh:
+    :param mesh: a mesh
+    :param dart_id: a dart on which to test the action
+    :param action: an action type
+    :return:
+    """
     d = Dart(mesh, dart_id)
     if d.get_beta(2) is None:
         return False, True
-    elif action == flip:
-        return isFlipOk(d)
-    elif action == split:
+    elif action == FLIP_CW:
+        return isFlipCWOk(d)
+    elif action == FLIP_CCW:
+        return isFlipCCWOk(d)
+    elif action == SPLIT:
         return isSplitOk(d)
-    elif action == collapse:
+    elif action == COLLAPSE:
         return isCollapseOk(d)
-    elif action == cleanup:
+    elif action == CLEANUP:
         return isCleanupOk(d)
-    elif action == test_all:
-        topo, geo = isFlipOk(d)
+    elif action == TEST_ALL:
+        topo, geo = isFlipCCWOk(d)
+        if not (topo and geo):
+            return False, False
+        topo, geo = isFlipCWOk(d)
         if not (topo and geo):
             return False, False
         topo, geo = isSplitOk(d)
@@ -35,8 +49,11 @@ def isValidAction(mesh: Mesh, dart_id: int, action: int) -> (bool, bool):
             return False, False
         elif topo and geo:
             return True, True
-    elif action == one_valid:
-        topo_flip, geo_flip = isFlipOk(d)
+    elif action == ONE_VALID:
+        topo_flip, geo_flip = isFlipCCWOk(d)
+        if (topo_flip and geo_flip):
+            return True, True
+        topo_flip, geo_flip = isFlipCWOk(d)
         if (topo_flip and geo_flip):
             return True, True
         topo_split, geo_split = isSplitOk(d)
@@ -50,7 +67,34 @@ def isValidAction(mesh: Mesh, dart_id: int, action: int) -> (bool, bool):
         raise ValueError("No valid action")
 
 
-def isFlipOk(d: Dart) -> (bool, bool):
+def isFlipCCWOk(d: Dart) -> (bool, bool):
+    mesh = d.mesh
+    topo = True
+    geo = True
+
+    # if d is on boundary, flip is not possible
+    if d.get_beta(2) is None:
+        topo = False
+        return topo, geo
+    else:
+        d2, d1, d11, d111, d21, d211, d2111, n1, n2, n3, n4, n5, n6 = mesh.active_quadrangles(d)
+
+    # if degree will not too high
+    if not test_degree(n5) or not test_degree(n3):
+        topo = False
+        return topo, geo
+
+    # if two faces share two edges
+    if d211.get_node() == d111.get_node() or d11.get_node() == d2111.get_node():
+        topo = False
+        return topo, geo
+
+    # check validity of the two modified quads
+    geo = isValidQuad(n5, n6, n2, n3) and isValidQuad(n1, n5, n3, n4)
+
+    return topo, geo
+
+def isFlipCWOk(d: Dart) -> (bool, bool):
     mesh = d.mesh
     topo = True
     geo = True
@@ -61,23 +105,14 @@ def isFlipOk(d: Dart) -> (bool, bool):
     else:
         d2, d1, d11, d111, d21, d211, d2111, n1, n2, n3, n4, n5, n6 = mesh.active_quadrangles(d)
     # if degree are
-    if not test_degree(n5) or not test_degree(n3):
+    if not test_degree(n4) or not test_degree(n6):
         topo = False
         return topo, geo
 
     if d211.get_node() == d111.get_node() or d11.get_node() == d2111.get_node():
         topo = False
         return topo, geo
-    topo = isValidQuad(n5, n6, n2, n3) and isValidQuad(n1, n5, n3, n4)
-
-    """
-    # Check angle at d limits to avoid edge reversal
-    angle_A = get_angle_by_coord(n5.x(), n5.y(), n1.x(), n1.y(), n3.x(), n3.y())
-
-    if angle_A <= 90 or angle_A >= 180:
-        topo = False
-        return topo, geo
-    """
+    geo = isValidQuad(n4, n6, n2, n3) and isValidQuad(n1, n5, n6, n4)
 
     return topo, geo
 
@@ -101,7 +136,7 @@ def isSplitOk(d: Dart) -> (bool, bool):
         return topo, geo
 
     n10 = mesh.add_node((n1.x() + n2.x()) / 2, (n1.y() + n2.y()) / 2)
-    topo = isValidQuad(n4, n1, n5, n10) and isValidQuad(n4, n10, n2, n3) and isValidQuad(n10, n5, n6, n2)
+    geo = isValidQuad(n4, n1, n5, n10) and isValidQuad(n4, n10, n2, n3) and isValidQuad(n10, n5, n6, n2)
     mesh.del_node(n10)
     return topo, geo
 
@@ -116,51 +151,69 @@ def isCollapseOk(d: Dart) -> (bool, bool):
     else:
         d2, d1, d11, d111, d21, d211, d2111, n1, n2, n3, n4, n5, n6 = mesh.active_quadrangles(d)
 
-    if on_boundary(n3) or on_boundary(n1):
+    if on_boundary(n1): # on_boundary(n3) or
         topo = False
         return topo, geo
 
-    if not test_degree(n3):
+    if (degree(n3)+degree(n1)-2) > 10:
         topo = False
         return topo, geo
 
+    adjacent_faces_lst = []
     f1 = d2.get_face()
-    f2 = (d1.get_beta(2)).get_face()
-    f3 = (d11.get_beta(2)).get_face()
-    f4 = (d111.get_beta(2)).get_face()
-    adjacent_faces_lst=[f1.id, f2.id, f3.id, f4.id]
+    adjacent_faces_lst.append(f1.id)
+    d12 = d1.get_beta(2)
+    if d12 is not None:
+        f2 = d12.get_face()
+        adjacent_faces_lst.append(f2.id)
+    d112 = d11.get_beta(2)
+    if d112 is not None:
+        f3 = d112.get_face()
+        adjacent_faces_lst.append(f3.id)
+    d1112 = d111.get_beta(2)
+    if d1112 is not None:
+        f4 = d1112.get_face()
+        adjacent_faces_lst.append(f4.id)
 
     # Check that there are no adjacent faces in common
     if len(adjacent_faces_lst) != len(set(adjacent_faces_lst)):
         topo = False
         return topo, geo
 
-    adj_faces = adjacent_faces(n3)
-    adj_faces.extend(adjacent_faces(n1))
-    n10 = mesh.add_node((n1.x() + n3.x()) / 2, (n1.y() + n3.y()) / 2)
+    adj_faces = adjacent_faces_id(n3)
+    adj_faces.extend(adjacent_faces_id(n1))
 
-    for f in adj_faces:
-        d = f.get_dart()
-        d1 = d.get_beta(1)
-        d11 = d1.get_beta(1)
-        d111 = d11.get_beta(1)
-        A = d.get_node()
-        B = d1.get_node()
-        C = d11.get_node()
-        D = d111.get_node()
-        if A==n1 or A==n3:
-            A=n10
-        elif B==n1 or B==n3:
-            B=n10
-        elif C==n1 or C==n3:
-            C=n10
-        elif D==n1 or D==n3:
-            D=n10
+    #If the opposite vertex is on the edge, it is not moved
 
-        if not isValidQuad(A, B, C, D):
-            topo = False
-            mesh.del_node(n10)
-            return topo, geo
+    if on_boundary(n3):
+        n10 = mesh.add_node( n3.x(), n3.y())
+    else:
+        n10 = mesh.add_node((n1.x() + n3.x()) / 2, (n1.y() + n3.y()) / 2)
+
+    for f_id in adj_faces:
+        if f_id != (d.get_face()).id:
+            f = Face(mesh, f_id)
+            df = f.get_dart()
+            df1 = df.get_beta(1)
+            df11 = df1.get_beta(1)
+            df111 = df11.get_beta(1)
+            A = df.get_node()
+            B = df1.get_node()
+            C = df11.get_node()
+            D = df111.get_node()
+            if A==n1 or A==n3:
+                A=n10
+            elif B==n1 or B==n3:
+                B=n10
+            elif C==n1 or C==n3:
+                C=n10
+            elif D==n1 or D==n3:
+                D=n10
+
+            if not isValidQuad(A, B, C, D):
+                geo = False
+                mesh.del_node(n10)
+                return topo, geo
 
     mesh.del_node(n10)
     return topo, geo
@@ -220,14 +273,10 @@ def isValidQuad(A: Node, B: Node, C: Node, D: Node):
     cp_C = cross_product(-1*u2, u3)
     cp_D = cross_product(-1*u3, u4)
 
-    """
-    if cp_A<=0 and cp_B<=0 and cp_C<=0 and cp_D<=0:
-        return True
-    else:
+    zero_count = sum(-1e-5<cp<1e-5 for cp in [cp_A, cp_B, cp_C, cp_D])
+    if zero_count>=2:
         return False
-
-    """
-    if 0<= signe(cp_A)+signe(cp_B)+signe(cp_C)+signe(cp_D) <2 :
+    elif 0<= signe(cp_A)+signe(cp_B)+signe(cp_C)+signe(cp_D) <2 :
         return True
     else:
         return False

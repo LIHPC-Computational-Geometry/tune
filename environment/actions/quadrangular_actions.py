@@ -2,19 +2,19 @@ from __future__ import annotations
 
 from mesh_model.mesh_struct.mesh import Mesh
 from mesh_model.mesh_struct.mesh_elements import Node
-from mesh_model.mesh_analysis.global_mesh_analysis import adjacent_darts, degree, mesh_check
-from mesh_model.mesh_analysis.quadmesh_analysis import isFlipOk, isCollapseOk, isSplitOk, isCleanupOk
+from mesh_model.mesh_analysis.global_mesh_analysis import adjacent_darts, degree, mesh_check, on_boundary
+from mesh_model.mesh_analysis.quadmesh_analysis import isFlipCCWOk, isFlipCWOk, isCollapseOk, isSplitOk, isCleanupOk
 
 
-def flip_edge_ids(mesh: Mesh, id1: int, id2: int) -> True:
-    return flip_edge(mesh, Node(mesh, id1), Node(mesh, id2))
+def flip_edge_cntcw_ids(mesh: Mesh, id1: int, id2: int) -> True:
+    return flip_edge_cntcw(mesh, Node(mesh, id1), Node(mesh, id2))
 
 
-def flip_edge(mesh: Mesh, n1: Node, n2: Node) -> (True, True, True):
+def flip_edge_cntcw(mesh: Mesh, n1: Node, n2: Node) -> (True, True, True):
     found, d = mesh.find_inner_edge(n1, n2)
 
     if found:
-        topo, geo = isFlipOk(d)
+        topo, geo = isFlipCCWOk(d)
         if not geo or not topo:
             return False, topo, geo
     else:
@@ -49,6 +49,53 @@ def flip_edge(mesh: Mesh, n1: Node, n2: Node) -> (True, True, True):
     d2.set_node(n3)
     d21.set_face(f1)
     d1.set_face(f2)
+
+    return True, topo, geo
+
+def flip_edge_cw_ids(mesh: Mesh, id1: int, id2: int) -> True:
+    return flip_edge_cw(mesh, Node(mesh, id1), Node(mesh, id2))
+
+
+def flip_edge_cw(mesh: Mesh, n1: Node, n2: Node) -> (True, True, True):
+    found, d = mesh.find_inner_edge(n1, n2)
+
+    if found:
+        topo, geo = isFlipCWOk(d)
+        if not geo or not topo:
+            return False, topo, geo
+    else:
+        return False, False, False
+
+    d2, d1, d11, d111, d21, d211, d2111, n1, n2, n3, n4, n5, n6 = mesh.active_quadrangles(d)
+
+    f1 = d.get_face()
+    f2 = d2.get_face()
+
+    # Update beta 1
+    d.set_beta(1, d2111)
+    d2111.set_beta(1, d1)
+    d11.set_beta(1, d)
+
+    d111.set_beta(1, d21)
+    d211.set_beta(1, d2)
+    d2.set_beta(1, d111)
+
+
+    if n1.get_dart().id == d.id:
+        n1.set_dart(d21)
+    if n2.get_dart().id == d2.id:
+        n2.set_dart(d1)
+
+    if f1.get_dart().id == d111.id:
+        f1.set_dart(d)
+
+    if f2.get_dart().id == d2111.id:
+        f2.set_dart(d2)
+
+    d.set_node(n4)
+    d2.set_node(n6)
+    d2111.set_face(f1)
+    d111.set_face(f2)
 
     return True, topo, geo
 
@@ -107,7 +154,8 @@ def collapse_edge(mesh: Mesh, n1: Node, n2: Node) -> True:
     d112 = d11.get_beta(2)
 
     # Move n3 node in the middle of [n3, n1]
-    n3.set_xy((n3.x() + n1.x()) / 2, (n1.y() + n3.y()) / 2)
+    if not on_boundary(n3):
+        n3.set_xy((n3.x() + n1.x()) / 2, (n1.y() + n3.y()) / 2)
 
     #Delete the face F5
     f5 = d.get_face()
@@ -120,6 +168,7 @@ def collapse_edge(mesh: Mesh, n1: Node, n2: Node) -> True:
     for d in adj_darts:
         if d.get_node() == n_from:
             d.set_node(n_to)
+
     mesh.del_node(n_from)
 
     #Update beta2 relations

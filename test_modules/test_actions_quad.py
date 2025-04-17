@@ -1,9 +1,10 @@
 import unittest
 import os
 import mesh_model.mesh_struct.mesh as mesh
+from mesh_model.mesh_analysis.global_mesh_analysis import global_score
 from mesh_model.mesh_struct.mesh_elements import Dart, Node
 from mesh_model.random_quadmesh import random_mesh
-from environment.actions.quadrangular_actions import flip_edge, split_edge, collapse_edge, cleanup_edge
+from environment.actions.quadrangular_actions import flip_edge_cntcw, flip_edge_cw, split_edge, collapse_edge, cleanup_edge
 from view.mesh_plotter.mesh_plots import plot_mesh
 from mesh_model.reader import read_gmsh
 
@@ -33,11 +34,11 @@ class TestQuadActions(unittest.TestCase):
         self.assertEqual(d2.get_node(), n10)
 
 
-        self.assertEqual(flip_edge(cmap, n11, n10), (True,True,True))
+        self.assertEqual(flip_edge_cntcw(cmap, n11, n10), (True,True,True))
         self.assertEqual(2, cmap.nb_faces())
         self.assertEqual(6, cmap.nb_nodes())
         plot_mesh(cmap)
-        self.assertFalse(flip_edge(cmap, n11, n10)[0])
+        self.assertFalse(flip_edge_cntcw(cmap, n11, n10)[0])
 
     def test_split(self):
         cmap = mesh.Mesh()
@@ -134,7 +135,7 @@ class TestQuadActions(unittest.TestCase):
         d = Dart(cmap, 32)
         n1 = d.get_node()
         n2 = (d.get_beta(1)).get_node()
-        self.assertEqual(flip_edge(cmap, n1, n2), (True,True,True))
+        self.assertEqual(flip_edge_cntcw(cmap, n1, n2), (True,True,True))
 
         plot_mesh(cmap)
 
@@ -172,6 +173,78 @@ class TestQuadActions(unittest.TestCase):
         n8 = Node(cmap, 8)
         collapse_edge(cmap, n7, n8)
         collapse_edge(cmap, n5, n7)
+
+    def test_simple_mesh(self):
+        filename = os.path.join(TESTFILE_FOLDER, 'simple_quad.msh')
+        cmap = read_gmsh(filename)
+        self.assertEqual(6, cmap.nb_faces())
+        self.assertEqual(11, cmap.nb_nodes())
+
+        #Collapse node 10 (0.67,0.67) from edge 10-6
+        collapse_edge(cmap, Node(cmap, 10), Node(cmap, 6))
+        self.assertEqual(5, cmap.nb_faces())
+        self.assertEqual(10, cmap.nb_nodes())
+        self.assertTrue(Node(cmap,10).get_dart().id < 0)
+        plot_mesh(cmap)
+        #Flip edge 5-3
+        self.assertTrue(cmap.find_inner_edge(Node(cmap, 5), Node(cmap, 3))[0])
+        flip_edge_cntcw(cmap, Node(cmap, 5), Node(cmap, 3))
+        self.assertFalse(cmap.find_inner_edge(Node(cmap, 5), Node(cmap, 3))[0])
+        plot_mesh(cmap)
+        #Collapse node 9 (0.33, 0.33) from edge 9-4
+        collapse_edge(cmap, Node(cmap, 9), Node(cmap, 4))
+        self.assertEqual(4, cmap.nb_faces())
+        self.assertEqual(9, cmap.nb_nodes())
+        self.assertTrue(Node(cmap, 9).get_dart().id < 0)
+        plot_mesh(cmap)
+        #Flip edge 7-1
+        self.assertTrue(cmap.find_inner_edge(Node(cmap, 7), Node(cmap, 1))[0])
+        flip_edge_cntcw(cmap, Node(cmap, 7), Node(cmap, 1))
+        self.assertFalse(cmap.find_inner_edge(Node(cmap, 7), Node(cmap, 1))[0])
+        plot_mesh(cmap)
+        #Flip edge 3-8
+        self.assertTrue(cmap.find_inner_edge(Node(cmap, 3), Node(cmap, 8))[0])
+        flip_edge_cntcw(cmap, Node(cmap, 3), Node(cmap, 8))
+        self.assertFalse(cmap.find_inner_edge(Node(cmap, 3), Node(cmap, 8))[0])
+        plot_mesh(cmap)
+        #Flip edge 1-8
+        self.assertTrue(cmap.find_inner_edge(Node(cmap, 1), Node(cmap, 8))[0])
+        flip_edge_cntcw(cmap, Node(cmap, 1), Node(cmap, 8))
+        self.assertFalse(cmap.find_inner_edge(Node(cmap, 1), Node(cmap, 8))[0])
+        plot_mesh(cmap)
+        #Split edge 2-7 and create new node n9 at coordinate (0.5, 0.75)
+        split_edge(cmap, Node(cmap, 2), Node(cmap, 7))
+        self.assertEqual(5, cmap.nb_faces())
+        self.assertEqual(10, cmap.nb_nodes())
+        self.assertTrue(Node(cmap, 9).get_dart().id > 0)
+        plot_mesh(cmap)
+        # Split edge 0-5 and create new node n10 at coordinate (0.5, 0.25)
+        split_edge(cmap, Node(cmap, 0), Node(cmap, 5))
+        self.assertEqual(6, cmap.nb_faces())
+        self.assertEqual(11, cmap.nb_nodes())
+        self.assertTrue(Node(cmap, 10).get_dart().id > 0)
+        plot_mesh(cmap)
+        # Flip edge 0-8
+        self.assertTrue(cmap.find_inner_edge(Node(cmap, 0), Node(cmap, 8))[0])
+        flip_edge_cw(cmap, Node(cmap, 0), Node(cmap, 8))
+        self.assertFalse(cmap.find_inner_edge(Node(cmap, 0), Node(cmap, 8))[0])
+        plot_mesh(cmap)
+
+        # Collapse node 8 (0.5, 0.5) from edge 8-10
+        collapse_edge(cmap, Node(cmap, 8), Node(cmap, 10))
+        self.assertEqual(5, cmap.nb_faces())
+        self.assertEqual(10, cmap.nb_nodes())
+        self.assertTrue(Node(cmap, 8).get_dart().id < 0)
+
+        # Collapse node 10 (0.5, 0.25) from edge 10-5
+        collapse_edge(cmap, Node(cmap, 10), Node(cmap, 5))
+        self.assertEqual(4, cmap.nb_faces())
+        self.assertEqual(9, cmap.nb_nodes())
+        self.assertTrue(Node(cmap, 10).get_dart().id < 0)
+
+        plot_mesh(cmap)
+
+        self.assertEqual(global_score(cmap)[1], 0)
 
 
 
