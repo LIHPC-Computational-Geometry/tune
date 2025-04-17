@@ -72,11 +72,58 @@ For training on quadrangular meshes, you can use an agent with all four actions:
 ##### 2. Using `tune/model_RL/PPO_model_pers`
 Run the following command from the `tune/` directory:
   ```bash
-  python -m /training/train_quadmesh
+  python -m training.train_quadmesh
   ```
 
 ##### 3. Using PPO from Stable Baselines 3 (SB3)
-Run the training script in pycharm `tune/training/train_quadmesh_SB3.py`
+Run the following command from the `tune/` directory:
+  ```bash
+  python -m training.train_quadmesh_SB3
+  ```
+#### 🧪 Testing a Saved SB3 Policy
+
+After training, the model is saved as a `.zip` file in the `tune/training/policy_saved/` directory. To evaluate the policy, follow these steps in `tune/training/exploit_SB3_policy.py` :
+
+##### 1. Create a Test Dataset
+
+You can either:
+
+- **Load a specific mesh file and duplicate it**:
+  ```python
+  mesh = read_gmsh("../mesh_files/t1_quad.msh")
+  dataset = [mesh for _ in range(9)]
+  ```
+
+- **Generate a set of random quad meshes**:
+  ```python
+  dataset = [QM.random_mesh() for _ in range(9)]
+  ```
+
+##### 2. Load the Environment Configuration
+
+Make sure to change and load the environment settings before testing:
+
+```python
+with open("../environment/environment_config.json", "r") as f:
+    env_config = json.load(f)
+
+plot_dataset(dataset)
+```
+
+##### 3. Load the Model
+
+Use the `PPO.load()` function and evaluate the policy with your dataset:
+
+```python
+model = PPO.load("policy_saved/name.zip")
+```
+
+##### 4. Run the script
+
+Run the script directly in **PyCharm** (or another IDE that supports graphical output) instead of the terminal.  
+> ❗ If executed in a terminal without GUI support, the plots will not be displayed.
 
 
+#### 🧪 Testing a Saved PPO_perso Policy
 
+🚧 *Section in progress...*
