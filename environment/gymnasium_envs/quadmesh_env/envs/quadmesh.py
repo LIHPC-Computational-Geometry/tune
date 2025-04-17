@@ -46,8 +46,8 @@ class QuadMeshEnv(gym.Env):
         self.darts_selected = [] # darts id observed
         self.deep = deep*2 if self.degree_observation else deep
         self.observation_space = spaces.Box(
-            low=-6,  # nodes min degree : -15
-            high=2,  # nodes max degree : 15
+            low=-6,  # nodes min degree : -6
+            high=2,  # nodes max degree : 2
             shape=(self.n_darts_selected, deep),
             dtype=np.int64
         )
@@ -102,8 +102,7 @@ class QuadMeshEnv(gym.Env):
             "split": 1.0 if action[0]==Actions.SPLIT.value else 0.0,
             "collapse": 1.0 if action[0]==Actions.COLLAPSE.value else 0.0,
             "cleanup": 1.0 if action[0]==Actions.CLEANUP.value else 0.0,
-            "invalid_flip_cw": 1.0 if action[0]==Actions.FLIP_CW.value and not valid_action else 0.0,
-            "invalid_flip_cntcw": 1.0 if action[0]==Actions.FLIP_CNTCW.value and not valid_action else 0.0,
+            "invalid_flip": 1.0 if (action[0]==Actions.FLIP_CW.value or action[0]==Actions.FLIP_CNTCW.value) and not valid_action else 0.0,
             "invalid_split": 1.0 if action[0]==Actions.SPLIT.value and not valid_action else 0.0,
             "invalid_collapse": 1.0 if action[0]==Actions.COLLAPSE.value and not valid_action else 0.0,
             "invalid_cleanup": 1.0 if action[0]==Actions.CLEANUP.value and not valid_action else 0.0,

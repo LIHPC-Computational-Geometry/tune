@@ -2,29 +2,43 @@ import numpy as np
 
 from mesh_model.mesh_struct.mesh_elements import Dart, Node, Face
 from mesh_model.mesh_struct.mesh import Mesh
-from mesh_model.mesh_analysis.global_mesh_analysis import test_degree, on_boundary, adjacent_faces_id
+from mesh_model.mesh_analysis.global_mesh_analysis import test_degree, on_boundary, adjacent_faces_id, degree
+
+FLIP_CW = 0 # flip clockwise
+FLIP_CCW = 1 # flip counterclockwise
+SPLIT = 2
+COLLAPSE = 3
+CLEANUP = 4
+TEST_ALL = 5 # test if all actions are valid
+ONE_VALID = 6 # test if at least one action is valid
 
 
 def isValidAction(mesh: Mesh, dart_id: int, action: int) -> (bool, bool):
-    flip_ccw = 0
-    split = 1
-    collapse = 2
-    cleanup =3
-    test_all = 4
-    one_valid = 5
+    """
+    Test if an action is valid. You can select the ype of action between {flip clockwise, flip counterclockwise, split, collapse, cleanup, all action, one action no matter wich one}.    :param mesh:
+    :param mesh: a mesh
+    :param dart_id: a dart on which to test the action
+    :param action: an action type
+    :return:
+    """
     d = Dart(mesh, dart_id)
     if d.get_beta(2) is None:
         return False, True
-    elif action == flip_ccw:
+    elif action == FLIP_CW:
+        return isFlipCWOk(d)
+    elif action == FLIP_CCW:
         return isFlipCCWOk(d)
-    elif action == split:
+    elif action == SPLIT:
         return isSplitOk(d)
-    elif action == collapse:
+    elif action == COLLAPSE:
         return isCollapseOk(d)
-    elif action == cleanup:
+    elif action == CLEANUP:
         return isCleanupOk(d)
-    elif action == test_all:
+    elif action == TEST_ALL:
         topo, geo = isFlipCCWOk(d)
+        if not (topo and geo):
+            return False, False
+        topo, geo = isFlipCWOk(d)
         if not (topo and geo):
             return False, False
         topo, geo = isSplitOk(d)
@@ -35,8 +49,11 @@ def isValidAction(mesh: Mesh, dart_id: int, action: int) -> (bool, bool):
             return False, False
         elif topo and geo:
             return True, True
-    elif action == one_valid:
+    elif action == ONE_VALID:
         topo_flip, geo_flip = isFlipCCWOk(d)
+        if (topo_flip and geo_flip):
+            return True, True
+        topo_flip, geo_flip = isFlipCWOk(d)
         if (topo_flip and geo_flip):
             return True, True
         topo_split, geo_split = isSplitOk(d)
@@ -54,30 +71,26 @@ def isFlipCCWOk(d: Dart) -> (bool, bool):
     mesh = d.mesh
     topo = True
     geo = True
+
     # if d is on boundary, flip is not possible
     if d.get_beta(2) is None:
         topo = False
         return topo, geo
     else:
         d2, d1, d11, d111, d21, d211, d2111, n1, n2, n3, n4, n5, n6 = mesh.active_quadrangles(d)
-    # if degree are
+
+    # if degree will not too high
     if not test_degree(n5) or not test_degree(n3):
         topo = False
         return topo, geo
 
+    # if two faces share two edges
     if d211.get_node() == d111.get_node() or d11.get_node() == d2111.get_node():
         topo = False
         return topo, geo
-    topo = isValidQuad(n5, n6, n2, n3) and isValidQuad(n1, n5, n3, n4)
 
-    """
-    # Check angle at d limits to avoid edge reversal
-    angle_A = get_angle_by_coord(n5.x(), n5.y(), n1.x(), n1.y(), n3.x(), n3.y())
-
-    if angle_A <= 90 or angle_A >= 180:
-        topo = False
-        return topo, geo
-    """
+    # check validity of the two modified quads
+    geo = isValidQuad(n5, n6, n2, n3) and isValidQuad(n1, n5, n3, n4)
 
     return topo, geo
 
@@ -99,7 +112,7 @@ def isFlipCWOk(d: Dart) -> (bool, bool):
     if d211.get_node() == d111.get_node() or d11.get_node() == d2111.get_node():
         topo = False
         return topo, geo
-    topo = isValidQuad(n4, n6, n2, n3) and isValidQuad(n1, n5, n6, n4)
+    geo = isValidQuad(n4, n6, n2, n3) and isValidQuad(n1, n5, n6, n4)
 
     return topo, geo
 
@@ -123,7 +136,7 @@ def isSplitOk(d: Dart) -> (bool, bool):
         return topo, geo
 
     n10 = mesh.add_node((n1.x() + n2.x()) / 2, (n1.y() + n2.y()) / 2)
-    topo = isValidQuad(n4, n1, n5, n10) and isValidQuad(n4, n10, n2, n3) and isValidQuad(n10, n5, n6, n2)
+    geo = isValidQuad(n4, n1, n5, n10) and isValidQuad(n4, n10, n2, n3) and isValidQuad(n10, n5, n6, n2)
     mesh.del_node(n10)
     return topo, geo
 
@@ -142,7 +155,7 @@ def isCollapseOk(d: Dart) -> (bool, bool):
         topo = False
         return topo, geo
 
-    if not test_degree(n3) and not test_degree(n1):
+    if (degree(n3)+degree(n1)-2) > 10:
         topo = False
         return topo, geo
 
@@ -198,7 +211,7 @@ def isCollapseOk(d: Dart) -> (bool, bool):
                 D=n10
 
             if not isValidQuad(A, B, C, D):
-                topo = False
+                geo = False
                 mesh.del_node(n10)
                 return topo, geo
 

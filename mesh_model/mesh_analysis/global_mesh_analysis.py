@@ -233,7 +233,7 @@ def test_degree(n: Node) -> bool:
     :param n: a Node
     :return: True if the degree is lower than 10, False otherwise
     """
-    if degree(n) > 10:
+    if degree(n) >= 10:
         return False
     else:
         return True
