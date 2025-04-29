@@ -299,11 +299,13 @@ class Mesh:
             raise IndexError('Dart index out of range')
 
     def del_dart(self, d: Dart):
+        """
         n = d.get_node()
-        #if n.get_dart() == d:
-            #d2 = d.get_beta(2)
-            #d21 = d2.get_beta(1)
-            #n.set_dart(d21)
+        if n.get_dart() == d:
+            d2 = d.get_beta(2)
+            d21 = d2.get_beta(1)
+            n.set_dart(d21)
+        """
         self.dart_info[d.id][0] = -self.first_free_dart - 1
         self.first_free_dart = d.id
 

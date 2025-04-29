@@ -1,7 +1,6 @@
 from mesh_model.mesh_analysis.global_mesh_analysis import global_score
 import copy
 import random
-import json
 from tqdm import tqdm
 import numpy as np
 import torch
