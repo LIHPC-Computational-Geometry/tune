@@ -58,8 +58,8 @@ class Actor(nn.Module):
             action = dist.sample()
             action = action.tolist()
             prob = pmf[action]
-            action_dart = int(action/3)
-            action_type = action % 3
+            action_dart = int(action/4)
+            action_type = action % 4
             dart_id = info["darts_selected"][action_dart]
             i = 0
             while not isValidAction(info["mesh"], dart_id, action_type):
@@ -70,8 +70,8 @@ class Actor(nn.Module):
                 action = dist.sample()
                 action = action.tolist()
                 prob = pmf[action]
-                action_dart = int(action/3)
-                action_type = action % 3
+                action_dart = int(action/4)
+                action_type = action % 4
                 dart_id = info["darts_selected"][action_dart]
                 i += 1
         action_list = [action, dart_id, action_type]
@@ -139,7 +139,7 @@ class Critic(nn.Module):
 class PPO:
     def __init__(self, env, lr, gamma, nb_iterations, nb_episodes_per_iteration, nb_epochs, batch_size):
         self.env = env
-        self.actor = Actor(env, 10*8, 3*10, lr=0.0001)
+        self.actor = Actor(env, 10*8, 4*10, lr=0.0001)
         self.critic = Critic(8*10, lr=0.0001)
         self.lr = lr
         self.gamma = gamma
@@ -165,8 +165,7 @@ class PPO:
                 critic_loss = []
                 actor_loss = []
                 self.critic.optimizer.zero_grad()
-                G = 0
-                for _, (s, o, a, r, old_prob, next_o, done) in enumerate(batch, 1):
+                for _, (s, o, a, r, G, old_prob, next_o, done) in enumerate(batch, 1):
                     o = torch.tensor(o.flatten(), dtype=torch.float32)
                     next_o = torch.tensor(next_o.flatten(), dtype=torch.float32)
                     value = self.critic(o)
@@ -174,7 +173,6 @@ class PPO:
                     log_prob = torch.log(pmf[a[0]])
                     next_value = torch.tensor(0.0, dtype=torch.float32) if done else self.critic(next_o)
                     delta = r + 0.9 * next_value - value
-                    G = (r + 0.9 * G) / 10
                     _, st, ideal_s, _ = global_score(s) # Comparaison à l'état s et pas s+1 ?
                     if st == ideal_s:
                         continue
@@ -199,7 +197,7 @@ class PPO:
                     p.requires_grad = True
                 start = stop + 1
 
-    def learn(self):
+    def learn(self, writer):
         """
         Train the PPO mesh_model
         :return: the actor policy, training rewards, training wins, len of episodes
@@ -207,6 +205,8 @@ class PPO:
         rewards = []
         wins = []
         len_ep = []
+        global_step = 0
+        nb_episodes = 0
 
         try:
             for iteration in tqdm(range(self.nb_iterations)):
@@ -217,6 +217,9 @@ class PPO:
                     next_obs, info = self.env.reset()
                     trajectory = []
                     ep_reward = 0
+                    ep_mesh_reward = 0
+                    ideal_reward = info["mesh_ideal_rewards"]
+                    G = 0
                     done = False
                     step = 0
                     while step < 40:
@@ -226,25 +229,32 @@ class PPO:
                         if action is None:
                             wins.append(0)
                             break
-                        gym_action = [action[2],int(action[0]/3)]
+                        gym_action = [action[2],int(action[0]/4)]
                         next_obs, reward, terminated, truncated, info = self.env.step(gym_action)
                         ep_reward += reward
+                        ep_mesh_reward += info["mesh_reward"]
+                        G = info["mesh_reward"] + 0.9 * G
                         if terminated:
                             if truncated:
                                 wins.append(0)
-                                trajectory.append((state, obs, action, reward, prob, next_obs, done))
+                                trajectory.append((state, obs, action, reward, G, prob, next_obs, done))
                             else:
                                 wins.append(1)
                                 done = True
-                                trajectory.append((state, obs, action, reward, prob, next_obs, done))
+                                trajectory.append((state, obs, action, reward, G, prob, next_obs, done))
                             break
-                        trajectory.append((state, obs, action, reward, prob, next_obs, done))
+                        trajectory.append((state, obs, action, reward, G, prob, next_obs, done))
                         step += 1
                     if len(trajectory) != 0:
                         rewards.append(ep_reward)
                         rollouts.append(trajectory)
                         dataset.extend(trajectory)
                         len_ep.append(len(trajectory))
+                    nb_episodes += 1
+                    writer.add_scalar("episode_reward", ep_reward, nb_episodes)
+                    writer.add_scalar("episode_mesh_reward", ep_mesh_reward, nb_episodes)
+                    writer.add_scalar("normalized return", (ep_mesh_reward/ideal_reward), nb_episodes)
+                    writer.add_scalar("len_episodes", len(trajectory), nb_episodes)
 
                 self.train(dataset)
 
@@ -254,4 +264,5 @@ class PPO:
         except NaNExceptionCritic:
             print("NaN Exception on Critic Network")
             return None, None, None, None
-        return self.actor, rewards, wins, len_ep
+
+        return self.actor, rewards, wins, len_ep, info["observation_count"]

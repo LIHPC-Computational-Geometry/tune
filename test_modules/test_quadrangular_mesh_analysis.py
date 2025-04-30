@@ -57,7 +57,7 @@ class TestMeshAnalysis(unittest.TestCase):
 
         #Invalid action
         with self.assertRaises(ValueError):
-            QMA.isValidAction(cmap, 0, 6)
+            QMA.isValidAction(cmap, 0, 7)
 
     def test_isTruncated(self):
         filename = os.path.join(TESTFILE_FOLDER, 't1_quad.msh')
