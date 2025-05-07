@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import os
 import json
+import matplotlib.pyplot as plt
+from sphinx.util import os_path
 
 import mesh_model.random_quadmesh as QM
 from mesh_model.reader import read_gmsh
@@ -9,8 +11,10 @@ from view.mesh_plotter.mesh_plots import dataset_plt
 from training.exploit_SB3_policy import testPolicy
 from stable_baselines3 import PPO
 from stable_baselines3.common.env_checker import check_env
-from stable_baselines3.common.callbacks import BaseCallback
-from stable_baselines3.common.logger import Figure
+from stable_baselines3.common.callbacks import BaseCallback, EvalCallback, StopTrainingOnNoModelImprovement, ProgressBarCallback
+from stable_baselines3.common.logger import Figure, HParam
+import wandb
+from wandb.integration.sb3 import WandbCallback
 
 from environment.gymnasium_envs import quadmesh_env
 
@@ -18,6 +22,45 @@ import gymnasium as gym
 import random
 import numpy as np
 import torch
+import os
+import tqdm
+import rich
+
+class HParamCallback(BaseCallback):
+    """
+    Saves the hyperparameters and metrics at the start of the training, and logs them to TensorBoard.
+    """
+
+    def _on_training_start(self) -> None:
+        hparam_dict = {
+            "algorithm": self.model.__class__.__name__,
+            "experiment": experiment_name,
+            "learning rate": self.model.learning_rate,
+            "gamma": self.model.gamma,
+            "batch_size":  ppo_config["batch_size"],
+            "epochs": ppo_config["n_epochs"],
+            "training_meshes": training_mesh_file_path,
+            "evaluation_meshes": evaluation_mesh_file_path,
+            "max_steps": env_config["max_episode_steps"],
+            "max_timesteps": ppo_config["total_timesteps"],
+
+
+        }
+        # define the metrics that will appear in the `HPARAMS` Tensorboard tab by referencing their tag
+        # Tensorbaord will find & display metrics from the `SCALARS` tab
+        metric_dict = {
+            "normalized_return": 0,
+            "rollout/ep_len_mean": 0.0,
+            "rollout/ep_rew_mean": 0.0
+        }
+        self.logger.record(
+            "hparams",
+            HParam(hparam_dict, metric_dict),
+            exclude=("stdout", "log", "json", "csv"),
+        )
+
+    def _on_step(self) -> bool:
+        return True
 
 class TensorboardCallback(BaseCallback):
     """
@@ -54,7 +97,7 @@ class TensorboardCallback(BaseCallback):
         """
         self.logger.record("parameters/ppo", f"<pre>{json.dumps(ppo_config, indent=4)}</pre>")
         self.logger.record("parameters/env", f"<pre>{json.dumps(env_config, indent=4)}</pre>")
-        self.logger.dump(step=0)
+
 
     def _on_step(self) -> bool:
         """
@@ -90,17 +133,17 @@ class TensorboardCallback(BaseCallback):
             self.final_distance = self.locals["infos"][0].get("distance", 0.0)
             self.logger.record("final_distance", self.final_distance)
             self.logger.record("valid_actions", self.actions_info["episode_valid_actions"]*100/self.current_episode_length if self.current_episode_length > 0 else 0)
-            self.logger.record("n_invalid_topo", self.actions_info["episode_invalid_topo"])
-            self.logger.record("n_invalid_geo", self.actions_info["episode_invalid_geo"])
-            self.logger.record("nb_flip_cw", self.actions_info["nb_flip_cw"])
-            self.logger.record("nb_flip_cntcw", self.actions_info["nb_flip_cntcw"])
-            self.logger.record("nb_split", self.actions_info["nb_split"])
-            self.logger.record("nb_collapse", self.actions_info["nb_collapse"])
-            self.logger.record("nb_cleanup", self.actions_info["nb_cleanup"])
-            self.logger.record("invalid_flip", self.actions_info["nb_invalid_flip"]*100/(self.actions_info["nb_flip_cw"]+self.actions_info["nb_flip_cntcw"]) if (self.actions_info["nb_flip_cw"]+self.actions_info["nb_flip_cntcw"]) > 0 else 0)
-            self.logger.record("invalid_split", self.actions_info["nb_invalid_split"]*100/self.actions_info["nb_split"] if self.actions_info["nb_split"] > 0 else 0)
-            self.logger.record("invalid_collapse", self.actions_info["nb_invalid_collapse"]*100/self.actions_info["nb_collapse"]if self.actions_info["nb_collapse"] > 0 else 0)
-            self.logger.record("invalid_cleanup", self.actions_info["nb_invalid_cleanup"]*100/self.actions_info["nb_cleanup"]if self.actions_info["nb_cleanup"] > 0 else 0)
+            self.logger.record("actions/n_invalid_topo", self.actions_info["episode_invalid_topo"])
+            self.logger.record("actions/n_invalid_geo", self.actions_info["episode_invalid_geo"])
+            self.logger.record("actions/nb_flip_cw", self.actions_info["nb_flip_cw"])
+            self.logger.record("actions/nb_flip_cntcw", self.actions_info["nb_flip_cntcw"])
+            self.logger.record("actions/nb_split", self.actions_info["nb_split"])
+            self.logger.record("actions/nb_collapse", self.actions_info["nb_collapse"])
+            self.logger.record("actions/nb_cleanup", self.actions_info["nb_cleanup"])
+            self.logger.record("actions/invalid_flip", self.actions_info["nb_invalid_flip"]*100/(self.actions_info["nb_flip_cw"]+self.actions_info["nb_flip_cntcw"]) if (self.actions_info["nb_flip_cw"]+self.actions_info["nb_flip_cntcw"]) > 0 else 0)
+            self.logger.record("actions/invalid_split", self.actions_info["nb_invalid_split"]*100/self.actions_info["nb_split"] if self.actions_info["nb_split"] > 0 else 0)
+            self.logger.record("actions/invalid_collapse", self.actions_info["nb_invalid_collapse"]*100/self.actions_info["nb_collapse"]if self.actions_info["nb_collapse"] > 0 else 0)
+            self.logger.record("actions/invalid_cleanup", self.actions_info["nb_invalid_cleanup"]*100/self.actions_info["nb_cleanup"]if self.actions_info["nb_cleanup"] > 0 else 0)
             self.logger.record("episode_mesh_reward", self.mesh_reward)
             self.logger.record("episode_reward", self.current_episode_reward)
             self.logger.record("normalized_return", self.normalized_return)
@@ -123,19 +166,36 @@ class TensorboardCallback(BaseCallback):
     def _on_training_end(self) -> None:
         """
         Records policy evaluation results : before and after dataset images
+        Save registry counts of observation in a csv file. Records analysis
         """
-        filename = "counts_PPO47.json"
+        filename = "counts_" + experiment_name + ".json"
         counts_registry = self.locals["infos"][0].get("observation_count", 0.0)
         counts = counts_registry.counts
 
         # Convertir les clés tuple en chaînes de caractères
-        counts_str_keys = {v: str(k) for k, v in counts.items()}
+        counts_str_keys = [(v, str(k)) for k, v in counts.items()]
+        counts_values = list(counts.values())
 
         # Écriture dans un fichier JSON
         with open(filename, "w") as file:
             json.dump(counts_str_keys, file, indent=4)
 
         print(f"Counts saved at {filename}")
+
+        self.logger.record("observation/n_observation", len(counts_values))
+        self.logger.record("observation/mean", np.mean(counts_values))
+        self.logger.record("observation/median", np.median(counts_values))
+        self.logger.record("observation/min", np.min(counts_values))
+        self.logger.record("observation/max", np.max(counts_values))
+
+        counts_values.sort()
+        figure, ax = plt.subplots()
+        ax.hist(counts_values, bins='auto')
+        ax.set_title("Observation counts")
+        # Close the figure after logging it
+        self.logger.record("observation/counts", Figure(figure, close=True), exclude=("stdout", "log", "json", "csv"))
+        plt.close()
+
 
         #mesh = read_gmsh("mesh_files/medium_quad.msh")
         dataset = [QM.random_mesh() for _ in range(9)] # dataset of 9 meshes of size 30
@@ -144,9 +204,21 @@ class TensorboardCallback(BaseCallback):
         after = dataset_plt(final_meshes)
         self.logger.record("figures/before", Figure(before, close=True), exclude=("stdout", "log"))
         self.logger.record("figures/after", Figure(after, close=True), exclude=("stdout", "log"))
-        self.logger.dump(step=0)
+        self.logger.dump(step=self.num_timesteps)
 
 if __name__ == '__main__':
+
+    experiment_name = "wandb_test"
+    ppo_config_path = "model_RL/parameters/ppo_config.json"
+    env_config_path = "environment/environment_config.json"
+    eval_env_config_path = "environment/eval_environment_config.json"
+    policy_saving_path = os.path.join("training/policy_saved/quad/", experiment_name)
+    wandb_model_save_path = f"training/wandb_models/{experiment_name}"
+
+    #Mesh datasets
+    evaluation_mesh_file_path = "mesh_files/simple_quad.msh"
+    training_mesh_file_path = "mesh_files/simple_quad.msh"
+
 
     # SEEDING
     seed = 1
@@ -155,10 +227,36 @@ if __name__ == '__main__':
     torch.manual_seed(seed)
     torch.backends.cudnn.deterministic = True
 
-    with open("model_RL/parameters/ppo_config.json", "r") as f:
+    # PARAMETERS CONFIGURATION
+
+    with open(ppo_config_path, "r") as f:
         ppo_config = json.load(f)
-    with open("environment/environment_config.json", "r") as f:
+    with open(env_config_path, "r") as f:
         env_config = json.load(f)
+    with open(eval_env_config_path, "r") as f:
+        eval_env_config = json.load(f)
+
+    # WANDB
+    run = wandb.init(
+        project="sb3",
+        sync_tensorboard=True,  # auto-upload sb3's tensorboard metrics
+        save_code=True,  # optional
+    )
+    # EVALUATION CALLBACKS
+
+    # Separate evaluation env
+    eval_env = gym.make(
+        eval_env_config["env_name"],
+        mesh = read_gmsh(evaluation_mesh_file_path),
+        max_episode_steps=eval_env_config["max_episode_steps"],
+        n_darts_selected=eval_env_config["n_darts_selected"],
+        deep= eval_env_config["deep"],
+        action_restriction=eval_env_config["action_restriction"],
+        with_degree_obs=eval_env_config["with_degree_observation"]
+    )
+    # Stop training if there is no improvement after more than 3 evaluations
+    stop_train_callback = StopTrainingOnNoModelImprovement(max_no_improvement_evals=5, min_evals=5, verbose=1)
+    eval_callback = EvalCallback(eval_env, eval_freq=500, callback_after_eval=stop_train_callback, verbose=1)
 
     # Create log dir
     log_dir = ppo_config["tensorboard_log"]
@@ -167,7 +265,7 @@ if __name__ == '__main__':
     # Create the environment
     env = gym.make(
         env_config["env_name"],
-        #mesh = read_gmsh("../mesh_files/medium_quad.msh"),
+        mesh = read_gmsh(training_mesh_file_path),
         max_episode_steps=env_config["max_episode_steps"],
         n_darts_selected=env_config["n_darts_selected"],
         deep= env_config["deep"],
@@ -190,6 +288,7 @@ if __name__ == '__main__':
     )
 
     print("-----------Starting learning-----------")
-    model.learn(total_timesteps=ppo_config["total_timesteps"], callback=TensorboardCallback(model))
+    model.learn(total_timesteps=ppo_config["total_timesteps"], tb_log_name=experiment_name, callback=[HParamCallback(), WandbCallback(model_save_path=wandb_model_save_path), TensorboardCallback(model), eval_callback], progress_bar=True)
     print("-----------Learning ended------------")
-    model.save("training/policy_saved/quad/4-actions-quad-rand_simple-PPO47")
+    model.save(policy_saving_path)
+    run.finish()

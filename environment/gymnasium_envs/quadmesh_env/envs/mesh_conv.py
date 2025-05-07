@@ -80,6 +80,8 @@ def get_template(mesh: Mesh, deep: int, nodes_scores):
                     template[n_darts - 1, len(E)-1] = nodes_scores[N2.id]
                 else:
                     E.extend([None,None])
+                    #template[n_darts - 1, len(E) - 1] = -500 # dummy vertices are assigned to -500
+                    #template[n_darts - 1, len(E) - 2] = -500 # dummy vertices are assigned to -500
 
     template = template[:n_darts, :]
 
