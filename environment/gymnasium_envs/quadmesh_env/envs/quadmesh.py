@@ -145,18 +145,22 @@ class QuadMeshEnv(gym.Env):
             # An episode is done if the actual score is the same as the ideal
             next_nodes_score, self.next_mesh_score, _, next_nodes_adjacency = global_score(self.mesh)
             terminated = np.array_equal(self._ideal_score, self.next_mesh_score)
-            mesh_reward = (self._mesh_score - self.next_mesh_score)*10
-            reward = mesh_reward
+            if terminated:
+                mesh_reward = (self._mesh_score - self.next_mesh_score)*10
+                reward = mesh_reward
+            else:
+                mesh_reward = (self._mesh_score - self.next_mesh_score)*10
+                reward = mesh_reward
             self._nodes_scores, self._mesh_score, self._nodes_adjacency = next_nodes_score, self.next_mesh_score, next_nodes_adjacency
             self.observation = self._get_obs()
             self.nb_invalid_actions = 0
         elif not valid_topo:
-            reward = -10
+            reward = -3
             mesh_reward = 0
             terminated = False
             self.nb_invalid_actions += 1
         elif not valid_geo:
-            mesh_reward = 0
+            mesh_reward = -1
             terminated = False
             reward = 0
             self.nb_invalid_actions += 1

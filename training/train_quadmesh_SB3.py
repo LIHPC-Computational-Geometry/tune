@@ -39,10 +39,16 @@ class HParamCallback(BaseCallback):
             "gamma": self.model.gamma,
             "batch_size":  ppo_config["batch_size"],
             "epochs": ppo_config["n_epochs"],
+            "clip_range": ppo_config["clip_range"],
             "training_meshes": training_mesh_file_path,
             "evaluation_meshes": evaluation_mesh_file_path,
             "max_steps": env_config["max_episode_steps"],
             "max_timesteps": ppo_config["total_timesteps"],
+            "deep": env_config["deep"],
+            "with_degree": env_config["with_degree_observation"],
+            "boundary_obs": env_config["boundary_obs"],
+            "nb_darts_selected": env_config["nb_darts_selected"],
+            "reward_mode": env_config["reward_mode"],
 
 
         }
@@ -255,7 +261,7 @@ if __name__ == '__main__':
         with_degree_obs=eval_env_config["with_degree_observation"]
     )
     # Stop training if there is no improvement after more than 3 evaluations
-    stop_train_callback = StopTrainingOnNoModelImprovement(max_no_improvement_evals=5, min_evals=5, verbose=1)
+    stop_train_callback = StopTrainingOnNoModelImprovement(max_no_improvement_evals=10, min_evals=5, verbose=1)
     eval_callback = EvalCallback(eval_env, eval_freq=500, callback_after_eval=stop_train_callback, verbose=1)
 
     # Create log dir

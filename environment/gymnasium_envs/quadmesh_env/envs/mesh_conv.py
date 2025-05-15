@@ -7,7 +7,8 @@ from mesh_model.mesh_struct.mesh import Mesh
 def get_x(state: Mesh, n_darts_selected: int, deep :int, degree: bool, restricted:bool, nodes_scores: list[int], nodes_adjacency: list[int]):
     mesh = state
     if degree:
-        template, darts_id = get_template_deg(mesh, deep, nodes_scores, nodes_adjacency)
+        deep = int(deep / 2)
+        template, darts_id = get_template_boundary(mesh, deep, nodes_scores, nodes_adjacency)
     else:
         template, darts_id = get_template(mesh, deep, nodes_scores)
 
@@ -126,19 +127,85 @@ def get_template_deg(mesh: Mesh, deep: int, nodes_scores, nodes_adjacency):
         if deep > 4:
             while len(E) < deep:
                 df = F.pop(0)
-                df1 = df.get_beta(1)
-                df11 = df1.get_beta(1)
-                df111 = df11.get_beta(1)
-                F.append(df1)
-                F.append(df11)
-                F.append(df111)
-                N1, N2 = df11.get_node(), df111.get_node()
-                E.append(N1)
-                template[n_darts - 1, len(E)] = nodes_scores[N1.id]
-                template[n_darts - 1, deep + len(E)] = nodes_adjacency[N1.id]
-                E.append(N2)
-                template[n_darts - 1, len(E)] = nodes_scores[N2.id]
-                template[n_darts - 1, deep + len(E)] = nodes_adjacency[N2.id]
+                if df is not None:
+                    df1 = df.get_beta(1)
+                    df11 = df1.get_beta(1)
+                    df111 = df11.get_beta(1)
+                    F.append(df1)
+                    F.append(df11)
+                    F.append(df111)
+                    N1, N2 = df11.get_node(), df111.get_node()
+                    E.append(N1)
+                    template[n_darts-1, len(E)-1] = nodes_scores[N1.id]
+                    template[n_darts-1, deep + len(E)-1] = nodes_adjacency[N1.id]
+                    E.append(N2)
+                    template[n_darts - 1, len(E)-1] = nodes_scores[N2.id]
+                    template[n_darts - 1, deep + len(E)-1] = nodes_adjacency[N2.id]
+                else:
+                    E.extend([None,None])
+                    #template[n_darts - 1, len(E) - 1] = -500 # dummy vertices are assigned to -500
+                    #template[n_darts - 1, len(E) - 2] = -500 # dummy vertices are assigned to -500
+
+    template = template[:n_darts, :]
+    return template, dart_ids
+
+def get_template_boundary(mesh: Mesh, deep: int, nodes_scores, nodes_adjacency):
+    size = len(mesh.dart_info)
+    template = np.zeros((size, deep*2), dtype=np.int64)
+    dart_ids = []
+    n_darts = 0
+
+    for d_info in mesh.active_darts():
+        n_darts += 1
+        d_id = d_info[0]
+        dart_ids.append(d_id)
+        d = Dart(mesh, d_id)
+        A = d.get_node()
+        d1 = d.get_beta(1)
+        B = d1.get_node()
+        d11 = d1.get_beta(1)
+        C = d11.get_node()
+        d111 = d11.get_beta(1)
+        D = d111.get_node()
+
+        # Template niveau 1
+        template[n_darts - 1, 0] = nodes_scores[A.id]
+        template[n_darts - 1, deep] = 1
+        template[n_darts - 1, 1] = nodes_scores[B.id]
+        template[n_darts - 1, deep+1] = 1
+        template[n_darts - 1, 2] = nodes_scores[C.id]
+        template[n_darts - 1, deep+2] = 1
+        template[n_darts - 1, 3] = nodes_scores[D.id]
+        template[n_darts - 1, deep + 3] = 1
+
+        E = [A, B, C, D]
+        deep_captured = len(E)
+        d2 = d.get_beta(2)
+        d12 = d1.get_beta(2)
+        d112 = d11.get_beta(2)
+        d1112 = d111.get_beta(2)
+        F = [d2, d12, d112, d1112]
+        if deep > 4:
+            while len(E) < deep:
+                df = F.pop(0)
+                if df is not None:
+                    df1 = df.get_beta(1)
+                    df11 = df1.get_beta(1)
+                    df111 = df11.get_beta(1)
+                    F.append(df1)
+                    F.append(df11)
+                    F.append(df111)
+                    N1, N2 = df11.get_node(), df111.get_node()
+                    E.append(N1)
+                    template[n_darts-1, len(E)-1] = nodes_scores[N1.id]
+                    template[n_darts-1, deep + len(E)-1] = 1
+                    E.append(N2)
+                    template[n_darts - 1, len(E)-1] = nodes_scores[N2.id]
+                    template[n_darts - 1, deep + len(E)-1] = 1
+                else:
+                    E.extend([None,None])
+                    #template[n_darts - 1, len(E) - 1] = -500 # dummy vertices are assigned to -500
+                    #template[n_darts - 1, len(E) - 2] = -500 # dummy vertices are assigned to -500
 
     template = template[:n_darts, :]
     return template, dart_ids
