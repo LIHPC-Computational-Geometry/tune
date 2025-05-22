@@ -51,13 +51,13 @@ class QuadMeshEnv(gym.Env):
     def __init__(
             self,
             mesh=None,
-            max_episode_steps: int =50,
-            n_darts_selected: int =20,
-            deep: int =6,
+            max_episode_steps: int = 50,
+            n_darts_selected: int = 20,
+            deep: int = 6,
             render_mode:  Optional[str] = None,
-            with_degree_obs: bool =True,
-            action_restriction: bool =False,
-            obs_count: bool=False,
+            with_degree_obs: bool = True,
+            action_restriction: bool = False,
+            obs_count: bool = False,
     ) -> None:
 
         assert render_mode is None or render_mode in self.metadata["render_modes"]
