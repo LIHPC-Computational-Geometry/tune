@@ -1,0 +1,57 @@
+project_name : "Quadmesh"
+experiment_name : "test"
+description : ""
+
+total_timesteps : 10000
+
+paths:
+  log_dir : "training/results/quad-sb3/"
+  policy_saving_dir : "training/policy_saved/quad-sb3/"
+  wandb_model_saving_dir : "training/wandb_models/"
+
+dataset:
+  evaluation_mesh_file_path : "mesh_files/simple_quad.msh"
+  training_mesh_file_path : "mesh_files/simple_quad.msh"
+
+seed : 1
+
+env:
+  env_id : "Quadmesh-v0"
+  n_vec_envs : 0
+  max_episode_steps : 30
+  n_darts_selected : 10
+  deep : 12
+  obs_size : 120
+  action_restriction : false
+  with_degree_observation : false
+  reward_function : 0 # 0 if basics, 1 if penalize, 2 otherwise
+  render_mode : null
+  obs_count : true
+
+ppo:
+  policy : MlpPolicy
+  n_steps : 2048
+  n_epochs : 5
+  batch_size: 64
+  learning_rate : 0.0001
+  gamma : 0.9
+  clip_range : 0.2
+
+eval:
+  eval_env_id : "Quadmesh-v0"
+  max_episode_steps : 20
+  min_evals : 5
+  max_no_improvement_evals : 10
+  eval_freq : 500
+  n_darts_selected: 10
+  deep: 12
+  obs_size: 120
+  render_mode: "human"
+  action_restriction: false
+  with_degree_observation: false
+
+
+metrics:
+  normalized_return: 0
+  ep_len_mean: 0
+  ep_reward_mean: 0

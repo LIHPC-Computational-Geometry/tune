@@ -275,4 +275,4 @@ class PPO:
             print("NaN Exception on Critic Network")
             return None, None, None, None
 
-        return self.actor, rewards, wins, len_ep, info["observation_count"]
+        return self.actor, rewards, wins, len_ep, info["observation_registry"]

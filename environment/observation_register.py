@@ -1,3 +1,5 @@
+import pandas as pd
+
 
 class ObservationRegistry:
     def __init__(self, n_darts_selected, deep, lowest_value, highest_value):
@@ -5,7 +7,8 @@ class ObservationRegistry:
         self.deep = deep
         self.low = lowest_value
         self.high = highest_value
-        self.counts = {}
+        self.df = pd.DataFrame(columns=["counts"])
+        self.df.index.name = "observations"
 
     def encode(self, observation):
         """
@@ -30,10 +33,14 @@ class ObservationRegistry:
         :param observation:
         """
         ID = self.encode(observation)
-        if self.counts.get(ID) is None:
-            self.counts[ID] = 1
+
+        if self.df.empty:
+            self.df = pd.DataFrame({"counts": [1]}, index=[ID])
+        elif ID in self.df.index:
+            self.df.at[ID, "counts"] += 1
         else:
-            self.counts[ID] += 1
+            new_row = pd.DataFrame({"counts": [1]}, index=[ID])
+            self.df = pd.concat([self.df, new_row])
 
     def get_count(self, observation):
         """
@@ -42,5 +49,20 @@ class ObservationRegistry:
         :return: counts of observations
         """
         ID = self.encode(observation)
-        return self.counts.get(ID, 0)
+        return int(self.df.loc[ID])
 
+    def save(self, path):
+        if path.endswith(".csv"):
+            self.df.to_csv(path)
+        elif path.endswith(".parquet"):
+            self.df.to_parquet(path)
+        else:
+            print("Unsupported file type")
+
+    def load_counts(self, path):
+        if path.endswith(".csv"):
+            self.df = pd.read_csv(path)
+        elif path.endswith(".parquet"):
+            self.df = pd.read_parquet(path)
+        else:
+            print("Unsupported file type")

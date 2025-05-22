@@ -1,3 +1,7 @@
+"""
+Old version of PPO for triangular environement
+"""
+
 from model_RL.utilities.actor_critic_networks import NaNExceptionActor, NaNExceptionCritic, Actor, Critic
 from mesh_model.mesh_analysis.global_mesh_analysis import global_score
 import copy

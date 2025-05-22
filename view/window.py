@@ -22,7 +22,7 @@ class window_data:
     def __init__(self):
         self.options = pygame.HWSURFACE | pygame.DOUBLEBUF | pygame.RESIZABLE
         self.center = pygame.math.Vector2(250, 250)
-        self.size = (500, 500)
+        self.size = (512, 512)
         self.stretch = 10.0
         self.scene_center = pygame.math.Vector2(0, 0)
         self.scene_xmin = -250

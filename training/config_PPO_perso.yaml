@@ -1,0 +1,39 @@
+project_name : "Quadmesh"
+experiment_name : "random_basic_quad_test_config-TEST"
+description : ""
+
+paths:
+  log_dir : "training/results/quad-perso/"
+  policy_saving_dir : "training/policy_saved/quad-perso/"
+  wandb_model_saving_dir : "training/wandb_models/"
+
+dataset:
+  evaluation_mesh_file_path : "mesh_files/simple_quad.msh"
+  training_mesh_file_path : "mesh_files/simple_quad.msh"
+
+seed : 1
+
+env:
+  env_id : "Quadmesh-v0"
+  max_episode_steps : 20
+  n_darts_selected : 10
+  deep : 12
+  obs_size : 120
+  action_restriction : false
+  with_degree_observation : false
+  reward_function : 0 # 0 if basics, 1 if penalize, 2 otherwise
+  render_mode: null
+  obs_count: true
+
+ppo:
+  n_iterations : 5
+  n_episodes_per_iteration : 50
+  n_epochs : 5
+  batch_size: 64
+  learning_rate : 0.0001
+  gamma : 0.9
+
+metrics:
+  normalized_return: 0
+  ep_len_mean: 0
+  ep_reward_mean: 0
