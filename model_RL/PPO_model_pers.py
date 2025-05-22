@@ -137,10 +137,11 @@ class Critic(nn.Module):
 
 
 class PPO:
-    def __init__(self, env, lr, gamma, nb_iterations, nb_episodes_per_iteration, nb_epochs, batch_size):
+    def __init__(self, env, obs_size, max_steps, lr, gamma, nb_iterations, nb_episodes_per_iteration, nb_epochs, batch_size):
         self.env = env
-        self.actor = Actor(env, 10*8, 4*10, lr=0.0001)
-        self.critic = Critic(8*10, lr=0.0001)
+        self.max_steps = max_steps
+        self.actor = Actor(self.env, obs_size, 4*10, lr=lr)
+        self.critic = Critic(obs_size, lr=lr)
         self.lr = lr
         self.gamma = gamma
         self.nb_iterations = nb_iterations
@@ -205,6 +206,7 @@ class PPO:
         rewards = []
         wins = []
         len_ep = []
+        valid_actions = []
         global_step = 0
         nb_episodes = 0
 
@@ -218,11 +220,12 @@ class PPO:
                     trajectory = []
                     ep_reward = 0
                     ep_mesh_reward = 0
+                    ep_valid_actions = 0
                     ideal_reward = info["mesh_ideal_rewards"]
                     G = 0
                     done = False
                     step = 0
-                    while step < 40:
+                    while step < self.max_steps:
                         state = copy.deepcopy(info["mesh"])
                         obs = next_obs
                         action, prob = self.actor.select_action(obs, info)
@@ -233,6 +236,7 @@ class PPO:
                         next_obs, reward, terminated, truncated, info = self.env.step(gym_action)
                         ep_reward += reward
                         ep_mesh_reward += info["mesh_reward"]
+                        ep_valid_actions += info["valid_action"]
                         G = info["mesh_reward"] + 0.9 * G
                         if terminated:
                             if truncated:
@@ -247,14 +251,20 @@ class PPO:
                         step += 1
                     if len(trajectory) != 0:
                         rewards.append(ep_reward)
+                        valid_actions.append(ep_valid_actions)
                         rollouts.append(trajectory)
                         dataset.extend(trajectory)
                         len_ep.append(len(trajectory))
                     nb_episodes += 1
                     writer.add_scalar("episode_reward", ep_reward, nb_episodes)
                     writer.add_scalar("episode_mesh_reward", ep_mesh_reward, nb_episodes)
-                    writer.add_scalar("normalized return", (ep_mesh_reward/ideal_reward), nb_episodes)
-                    writer.add_scalar("len_episodes", len(trajectory), nb_episodes)
+                    if ideal_reward !=0 :
+                        writer.add_scalar("normalized return", (ep_mesh_reward/ideal_reward), nb_episodes)
+                    else :
+                        writer.add_scalar("normalized return", ep_mesh_reward, nb_episodes)
+                    if len(trajectory) != 0:
+                        writer.add_scalar("len_episodes", len(trajectory), nb_episodes)
+                        writer.add_scalar("valid_actions", ep_valid_actions*100/len(trajectory), nb_episodes)
 
                 self.train(dataset)
 
@@ -265,4 +275,4 @@ class PPO:
             print("NaN Exception on Critic Network")
             return None, None, None, None
 
-        return self.actor, rewards, wins, len_ep, info["observation_count"]
+        return self.actor, rewards, wins, len_ep, info["observation_registry"]

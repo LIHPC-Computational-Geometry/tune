@@ -19,7 +19,7 @@ def random_mesh() -> Mesh:
     #filename = os.path.join('../mesh_files/', 't1_quad.msh')
     #mesh = read_gmsh("/home/ropercha/PycharmProjects/tune/mesh_files/t1_quad.msh")
     mesh = read_gmsh(filename)
-    mesh_shuffle(mesh, 10)
+    mesh_shuffle(mesh, 5)
     return mesh
 
 def mesh_shuffle(mesh: Mesh, num_nodes) -> Mesh:
