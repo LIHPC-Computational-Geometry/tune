@@ -22,6 +22,7 @@ class Dart:
         if not isinstance(dart_id, (int, np.integer)):
             raise ValueError(f"The id must be an integer, {dart_id} is type {type(dart_id)}.")
         self.id = dart_id
+        self.active = True
 
     def __eq__(self, a_dart: Dart) -> bool:
         """
@@ -44,6 +45,9 @@ class Dart:
             raise ValueError("Wrong alpha dimension")
         if self.mesh.dart_info[self.id, i] == -1:
             return None
+        d2_id = self.mesh.dart_info[self.id, i]
+        if self.mesh.dart_info[d2_id, 0] <0 :
+            raise ValueError("Dart deleted")
 
         return Dart(self.mesh, self.mesh.dart_info[self.id, i])
 
@@ -111,6 +115,7 @@ class Node:
         """
         self.mesh = m
         self.id = node_id
+        self.ideal_adjacency = 0
 
     def __eq__(self, a_node: Node) -> bool:
         """
@@ -174,6 +179,9 @@ class Node:
         """
         self.set_x(x)
         self.set_y(y)
+
+    def set_ideal_adjacency(self, i: int) -> None:
+        self.ideal_adjacency = i
 
 
 class Face:

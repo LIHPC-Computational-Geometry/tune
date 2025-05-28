@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from mesh_model.mesh_struct.mesh import Mesh
 from mesh_model.mesh_struct.mesh_elements import Node
-from mesh_model.mesh_analysis.global_mesh_analysis import adjacent_darts, on_boundary
+from mesh_model.mesh_analysis.global_mesh_analysis import GlobalMeshAnalysis
 
 def smoothing_mean(mesh: Mesh) -> True:
     for i in range (20):

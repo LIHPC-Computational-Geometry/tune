@@ -1,10 +1,10 @@
 from __future__ import annotations
 import numpy as np
 
+from mesh_model.mesh_analysis.global_mesh_analysis import NodeAnalysis
 from mesh_model.mesh_struct.mesh_elements import Dart, Node
 from mesh_model.mesh_struct.mesh import Mesh
-from mesh_model.mesh_analysis.trimesh_analysis import find_opposite_node, isValidAction
-from mesh_model.mesh_analysis.global_mesh_analysis import node_in_mesh
+from mesh_model.mesh_analysis.trimesh_analysis import TriMeshGeoAnalysis, TriMeshTopoAnalysis
 from environment.actions.triangular_actions import flip_edge_ids, split_edge_ids, collapse_edge_ids
 
 
@@ -18,6 +18,7 @@ def regular_mesh(num_nodes_max: int) -> Mesh:
     nodes = [[0.0, 0.0], [1.0, 0.0], [0.5, 0.87]]
     faces = [[0, 1, 2]]
     mesh = Mesh(nodes, faces)
+    m_analysis = TriMeshGeoAnalysis(mesh)
 
     num_nodes = 3
     dart_id = 0
@@ -28,10 +29,10 @@ def regular_mesh(num_nodes_max: int) -> Mesh:
         A = d.get_node()
         d1 = d.get_beta(1)
         B = d1.get_node()
-        x_C, y_C = find_opposite_node(d)
+        x_C, y_C = m_analysis.find_opposite_node(d)
 
         # Search if the node C already exist in the actual mesh
-        found, n_id = node_in_mesh(mesh, x_C, y_C)
+        found, n_id = m_analysis.node_in_mesh( x_C, y_C)
 
         if found and d.get_beta(2) is None:
             C = Node(mesh, n_id)
@@ -46,6 +47,14 @@ def regular_mesh(num_nodes_max: int) -> Mesh:
         dart_id += 1
 
     mesh.set_twin_pointers()
+    i = 0
+    for n_info in mesh.nodes:
+        if n_info[2] >=0:
+            n = Node(mesh, i)
+            na = NodeAnalysis(n)
+            if na.on_boundary():
+                n.set_ideal_adjacency(int(na.get_boundary_angle()/6))
+        i+=1
 
     return mesh
 
@@ -97,6 +106,7 @@ def mesh_shuffle(mesh: Mesh, num_nodes) -> Mesh:
     nb_action_max = int(num_nodes)
     nb_action = 0
     active_darts_list = mesh.active_darts()
+    m_analysis = TriMeshTopoAnalysis(mesh)
     i = 0
     while i < nb_action_max:
         action_type = np.random.randint(0, 3)
@@ -105,14 +115,14 @@ def mesh_shuffle(mesh: Mesh, num_nodes) -> Mesh:
         dart = Dart(mesh, d_id)
         i1 = dart.get_node()
         i2 = ((dart.get_beta(1)).get_beta(1)).get_node()
-        if action_type == 0 and isValidAction(mesh, d_id, action_type)[0]:
-            flip_edge_ids(mesh, i1.id, i2.id)
+        if action_type == 0 and m_analysis.isValidAction(d_id, action_type)[0]:
+            flip_edge_ids(m_analysis, i1.id, i2.id)
             nb_action += 1
-        elif action_type == 1 and isValidAction(mesh, d_id, action_type)[0]:
-            split_edge_ids(mesh, i1.id, i2.id)
+        elif action_type == 1 and m_analysis.isValidAction(d_id, action_type)[0]:
+            split_edge_ids(m_analysis, i1.id, i2.id)
             nb_action += 1
-        elif action_type == 2 and isValidAction(mesh, d_id, action_type)[0]:
-            collapse_edge_ids(mesh, i1.id, i2.id)
+        elif action_type == 2 and m_analysis.isValidAction(d_id, action_type)[0]:
+            collapse_edge_ids(m_analysis, i1.id, i2.id)
             nb_action += 1
         i += 1
         active_darts_list = mesh.active_darts()

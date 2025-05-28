@@ -13,7 +13,7 @@ from pygame.locals import *
 
 from mesh_model.random_quadmesh import random_mesh
 from mesh_model.mesh_struct.mesh_elements import Dart
-from mesh_model.mesh_analysis.global_mesh_analysis import global_score
+from mesh_model.mesh_analysis.global_mesh_analysis import GlobalMeshAnalysis
 from mesh_model.mesh_analysis.quadmesh_analysis import isTruncated
 from environment.gymnasium_envs.quadmesh_env.envs.mesh_conv import get_x
 from environment.actions.quadrangular_actions import flip_edge_cntcw, flip_edge_cw, split_edge, collapse_edge, cleanup_edge
@@ -70,10 +70,10 @@ class QuadMeshEnv(gym.Env):
         else :
             self.config = {"mesh": None}
             self.mesh = random_mesh()
-
+        self.mesh_analysis = GlobalMeshAnalysis(self.mesh)
         #self.mesh_size = len(self.mesh.nodes)
         #self.nb_darts = len(self.mesh.dart_info)
-        self._nodes_scores, self._mesh_score, self._ideal_score, self._nodes_adjacency = global_score(self.mesh)
+        self._nodes_scores, self._mesh_score, self._ideal_score, self._nodes_adjacency = self.mesh_analysis.global_score()
         self._ideal_rewards = (self._mesh_score - self._ideal_score)*10 #arbitrary factor of 10 for rewards
         self.next_mesh_score = 0
         self.n_darts_selected = n_darts_selected
@@ -137,7 +137,7 @@ class QuadMeshEnv(gym.Env):
         else:
             self.mesh = random_mesh()
         #self.nb_darts = len(self.mesh.dart_info)
-        self._nodes_scores, self._mesh_score, self._ideal_score, self._nodes_adjacency = global_score(self.mesh)
+        self._nodes_scores, self._mesh_score, self._ideal_score, self._nodes_adjacency = self.mesh_analysis.global_score()
         self._ideal_rewards = (self._mesh_score - self._ideal_score) * 10
         self.nb_invalid_actions = 0
         self.close()
@@ -230,7 +230,7 @@ class QuadMeshEnv(gym.Env):
 
         if valid_action:
             # An episode is done if the actual score is the same as the ideal
-            next_nodes_score, self.next_mesh_score, _, next_nodes_adjacency = global_score(self.mesh)
+            next_nodes_score, self.next_mesh_score, _, next_nodes_adjacency = self.mesh_analysis.global_score()
             terminated = np.array_equal(self._ideal_score, self.next_mesh_score)
             if terminated:
                 mesh_reward = (self._mesh_score - self.next_mesh_score)*10

@@ -6,13 +6,12 @@ import numpy as np
 
 from mesh_model.random_trimesh import random_mesh
 from mesh_model.mesh_struct.mesh_elements import Dart
-from mesh_model.mesh_analysis.global_mesh_analysis import global_score
-from mesh_model.mesh_analysis.trimesh_analysis import isTruncated
+from mesh_model.mesh_analysis.trimesh_analysis import TriMeshGeoAnalysis, TriMeshTopoAnalysis
 from environment.gymnasium_envs.trimesh_full_env.envs.mesh_conv import get_x
 from environment.actions.triangular_actions import flip_edge, split_edge, collapse_edge
 
-from view.window import Game
-from mesh_display import MeshDisplay
+#from view.window import Game
+#from mesh_display import MeshDisplay
 
 
 class Actions(Enum):
@@ -24,11 +23,12 @@ class Actions(Enum):
 class TriMeshEnvFull(gym.Env):
     metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 60}
 
-    def __init__(self, mesh=None, mesh_size=16, n_darts_selected=20, deep=6, with_degree_obs=True, action_restriction=False, render_mode=None):
+    def __init__(self, mesh=None, mesh_size=10, n_darts_selected=20, deep=6, with_degree_obs=False, action_restriction=False, render_mode=None):
         self.mesh = mesh if mesh is not None else random_mesh(mesh_size)
-        self.mesh_size = len(self.mesh.nodes)
+        self.m_analysis = TriMeshTopoAnalysis(self.mesh)
+        self.mesh_size = mesh_size
         self.nb_darts = len(self.mesh.dart_info)
-        self._nodes_scores, self._mesh_score, self._ideal_score, self._nodes_adjacency = global_score(self.mesh)
+        self._nodes_scores, self._mesh_score, self._ideal_score, self._nodes_adjacency = self.m_analysis.global_score()
         self._ideal_rewards = (self._mesh_score - self._ideal_score)*10
         self.next_mesh_score = 0
         self.deep = deep
@@ -73,8 +73,9 @@ class TriMeshEnvFull(gym.Env):
             self.mesh = options['mesh']
         else:
             self.mesh = random_mesh(self.mesh_size)
+        self.m_analysis = TriMeshTopoAnalysis(self.mesh)
         self.nb_darts = len(self.mesh.dart_info)
-        self._nodes_scores, self._mesh_score, self._ideal_score, self._nodes_adjacency = global_score(self.mesh)
+        self._nodes_scores, self._mesh_score, self._ideal_score, self._nodes_adjacency = self.m_analysis.global_score()
         self._ideal_rewards = (self._mesh_score - self._ideal_score) * 10
         self.nb_invalid_actions = 0
         self.close()
@@ -88,7 +89,7 @@ class TriMeshEnvFull(gym.Env):
 
 
     def _get_obs(self):
-        irregularities, darts_list = get_x(self.mesh, self.n_darts_selected, self.deep, self.degree_observation, self.restricted, self._nodes_scores, self._nodes_adjacency)
+        irregularities, darts_list = get_x(self.m_analysis, self.n_darts_selected, self.deep, self.degree_observation, self.restricted, self._nodes_scores, self._nodes_adjacency)
         self.darts_selected = darts_list
         return irregularities
 
@@ -128,17 +129,17 @@ class TriMeshEnvFull(gym.Env):
         valid_action, valid_topo, valid_geo = False, False, False
 
         if action[0] == Actions.FLIP.value:
-            valid_action, valid_topo, valid_geo = flip_edge(self.mesh, n1, n2)
+            valid_action, valid_topo, valid_geo = flip_edge(self.m_analysis, n1, n2)
         elif action[0] == Actions.SPLIT.value:
-            valid_action, valid_topo, valid_geo = split_edge(self.mesh, n1, n2)
+            valid_action, valid_topo, valid_geo = split_edge(self.m_analysis, n1, n2)
         elif action[0] == Actions.COLLAPSE.value:
-            valid_action, valid_topo, valid_geo = collapse_edge(self.mesh, n1, n2)
+            valid_action, valid_topo, valid_geo = collapse_edge(self.m_analysis, n1, n2)
         else:
             raise ValueError("Action not defined")
 
         if valid_action:
             # An episode is done if the actual score is the same as the ideal
-            next_nodes_score, self.next_mesh_score, _, next_nodes_adjacency = global_score(self.mesh)
+            next_nodes_score, self.next_mesh_score, _, next_nodes_adjacency = self.m_analysis.global_score()
             terminated = np.array_equal(self._ideal_score, self.next_mesh_score)
             mesh_reward = (self._mesh_score - self.next_mesh_score)*10
             reward = mesh_reward
@@ -158,7 +159,7 @@ class TriMeshEnvFull(gym.Env):
         else:
             raise ValueError("Invalid action")
         if self.nb_invalid_actions > 10 :
-            truncated = isTruncated(self.mesh, self.darts_selected)
+            truncated = self.m_analysis.isTruncated(self.darts_selected)
         else:
             truncated = False
         valid_act = valid_action, valid_topo, valid_geo
@@ -169,6 +170,7 @@ class TriMeshEnvFull(gym.Env):
 
         return self.observation, reward, terminated, truncated, info
 
+"""
     def render(self):
         if self.render_mode == "human":
             return self._render_frame()
@@ -187,9 +189,10 @@ class TriMeshEnvFull(gym.Env):
         if self.render_mode == "human":
             self.g.mesh_disp = MeshDisplay(self.mesh)
             self.g.control_events()
-
+            
     def close(self):
         if self.window is not None:
             pygame.display.quit()
             pygame.quit()
             self.g = None
+"""

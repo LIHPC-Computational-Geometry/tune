@@ -4,6 +4,7 @@ import os
 import json
 
 import mesh_model.random_trimesh as TM
+from mesh_model.reader import read_gmsh
 from view.mesh_plotter.mesh_plots import dataset_plt
 from training.exploit_SB3_policy import testPolicy
 from stable_baselines3 import PPO
@@ -129,10 +130,12 @@ with open("../environment/environment_config.json", "r") as f:
 log_dir = ppo_config["tensorboard_log"]
 os.makedirs(log_dir, exist_ok=True)
 
+mesh = read_gmsh("../mesh_files/t1_tri.msh")
 # Create the environment
 env = gym.make(
     env_config["env_name"],
-    mesh_size=env_config["mesh_size"],
+    mesh=mesh,
+    mesh_size=10,
     max_episode_steps=env_config["max_episode_steps"],
     n_darts_selected=env_config["n_darts_selected"],
     deep= env_config["deep"],
