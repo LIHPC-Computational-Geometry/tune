@@ -2,13 +2,17 @@ from enum import Enum
 import gymnasium as gym
 from gymnasium import spaces
 import pygame
+from pygame.locals import *
 import numpy as np
+import sys
 
 from mesh_model.random_trimesh import random_mesh
 from mesh_model.mesh_struct.mesh_elements import Dart
 from mesh_model.mesh_analysis.trimesh_analysis import TriMeshGeoAnalysis, TriMeshTopoAnalysis
 from environment.gymnasium_envs.trimesh_full_env.envs.mesh_conv import get_x
 from environment.actions.triangular_actions import flip_edge, split_edge, collapse_edge
+from view.window import window_data, graph
+from mesh_display import MeshDisplay
 
 #from view.window import Game
 #from mesh_display import MeshDisplay
@@ -23,7 +27,7 @@ class Actions(Enum):
 class TriMeshEnvFull(gym.Env):
     metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 60}
 
-    def __init__(self, mesh=None, mesh_size=10, n_darts_selected=20, deep=6, with_degree_obs=False, action_restriction=False, render_mode=None):
+    def __init__(self, mesh=None, mesh_size=9, n_darts_selected=20, deep=6, with_degree_obs=False, action_restriction=False, render_mode=None):
         self.mesh = mesh if mesh is not None else random_mesh(mesh_size)
         self.m_analysis = TriMeshTopoAnalysis(self.mesh)
         self.mesh_size = mesh_size
@@ -51,7 +55,7 @@ class TriMeshEnvFull(gym.Env):
         self.observation = None
 
         # We have 3 action, flip, split, collapse
-        self.action_space = spaces.MultiDiscrete([3, self.n_darts_selected])
+        self.action_space = spaces.MultiDiscrete([1, self.n_darts_selected])
 
         assert render_mode is None or render_mode in self.metadata["render_modes"]
         self.render_mode = render_mode
@@ -63,8 +67,18 @@ class TriMeshEnvFull(gym.Env):
         human-mode. They will remain `None` until human-mode is used for the
         first time.
         """
-        self.window = None
-        self.clock = None
+        # Render
+        if self.render_mode == "human":
+            self.mesh_disp = MeshDisplay(self.mesh)
+            self.graph = graph.Graph(self.mesh_disp.get_nodes_coordinates(), self.mesh_disp.get_edges(),
+                                     self.mesh_disp.get_scores())
+            self.win_data = window_data()
+            self.window_size = 512  # The size of the PyGame window
+            self.window = None
+            self.clock = None
+
+            self.recording = False
+            self.frames = []
 
     def reset(self, seed=None, options=None):
         # We need the following line to seed self.np_random
@@ -84,6 +98,10 @@ class TriMeshEnvFull(gym.Env):
 
         if self.render_mode == "human":
             self._render_frame()
+            self.recording = True
+        else:
+            self.recording = False
+            self.frames = []
 
         return self.observation, info
 
@@ -109,7 +127,7 @@ class TriMeshEnvFull(gym.Env):
             "invalid_flip": 1.0 if action[0]==Actions.FLIP.value and not valid_action else 0.0,
             "invalid_split": 1.0 if action[0]==Actions.SPLIT.value and not valid_action else 0.0,
             "invalid_collapse": 1.0 if action[0]==Actions.COLLAPSE.value and not valid_action else 0.0,
-            "mesh" : self.mesh,
+            "mesh" : self.m_analysis.mesh,
         }
 
     def _action_to_dart_id(self, action: np.ndarray) -> int:
@@ -170,29 +188,75 @@ class TriMeshEnvFull(gym.Env):
 
         return self.observation, reward, terminated, truncated, info
 
-"""
-    def render(self):
-        if self.render_mode == "human":
-            return self._render_frame()
-
     def _render_frame(self):
-        if self.g is None and self.render_mode == "human":
-            mesh_disp = MeshDisplay(self.mesh)
-            self.g = Game(self.mesh, mesh_disp)
-            self.window = True
-            self.g.control_events()
-            self.g.window.fill((255, 255, 255))
-            self.g.draw()
-            pygame.display.flip()
-        if self.clock is None and self.render_mode == "human":
+        if self.render_mode == "human" and self.window is None:
+            pygame.init()
+            pygame.display.init()
+            self.window = pygame.display.set_mode(self.win_data.size, self.win_data.options)
+            pygame.display.set_caption('QuadMesh')
+            self.window.fill((255, 255, 255))
+            self.font = pygame.font.SysFont(None, self.win_data.font_size)
             self.clock = pygame.time.Clock()
-        if self.render_mode == "human":
-            self.g.mesh_disp = MeshDisplay(self.mesh)
-            self.g.control_events()
-            
+            self.clock.tick(60)
+            self.win_data.scene_xmin, self.win_data.scene_ymin, self.win_data.scene_xmax, self.win_data.scene_ymax = self.graph.bounding_box()
+            self.win_data.scene_center = pygame.math.Vector2((self.win_data.scene_xmax + self.win_data.scene_xmin) / 2.0,
+                                                      (self.win_data.scene_ymax + self.win_data.scene_ymin) / 2.0)
+
+        pygame.event.pump()
+        self.window.fill((255, 255, 255))  # white
+        for event in pygame.event.get():
+            if event.type == QUIT:
+                pygame.quit()
+                sys.exit()
+
+            if event.type == VIDEORESIZE or event.type == VIDEOEXPOSE:  # handles window minimising/maximising
+                x, y = self.window.get_size()
+                text_margin = 200
+                self.win_data.center.x = (x - text_margin) / 2
+                self.win_data.center.y = y / 2
+                ratio = float(x - text_margin) / float(self.win_data.scene_xmax - self.win_data.scene_xmin)
+                ratio_y = float(y) / float(self.win_data.scene_ymax - self.win_data.scene_ymin)
+                if ratio_y < ratio:
+                    ratio = ratio_y
+
+                self.win_data.node_size = max(ratio / 100, 10)
+                self.win_data.stretch = 0.75 * ratio
+
+                self.window.fill((255, 255, 255))
+                pygame.display.flip()
+
+        self.graph.clear()
+        self.mesh_disp = MeshDisplay(self.mesh)
+        self.graph.update(self.mesh_disp.get_nodes_coordinates(), self.mesh_disp.get_edges(),
+                          self.mesh_disp.get_scores())
+
+        #Draw mesh
+        for e in self.graph.edges:
+            e.draw(self.window, self.win_data)
+        for n in self.graph.vertices:
+            n.draw(self.window, self.font, self.win_data)
+
+        #Print action type
+        if hasattr(self, 'actions_info'):
+            x = self.window.get_width() - 150
+            y_start = 100
+            line_spacing = 25
+
+            for i, (action_name, count) in enumerate(self.actions_info.items()):
+                text = f"{action_name}: {count}"
+                text_surface = self.font.render(text, True, (0, 0, 0))
+                self.window.blit(text_surface, (x, y_start + i * line_spacing))
+
+        self.clock.tick(60)
+        pygame.time.delay(1200)
+        pygame.display.flip()
+        if self.recording:
+            pixels = pygame.surfarray.array3d(pygame.display.get_surface())
+            frame = pixels.transpose([1,0,2])
+            self.frames.append(frame)
+
     def close(self):
-        if self.window is not None:
+        if self.render_mode=="human" and self.window is not None:
             pygame.display.quit()
             pygame.quit()
-            self.g = None
-"""
+            self.window = None

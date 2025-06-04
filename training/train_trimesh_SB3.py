@@ -2,10 +2,12 @@ from __future__ import annotations
 
 import os
 import json
+from copy import deepcopy
 
 import mesh_model.random_trimesh as TM
+from environment.actions.smoothing import smoothing_mean
 from mesh_model.reader import read_gmsh
-from view.mesh_plotter.mesh_plots import dataset_plt
+from view.mesh_plotter.mesh_plots import dataset_plt, plot_mesh
 from training.exploit_SB3_policy import testPolicy
 from stable_baselines3 import PPO
 from stable_baselines3.common.env_checker import check_env
@@ -66,6 +68,7 @@ class TensorboardCallback(BaseCallback):
         self.actions_info["nb_invalid_split"] += self.locals["infos"][0].get("invalid_split", 0.0)
         self.actions_info["nb_invalid_collapse"] += self.locals["infos"][0].get("invalid_collapse", 0.0)
 
+        self.final_distance = self.locals["infos"][0].get("distance", 0.0)
         self.mesh_reward += self.locals["infos"][0].get("mesh_reward", 0.0)
 
         # When the episode is over
@@ -74,20 +77,26 @@ class TensorboardCallback(BaseCallback):
             mesh_ideal_reward = self.locals["infos"][0].get("mesh_ideal_rewards", 0.0) # maximum achievable reward
             if mesh_ideal_reward > 0:
                 self.normalized_return = self.mesh_reward/ mesh_ideal_reward
+                if self.normalized_return > 1:
+                    plot_mesh(self.locals["infos"][0].get("mesh"))
+                    smoothed_m = deepcopy(self.locals["infos"][0].get("mesh"))
+                    smoothing_mean(smoothed_m)
+                    plot_mesh(smoothed_m)
+                    raise ValueError("normalized return above 1 imposssible")
             else:
                 self.normalized_return = 0
 
-            self.final_distance = self.locals["infos"][0].get("distance", 0.0)
+
             self.logger.record("final_distance", self.final_distance)
-            self.logger.record("valid_actions", self.actions_info["episode_valid_actions"]*100/self.current_episode_length if self.current_episode_length > 0 else 0)
+            self.logger.record("valid_actions (%)", self.actions_info["episode_valid_actions"]*100/self.current_episode_length if self.current_episode_length > 0 else 0)
             self.logger.record("n_invalid_topo", self.actions_info["episode_invalid_topo"])
             self.logger.record("n_invalid_geo", self.actions_info["episode_invalid_geo"])
             self.logger.record("nb_flip", self.actions_info["nb_flip"])
             self.logger.record("nb_split", self.actions_info["nb_split"])
             self.logger.record("nb_collapse", self.actions_info["nb_collapse"])
-            self.logger.record("invalid_flip", self.actions_info["nb_invalid_flip"]*100/self.actions_info["nb_flip"] if self.actions_info["nb_flip"] > 0 else 0)
-            self.logger.record("invalid_split", self.actions_info["nb_invalid_split"]*100/self.actions_info["nb_split"] if self.actions_info["nb_split"] > 0 else 0)
-            self.logger.record("invalid_collapse", self.actions_info["nb_invalid_collapse"]*100/self.actions_info["nb_collapse"]if self.actions_info["nb_collapse"] > 0 else 0)
+            self.logger.record("invalid_flip (%)", self.actions_info["nb_invalid_flip"]*100/self.actions_info["nb_flip"] if self.actions_info["nb_flip"] > 0 else 0)
+            self.logger.record("invalid_split (%)", self.actions_info["nb_invalid_split"]*100/self.actions_info["nb_split"] if self.actions_info["nb_split"] > 0 else 0)
+            self.logger.record("invalid_collapse (%)", self.actions_info["nb_invalid_collapse"]*100/self.actions_info["nb_collapse"]if self.actions_info["nb_collapse"] > 0 else 0)
 
             self.logger.record("episode_mesh_reward", self.mesh_reward)
             self.logger.record("episode_reward", self.current_episode_reward)
@@ -135,12 +144,13 @@ mesh = read_gmsh("../mesh_files/t1_tri.msh")
 env = gym.make(
     env_config["env_name"],
     mesh=mesh,
-    mesh_size=10,
+    mesh_size=15,
     max_episode_steps=env_config["max_episode_steps"],
     n_darts_selected=env_config["n_darts_selected"],
     deep= env_config["deep"],
     action_restriction=env_config["action_restriction"],
-    with_degree_obs=env_config["with_degree_observation"]
+    with_degree_obs=env_config["with_degree_observation"],
+    render_mode=None
 )
 
 check_env(env, warn=True)

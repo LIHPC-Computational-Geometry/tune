@@ -22,7 +22,6 @@ class Dart:
         if not isinstance(dart_id, (int, np.integer)):
             raise ValueError(f"The id must be an integer, {dart_id} is type {type(dart_id)}.")
         self.id = dart_id
-        self.active = True
 
     def __eq__(self, a_dart: Dart) -> bool:
         """
@@ -100,7 +99,6 @@ class Dart:
         """
         self.mesh.dart_info[self.id, 4] = face.id
 
-
 class Node:
     _mesh_type: type = None
 
@@ -115,7 +113,6 @@ class Node:
         """
         self.mesh = m
         self.id = node_id
-        self.ideal_adjacency = 0
 
     def __eq__(self, a_node: Node) -> bool:
         """
@@ -181,7 +178,10 @@ class Node:
         self.set_y(y)
 
     def set_ideal_adjacency(self, i: int) -> None:
-        self.ideal_adjacency = i
+        self.mesh.nodes[self.id,3] = i
+
+    def get_ideal_adjacency(self) -> int:
+        return self.mesh.nodes[self.id,3]
 
 
 class Face:

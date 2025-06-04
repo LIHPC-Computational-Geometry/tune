@@ -13,11 +13,11 @@ Mesh class.
 class Mesh:
     def __init__(self, nodes=[], faces=[]):
         """
-        Vertices are stored in a numpy array containing coordinates (x,y, dart id)
+        Vertices are stored in a numpy array containing coordinates (x,y, dart id, ideal adjacency)
         Faces are stored in a numpy array of simple (dart ids)
         Darts are stored in a numpy array, where each dart is a 5-tuple (dart id, beta_1, beta_2, vertex_id, face_id)
         """
-        self.nodes = numpy.empty((0, 3))
+        self.nodes = numpy.empty((0, 4))
         self.faces = numpy.empty(0, dtype=int)
         self.dart_info = numpy.empty((0, 5), dtype=int)
         self.first_free_dart = 0
@@ -66,14 +66,14 @@ class Mesh:
         :return: the created node
         """
         if len(self.nodes) <= self.first_free_node:
-            self.nodes = numpy.append(self.nodes, [[x, y, -1]], axis=0)
+            self.nodes = numpy.append(self.nodes, [[x, y, -1, 0]], axis=0)
             self.first_free_node += 1
             return Node(self, len(self.nodes) - 1)
         elif self.first_free_node >= 0:
             n_id = int(self.first_free_node)
             if isinstance(n_id, int):
                 self.first_free_node = abs(self.nodes[n_id, 2] + 1)
-                self.nodes[n_id] = [x, y, -1]
+                self.nodes[n_id] = [x, y, -1, 0]
             else:
                 print(n_id)
                 print(type(n_id))
@@ -308,7 +308,16 @@ class Mesh:
         """
         self.dart_info[d.id][0] = -self.first_free_dart - 1
         self.first_free_dart = d.id
+        d.active = False
 
+    def is_dart_active(self, d: Dart) -> bool:
+        """Check if the dart has been deleted"""
+        if d is None:
+            return False
+        elif self.dart_info[d.id,0] < 0:
+            return False
+        elif self.dart_info[d.id,0] >=0 :
+            return True
 
     def set_beta2(self, dart: Dart) -> None:
         """

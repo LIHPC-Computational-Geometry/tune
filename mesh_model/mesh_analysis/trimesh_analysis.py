@@ -95,11 +95,11 @@ class TriMeshTopoAnalysis(TriMeshAnalysis):
 
     def isValidAction(self, dart_id: int, action: int) -> (bool,bool):
         d = Dart(self.mesh, dart_id)
-        boundary_darts = self.get_boundary_darts()
+        #boundary_darts = self.get_boundary_darts()
 
         geo = True # The geometric validity is automatically set to True, it is not tested here
 
-        if d in boundary_darts:
+        if d.get_beta(2) is None: #if d in boundary_darts:
             return False, geo
         elif action == FLIP:
             return self.isFlipOk(d), geo
@@ -123,7 +123,7 @@ class TriMeshTopoAnalysis(TriMeshAnalysis):
             topo = False
             return topo, geo
 
-        _, _, _, _, _, A, B, C, D = self.mesh.active_triangles(d)
+        d2, d1, d11, d21, d211, A, B, C, D = self.mesh.active_triangles(d)
 
         nA_analysis = NodeAnalysis(A)
         nB_analysis = NodeAnalysis(B)

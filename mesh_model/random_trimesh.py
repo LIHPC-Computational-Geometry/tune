@@ -6,6 +6,7 @@ from mesh_model.mesh_struct.mesh_elements import Dart, Node
 from mesh_model.mesh_struct.mesh import Mesh
 from mesh_model.mesh_analysis.trimesh_analysis import TriMeshGeoAnalysis, TriMeshTopoAnalysis
 from environment.actions.triangular_actions import flip_edge_ids, split_edge_ids, collapse_edge_ids
+from view.mesh_plotter.mesh_plots import plot_mesh
 
 
 def regular_mesh(num_nodes_max: int) -> Mesh:
@@ -53,7 +54,8 @@ def regular_mesh(num_nodes_max: int) -> Mesh:
             n = Node(mesh, i)
             na = NodeAnalysis(n)
             if na.on_boundary():
-                n.set_ideal_adjacency(int(na.get_boundary_angle()/6))
+                ideal_adj = max(round(na.get_boundary_angle()/60)+1,2)
+                n.set_ideal_adjacency(ideal_adj)
         i+=1
 
     return mesh
@@ -78,6 +80,7 @@ def random_mesh(num_nodes_max: int) -> Mesh:
     """
     mesh = regular_mesh(num_nodes_max)
     mesh_shuffle(mesh, num_nodes_max)
+    #plot_mesh(mesh)
     return mesh
 
 
@@ -109,7 +112,7 @@ def mesh_shuffle(mesh: Mesh, num_nodes) -> Mesh:
     m_analysis = TriMeshTopoAnalysis(mesh)
     i = 0
     while i < nb_action_max:
-        action_type = np.random.randint(0, 3)
+        action_type = np.random.randint(0, 1)
         d_id = np.random.randint(len(active_darts_list))
         d_id = active_darts_list[d_id][0]
         dart = Dart(mesh, d_id)

@@ -43,8 +43,30 @@ def subplot_mesh(mesh: Mesh) -> None:
             n1 = d1.get_node()
             n2 = d2.get_node()
             n3 = d3.get_node()
+
+            # Coordonnées des sommets
+            p1 = np.array([n1.x(), n1.y()])
+            p2 = np.array([n2.x(), n2.y()])
+            p3 = np.array([n3.x(), n3.y()])
+
             polygon = np.array([(n1.x(), n1.y()), (n2.x(), n2.y()), (n3.x(), n3.y()), (n1.x(), n1.y())])
             plt.plot(polygon[:, 0], polygon[:, 1], 'k-')
+
+            # Ajouter les labels sur les arêtes (au milieu)
+            mid1 = (p1 + p2) / 2
+            mid2 = (p2 + p3) / 2
+            mid3 = (p3 + p1) / 2
+
+            centroid = (p1 + p2 + p3) / 3
+
+            pos1 = mid1 +0.2* (centroid - mid1)
+            pos2 = mid2 +0.2* (centroid - mid2)
+            pos3 = mid3 +0.2* (centroid - mid3)
+
+            # Labels arbitraires, tu peux remplacer par des identifiants si tu veux
+            plt.text(*pos1, f"{d1.id}", color='blue', fontsize=10, ha='center', va='center')
+            plt.text(*pos2, f"{d2.id}", color='blue', fontsize=10, ha='center', va='center')
+            plt.text(*pos3, f"{d3.id}", color='blue', fontsize=10, ha='center', va='center')
     elif quad:
         for dart_id in faces:
             d1 = Dart(mesh, dart_id)

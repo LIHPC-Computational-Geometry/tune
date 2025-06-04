@@ -25,11 +25,13 @@ class NodeAnalysis:
         d11 = d1.get_beta(1)
         d111 = d11.get_beta(1)
         triangular = (d111.id == d.id)
-
-        if self.n.ideal_adjacency == 0:
-            ideal_adjacency = 6 if triangular else 4
+        i =self.n.get_ideal_adjacency()
+        if i>0:
+            ideal_adjacency = i
+        elif triangular:
+            ideal_adjacency = 360 / 60
         else:
-            ideal_adjacency = self.n.ideal_adjacency
+            ideal_adjacency = 360 / 90
 
         return ideal_adjacency - adjacency, adjacency
 
