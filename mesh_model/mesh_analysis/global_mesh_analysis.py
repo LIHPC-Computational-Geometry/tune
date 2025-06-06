@@ -1,39 +1,32 @@
 import numpy as np
-from math import sqrt, degrees, acos
+from math import sqrt, degrees, acos, atan2
 from abc import ABC, abstractmethod
 
 from mesh_model.mesh_struct.mesh_elements import Dart, Node, Face
 from mesh_model.mesh_struct.mesh import Mesh
 from view.mesh_plotter.mesh_plots import plot_mesh
 
+
 class NodeAnalysis:
     def __init__(self, n: Node):
         self.n = n
 
-    def score_calculation(self) -> (int, int):
+    def score_calculation(self) -> int:
         """
         Function to calculate the irregularity of a node in the mesh.
         :param n: a node in the mesh.
         :return: the irregularity of the node
+        :raises ValueError: if the node is associated to no dart
         """
-        adjacency = self.degree()
-        # Check if the mesh is triangular or quad
+
         d = self.n.get_dart()
         if d.mesh.dart_info[d.id,0] < 0:
             raise ValueError("No existing dart")
-        d1 = d.get_beta(1)
-        d11 = d1.get_beta(1)
-        d111 = d11.get_beta(1)
-        triangular = (d111.id == d.id)
-        i =self.n.get_ideal_adjacency()
-        if i>0:
-            ideal_adjacency = i
-        elif triangular:
-            ideal_adjacency = 360 / 60
-        else:
-            ideal_adjacency = 360 / 90
 
-        return ideal_adjacency - adjacency, adjacency
+        adjacency = self.degree()
+        ideal_adjacency =self.n.get_ideal_adjacency()
+
+        return ideal_adjacency - adjacency
 
     def get_angle(self, d1: Dart, d2: Dart) -> float:
         """
@@ -57,15 +50,18 @@ class NodeAnalysis:
 
         vect_AB = (B.x() - A.x(), B.y() - A.y())
         vect_AC = (C.x() - A.x(), C.y() - A.y())
-        dist_AB = sqrt(vect_AB[0] ** 2 + vect_AB[1] ** 2)
-        dist_AC = sqrt(vect_AC[0] ** 2 + vect_AC[1] ** 2)
-        cos_theta = np.dot(vect_AB, vect_AC) / (dist_AB * dist_AC)
-        cos_theta = np.clip(cos_theta, -1, 1)
-        angle = np.arccos(cos_theta)
+
+        dot = vect_AB[0] * vect_AC[0] + vect_AB[1] * vect_AC[1]
+
+        # cross product
+        cross = vect_AB[0] * vect_AC[1] - vect_AB[1] * vect_AC[0]
+
+        angle_rad = atan2(cross, dot)
+        angle = degrees(angle_rad) % 360
         if np.isnan(angle):
             plot_mesh(self.n.mesh)
             raise ValueError("Angle error")
-        return degrees(angle)
+        return angle
 
     def get_boundary_angle(self) -> float:
         """
@@ -139,9 +135,9 @@ class NodeAnalysis:
             else:
                 adjacency += 0.5
         if adjacency != int(adjacency):
-            adjacency = int(adjacency+0.5)
-            #plot_mesh(self.n.mesh)
-            #raise ValueError("Adjacency error")
+            #adjacency = int(adjacency+0.5)
+            plot_mesh(self.n.mesh)
+            raise ValueError("Adjacency error")
         return adjacency
 
     def test_degree(self) -> bool:
@@ -163,6 +159,19 @@ class GlobalMeshAnalysis(ABC):
     def __init__(self, mesh: Mesh) -> None:
         self.mesh = mesh
 
+    def set_adjacency(self):
+        pass
+
+    def set_scores(self):
+        pass
+
+    def set_geometric_quality(self):
+        pass
+
+    def get_dart_geometric_quality(self, d: Dart) -> int:
+        pass
+
+
     def global_score(self):
         """
         Calculate the overall mesh score. The mesh cannot achieve a better score than the ideal one.
@@ -178,9 +187,9 @@ class GlobalMeshAnalysis(ABC):
                 n_id = i
                 node = Node(self.mesh, n_id)
                 n_a = NodeAnalysis(node)
-                n_score, adjacency = n_a.score_calculation()
+                n_score = n_a.score_calculation()
                 nodes_score.append(n_score)
-                nodes_adjacency.append(adjacency)
+                nodes_adjacency.append(6)
                 mesh_ideal_score += n_score
                 mesh_score += abs(n_score)
             else:
@@ -278,3 +287,18 @@ class GlobalMeshAnalysis(ABC):
         rad = acos(cos_ABC)
         deg = degrees(rad)
         return deg
+
+    def cross_product(self, vect_AB, vect_AC):
+        """ Return the cross product between AB et AC.
+            0 means A, B and C are coolinear
+            > 0 mean A, B and C are "sens des aiguilles d'une montre"
+            < 0 sens inverse
+        """
+        val = vect_AB[0] * vect_AC[1] - vect_AB[1] * vect_AC[0]
+        return val
+
+    def signe(self, a: int):
+        if a <= 0:
+            return 0
+        else:
+            return 1

@@ -1,3 +1,4 @@
+from copy import deepcopy
 from enum import Enum
 import gymnasium as gym
 from gymnasium import spaces
@@ -5,12 +6,14 @@ import pygame
 from pygame.locals import *
 import numpy as np
 import sys
+import imageio
 
 from mesh_model.random_trimesh import random_mesh
 from mesh_model.mesh_struct.mesh_elements import Dart
 from mesh_model.mesh_analysis.trimesh_analysis import TriMeshGeoAnalysis, TriMeshTopoAnalysis
 from environment.gymnasium_envs.trimesh_full_env.envs.mesh_conv import get_x
-from environment.actions.triangular_actions import flip_edge, split_edge, collapse_edge
+from environment.actions.triangular_actions import flip_edge, split_edge, collapse_edge, check_mesh
+from view.mesh_plotter.mesh_plots import plot_mesh
 from view.window import window_data, graph
 from mesh_display import MeshDisplay
 
@@ -27,7 +30,7 @@ class Actions(Enum):
 class TriMeshEnvFull(gym.Env):
     metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 60}
 
-    def __init__(self, mesh=None, mesh_size=9, n_darts_selected=20, deep=6, with_degree_obs=False, action_restriction=False, render_mode=None):
+    def __init__(self, mesh=None, mesh_size=9, max_episode_steps=20, n_darts_selected=20, deep=6, with_degree_obs=False, action_restriction=False, render_mode=None):
         self.mesh = mesh if mesh is not None else random_mesh(mesh_size)
         self.m_analysis = TriMeshTopoAnalysis(self.mesh)
         self.mesh_size = mesh_size
@@ -44,6 +47,9 @@ class TriMeshEnvFull(gym.Env):
         self.nb_invalid_actions = 0
         self.darts_selected = [] # darts id observed
         deep = self.deep*2 if self.degree_observation else deep
+        self.episode_count = 0
+        self.ep_len = 0
+        self.max_steps = max_episode_steps
 
         self.observation_space = spaces.Box(
             low=-15,  # nodes min degree : 15
@@ -59,7 +65,6 @@ class TriMeshEnvFull(gym.Env):
 
         assert render_mode is None or render_mode in self.metadata["render_modes"]
         self.render_mode = render_mode
-
         """
         If human-rendering is used, `self.window` will be a reference
         to the window that we draw to. `self.clock` will be a clock that is used
@@ -92,10 +97,17 @@ class TriMeshEnvFull(gym.Env):
         self._nodes_scores, self._mesh_score, self._ideal_score, self._nodes_adjacency = self.m_analysis.global_score()
         self._ideal_rewards = (self._mesh_score - self._ideal_score) * 10
         self.nb_invalid_actions = 0
+        self.ep_len = 0
         self.close()
         self.observation = self._get_obs()
         info = self._get_info(terminated=False,valid_act=(None,None,None), action=(None,None), mesh_reward=None)
 
+        """
+        if self._ideal_score !=0:
+            self.render_mode = "human"
+        else:
+            self.render_mode = None
+        """
         if self.render_mode == "human":
             self._render_frame()
             self.recording = True
@@ -113,6 +125,8 @@ class TriMeshEnvFull(gym.Env):
 
     def _get_info(self, terminated, valid_act, action, mesh_reward):
         valid_action, valid_topo, valid_geo = valid_act
+        if self._mesh_score - self._ideal_score <0:
+            raise ValueError("score impossible")
         return {
             "distance": self._mesh_score - self._ideal_score,
             "mesh_reward" : mesh_reward,
@@ -139,13 +153,14 @@ class TriMeshEnvFull(gym.Env):
         return self.darts_selected[int(action[1])]
 
     def step(self, action: np.ndarray):
+        self.ep_len+=1
         dart_id = self._action_to_dart_id(action)
         d = Dart(self.mesh, dart_id)
         d1 = d.get_beta(1)
         n1 = d.get_node()
         n2 = d1.get_node()
         valid_action, valid_topo, valid_geo = False, False, False
-
+        before_mesh = deepcopy(self.mesh)
         if action[0] == Actions.FLIP.value:
             valid_action, valid_topo, valid_geo = flip_edge(self.m_analysis, n1, n2)
         elif action[0] == Actions.SPLIT.value:
@@ -160,6 +175,12 @@ class TriMeshEnvFull(gym.Env):
             next_nodes_score, self.next_mesh_score, _, next_nodes_adjacency = self.m_analysis.global_score()
             terminated = np.array_equal(self._ideal_score, self.next_mesh_score)
             mesh_reward = (self._mesh_score - self.next_mesh_score)*10
+            if mesh_reward == 10:
+                b_mesh_analysis = TriMeshTopoAnalysis(before_mesh)
+                plot_mesh(before_mesh)
+                plot_mesh(self.mesh)
+                bool1 = check_mesh(b_mesh_analysis)
+                bool2 = check_mesh(self.m_analysis)
             reward = mesh_reward
             self._nodes_scores, self._mesh_score, self._nodes_adjacency = next_nodes_score, self.next_mesh_score, next_nodes_adjacency
             self.observation = self._get_obs()
@@ -185,6 +206,12 @@ class TriMeshEnvFull(gym.Env):
 
         if self.render_mode == "human":
             self._render_frame()
+        #Saving episode rendering as gif
+        if terminated or self.ep_len>= self.max_steps:
+            if self.recording and self.frames:
+                imageio.mimsave(f"training/episode_recording/episode_{self.episode_count}.gif", self.frames, fps=1)
+                print("Image recorded")
+                self.episode_count +=1
 
         return self.observation, reward, terminated, truncated, info
 

@@ -99,6 +99,37 @@ class Dart:
         """
         self.mesh.dart_info[self.id, 4] = face.id
 
+    def get_quality(self) -> int:
+        """
+        Get the geometric quality around a given dart.
+
+        :return: the geometric quality around the dart.
+        :raises ValueError: if there is no quality dimension
+        """
+        dart_quality = self.mesh.dart_info[self.id, 5]
+        if dart_quality == -99:
+            raise ValueError("No quality dimension")
+        return dart_quality
+
+    def set_quality(self, quality: int) -> None:
+        """
+        Set the geometric quality around a given dart. Automatically set the same quality for the twin dart
+        The quality is a parameter used to determine whether applying an operation to the dart would flip a face.
+
+            * For triangular meshes:
+        The dart's surrounding quality is determined by analyzing the quadrilateral formed by the two adjacent triangles.
+        The configuration is classified as convex, crossed, or concave.
+
+            * For quadrilateral meshes:
+        The dart's surrounding quality is determined based on whether the associated node forms a "star-shaped" (étoilé) configuration.
+        :param quality: calculated quality
+        """
+
+        d2_id = self.mesh.dart_info[self.id, 2]
+        self.mesh.dart_info[self.id, 5] = quality
+        if d2_id >=0: # inner dart
+            self.mesh.dart_info[d2_id, 5] = quality
+
 class Node:
     _mesh_type: type = None
 
@@ -178,10 +209,40 @@ class Node:
         self.set_y(y)
 
     def set_ideal_adjacency(self, i: int) -> None:
+        """
+        Set the ideal adjacency of this node.
+        :param i: calculated ideal adjacency
+        """
         self.mesh.nodes[self.id,3] = i
 
     def get_ideal_adjacency(self) -> int:
-        return self.mesh.nodes[self.id,3]
+        """
+        Get the ideal adjacency of this node.
+        :return: ideal adjacency
+        :raises ValueError: if there is no ideal adjacency
+        """
+        ideal_adjacency = self.mesh.nodes[self.id,3]
+        if ideal_adjacency == -1:
+            raise ValueError("No ideal adjacency")
+        return ideal_adjacency
+
+    def set_score(self, s: int) -> None:
+        """
+        Set the score of a node.
+        :param s: calculated score
+        """
+        self.mesh.nodes[self.id,4] = s
+
+    def get_score(self) -> int:
+        """
+        Get the score of this node.
+        :return: score
+        :raises ValueError: if there is no score defined
+        """
+        score = self.mesh.nodes[self.id,4]
+        if score == -99:
+            raise ValueError("No score")
+        return score
 
 
 class Face:

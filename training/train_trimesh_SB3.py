@@ -1,21 +1,75 @@
 from __future__ import annotations
 
+import random
+import torch
 import os
+import time
 import json
-from copy import deepcopy
+import yaml
+import wandb
 
-import mesh_model.random_trimesh as TM
+import gymnasium as gym
+import numpy as np
+
+from copy import deepcopy
+from stable_baselines3 import PPO
+from stable_baselines3.common.env_checker import check_env
+from stable_baselines3.common.callbacks import BaseCallback
+from stable_baselines3.common.logger import Figure, HParam
+
+from wandb.integration.sb3 import WandbCallback
+
 from environment.actions.smoothing import smoothing_mean
 from mesh_model.reader import read_gmsh
 from view.mesh_plotter.mesh_plots import dataset_plt, plot_mesh
 from training.exploit_SB3_policy import testPolicy
-from stable_baselines3 import PPO
-from stable_baselines3.common.env_checker import check_env
-from stable_baselines3.common.callbacks import BaseCallback
-from stable_baselines3.common.logger import Figure
+
 from environment.gymnasium_envs import trimesh_full_env
 
-import gymnasium as gym
+import mesh_model.random_trimesh as TM
+
+
+class HParamCallback(BaseCallback):
+    """
+    Saves the hyperparameters and metrics at the start of the training, and logs them to TensorBoard.
+    """
+
+    def _on_training_start(self) -> None:
+        hparam_dict = {
+            "algorithm": self.model.__class__.__name__,
+            "experiment": experiment_name,
+            "learning rate": self.model.learning_rate,
+            "gamma": self.model.gamma,
+            "batch_size": config["ppo"]["batch_size"],
+            "epochs": config["ppo"]["n_epochs"],
+            "clip_range": config["ppo"]["clip_range"],
+            "training_meshes": config["dataset"]["training_mesh_file_path"],
+            "evaluation_meshes": config["dataset"]["evaluation_mesh_file_path"],
+            "max_steps": config["env"]["max_episode_steps"],
+            "max_timesteps": config["total_timesteps"],
+            "deep": config["env"]["deep"],
+            "with_degree": config["env"]["with_degree_observation"],
+            "nb_darts_selected": config["env"]["n_darts_selected"],
+            "reward_mode": config["env"]["reward_function"],
+
+
+        }
+        # define the metrics that will appear in the `HPARAMS` Tensorboard tab by referencing their tag
+        # Tensorbaord will find & display metrics from the `SCALARS` tab
+        metric_dict = {
+            "normalized_return": 0,
+            "rollout/ep_len_mean": 0.0,
+            "rollout/ep_rew_mean": 0.0
+        }
+        self.logger.record(
+            "hparams",
+            HParam(hparam_dict, metric_dict),
+            exclude=("stdout", "log", "json", "csv"),
+        )
+
+    def _on_step(self) -> bool:
+        return True
+
 
 class TensorboardCallback(BaseCallback):
     """
@@ -42,14 +96,6 @@ class TensorboardCallback(BaseCallback):
         }
         self.final_distance = 0
         self.normalized_return = 0
-
-    def _on_training_start(self) -> None:
-        """
-        Record PPO parameters and environment configuration at the training start.
-        """
-        self.logger.record("parameters/ppo", f"<pre>{json.dumps(ppo_config, indent=4)}</pre>")
-        self.logger.record("parameters/env", f"<pre>{json.dumps(env_config, indent=4)}</pre>")
-        self.logger.dump(step=0)
 
     def _on_step(self) -> bool:
         """
@@ -121,53 +167,81 @@ class TensorboardCallback(BaseCallback):
         """
         Records policy evaluation results : before and after dataset images
         """
+        print("-------- Testing Policy ---------")
         dataset = [TM.random_mesh(30) for _ in range(9)] # dataset of 9 meshes of size 30
         before = dataset_plt(dataset) # plot the datasat as image
-        length, wins, rewards, normalized_return, final_meshes = testPolicy(self.model, 10, env_config, dataset) # test model policy on the dataset
+        length, wins, rewards, normalized_return, final_meshes = testPolicy(self.model, 10, config, dataset) # test model policy on the dataset
         after = dataset_plt(final_meshes)
         self.logger.record("figures/before", Figure(before, close=True), exclude=("stdout", "log"))
         self.logger.record("figures/after", Figure(after, close=True), exclude=("stdout", "log"))
         self.logger.dump(step=0)
 
+if __name__ == '__main__':
 
-with open("../model_RL/parameters/ppo_config.json", "r") as f:
-    ppo_config = json.load(f)
-with open("../environment/environment_config.json", "r") as f:
-    env_config = json.load(f)
+    # PARAMETERS CONFIGURATION
+    with open("training/trimesh_config_PPO_SB3.yaml", "r") as f:
+        config = yaml.safe_load(f)
 
-# Create log dir
-log_dir = ppo_config["tensorboard_log"]
-os.makedirs(log_dir, exist_ok=True)
+    experiment_name = config["experiment_name"]
 
-mesh = read_gmsh("../mesh_files/t1_tri.msh")
-# Create the environment
-env = gym.make(
-    env_config["env_name"],
-    mesh=mesh,
-    mesh_size=15,
-    max_episode_steps=env_config["max_episode_steps"],
-    n_darts_selected=env_config["n_darts_selected"],
-    deep= env_config["deep"],
-    action_restriction=env_config["action_restriction"],
-    with_degree_obs=env_config["with_degree_observation"],
-    render_mode=None
-)
+    # SEEDING
+    seed = config["seed"]
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.backends.cudnn.deterministic = True
 
-check_env(env, warn=True)
+    # WANDB
+    run = wandb.init(
+        project="Trimesh-learning",
+        name=config["experiment_name"],
+        sync_tensorboard=True,  # auto-upload sb3's tensorboard metrics
+        save_code=True,  # optional
+    )
+    # Create tensorboard log dir
+    log_dir = config["paths"]["log_dir"]
+    os.makedirs(log_dir, exist_ok=True)
 
-model = PPO(
-    policy=ppo_config["policy"],
-    env=env,
-    n_steps=ppo_config["n_steps"],
-    n_epochs=ppo_config["n_epochs"],
-    batch_size=ppo_config["batch_size"],
-    learning_rate=ppo_config["learning_rate"],
-    gamma=ppo_config["gamma"],
-    verbose=ppo_config["verbose"],
-    tensorboard_log=log_dir
-)
+    training_mesh = read_gmsh(config["dataset"]["training_mesh_file_path"])
+    # Create the environment
+    env = gym.make(
+        config["env"]["env_id"],
+        mesh=None,
+        mesh_size = 15,
+        max_episode_steps=config["env"]["max_episode_steps"],
+        n_darts_selected=config["env"]["n_darts_selected"],
+        deep=config["env"]["deep"],
+        action_restriction=config["env"]["action_restriction"],
+        with_degree_obs=config["env"]["with_degree_observation"],
+        render_mode=config["env"]["render_mode"],
+    )
 
-print("-----------Starting learning-----------")
-model.learn(total_timesteps=ppo_config["total_timesteps"], callback=TensorboardCallback(model))
-print("-----------Learning ended------------")
-model.save("policy_saved/test/test-PPO-4")
+    check_env(env, warn=True)
+
+    model = PPO(
+        policy=config["ppo"]["policy"],
+        env=env,
+        n_steps=config["ppo"]["n_steps"],
+        n_epochs=config["ppo"]["n_epochs"],
+        batch_size=config["ppo"]["batch_size"],
+        learning_rate=config["ppo"]["learning_rate"],
+        gamma=config["ppo"]["gamma"],
+        verbose=1,
+        tensorboard_log=log_dir
+    )
+
+    start_time = time.perf_counter()
+    print("-----------Starting learning-----------")
+    model.learn(
+        total_timesteps=config["total_timesteps"],
+        tb_log_name=config["experiment_name"],
+        callback=[HParamCallback(),
+                  WandbCallback(model_save_path=config["paths"]["wandb_model_saving_dir"] + config["experiment_name"]),
+                  TensorboardCallback(model)],
+        progress_bar=True
+    )
+    end_time = time.perf_counter()
+    print("-----------Learning ended------------")
+    print(f"Temps d'apprentissage : {end_time - start_time:.4} s")
+    model.save(config["paths"]["policy_saving_dir"] + config["experiment_name"])
+    run.finish()

@@ -2,4 +2,3 @@ from environment.gymnasium_envs.quadmesh_env.wrappers.clip_reward import ClipRew
 from environment.gymnasium_envs.quadmesh_env.wrappers.discrete_actions import DiscreteActions
 from environment.gymnasium_envs.quadmesh_env.wrappers.reacher_weighted_reward import ReacherRewardWrapper
 from environment.gymnasium_envs.quadmesh_env.wrappers.relative_position import RelativePosition
-from environment.gymnasium_envs.quadmesh_env.wrappers.dummy_vertices_observation import

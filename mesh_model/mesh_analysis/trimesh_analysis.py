@@ -1,4 +1,7 @@
 from math import sqrt, degrees, radians, cos, sin
+from multiprocessing.managers import Value
+
+import numpy as np
 from mesh_model.mesh_analysis.global_mesh_analysis import GlobalMeshAnalysis, NodeAnalysis
 from mesh_model.mesh_struct.mesh_elements import Dart, Node, Face
 from mesh_model.mesh_struct.mesh import Mesh
@@ -19,6 +22,85 @@ class TriMeshAnalysis(GlobalMeshAnalysis):
 
     def isValidAction(self, dart_id: int, action: int) -> (bool,bool):
         pass
+
+    def set_adjacency(self) -> None:
+        i = 0
+        for n_info in self.mesh.nodes:
+            if n_info[2] >= 0:
+                n = Node(self.mesh, i)
+                na = NodeAnalysis(n)
+                if na.on_boundary():
+                    angle = na.get_boundary_angle()
+                    ideal_adj = max(round(angle / 60) + 1, 2)
+                    n.set_ideal_adjacency(ideal_adj)
+                else:
+                    n.set_ideal_adjacency(6)
+            i += 1
+
+    def set_scores(self) -> None:
+        i = 0
+        for n_info in self.mesh.nodes:
+            if n_info[2] >= 0:
+                n = Node(self.mesh, i)
+                na = NodeAnalysis(n)
+                s = na.score_calculation()
+                n.set_score(s)
+            i += 1
+
+    def set_geometric_quality(self) -> None:
+        for d_info in self.mesh.active_darts():
+            d_id = d_info[0]
+            d = Dart(self.mesh, d_id)
+            d.set_quality(self.get_dart_geometric_quality(d))
+
+    def get_dart_geometric_quality(self, d: Dart) -> int:
+        """
+        Calculate the geometric quality of the surrounding of a dart and his twin dart.
+            * quality = -1: boundary dart
+            * quality = 0: convex quad
+            * quality = 1: concave quad
+            * quality = 2: crossed quad
+            * quality = 3: flat quad
+        :param d: dart
+        :return: geometric quality
+        """
+        if d.get_beta(2) is None:
+            return -1 # boundary dart
+
+        d2, d1, d11, d21, d211, A, B, C, D = self.mesh.active_triangles(d)
+
+        u1 = np.array([B.x() - A.x(), B.y() - A.y()])  # d vector (unused)
+        u2 = np.array([C.x() - B.x(), C.y() - B.y()])  # vect(BC)
+        u3 = np.array([A.x() - C.x(), A.y() - C.y()])  # vect(CA)
+        u4 = np.array([D.x() - A.x(), D.y() - A.y()])  # vect(AD)
+        u5 = np.array([B.x() - D.x(), B.y() - D.y()])  # vect(DB)
+
+        # Checking for near-zero vectors (close to (0,0))
+        if (np.linalg.norm(u2) < 1e-5 or
+                np.linalg.norm(u3) < 1e-5 or
+                np.linalg.norm(u4) < 1e-5 or
+                np.linalg.norm(u5) < 1e-5):
+            raise ValueError("near zero vector") # Quad invalid because one side is almost zero
+
+        # Calculate cross product at each node
+        cp_A = self.cross_product(-1 * u3, u4)
+        cp_D = self.cross_product(-1 * u4, u5)
+        cp_B = self.cross_product(-1 * u5, u2)
+        cp_C = self.cross_product(-1 * u2, u3)
+
+        #If two cross product are near zero, it means it's a flat quadrangle and the two adjacent faces are flat
+        zero_count = sum(-1e-5 < cp < 1e-5 for cp in [cp_A, cp_B, cp_C, cp_D])
+        if zero_count >= 2:
+            return 3 #flat
+
+        # Counts how many angles are oriented clockwise. If the angle is clockwise oriented, signe(cp) return 1
+        sum_cp = self.signe(cp_A) + self.signe(cp_B) + self.signe(cp_C) + self.signe(cp_D)
+        if sum_cp == 0:
+            return 0 #convexe
+        elif sum_cp == 1:
+            return 1 #concave
+        elif sum_cp == 2:
+            return 2 #crossed
 
     def get_adjacent_faces(self, n: Node, d_from: Dart, d_to: Dart) -> list:
         adj_faces = []
@@ -131,7 +213,9 @@ class TriMeshTopoAnalysis(TriMeshAnalysis):
         if not nA_analysis.test_degree() or not nB_analysis.test_degree():
             topo = False
 
-        #Edge reversal allowed
+        #Edge reversal not allowed
+        if d.get_quality() != 0:
+            geo = False
 
         return topo, geo
 

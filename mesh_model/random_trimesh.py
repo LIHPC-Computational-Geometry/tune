@@ -48,15 +48,9 @@ def regular_mesh(num_nodes_max: int) -> Mesh:
         dart_id += 1
 
     mesh.set_twin_pointers()
-    i = 0
-    for n_info in mesh.nodes:
-        if n_info[2] >=0:
-            n = Node(mesh, i)
-            na = NodeAnalysis(n)
-            if na.on_boundary():
-                ideal_adj = max(round(na.get_boundary_angle()/60)+1,2)
-                n.set_ideal_adjacency(ideal_adj)
-        i+=1
+    m_analysis.set_adjacency()
+    m_analysis.set_scores()
+    m_analysis.set_geometric_quality()
 
     return mesh
 

@@ -30,11 +30,11 @@ def flip_edge(mesh_analysis, n1: Node, n2: Node) -> True:
     found, d = mesh_analysis.mesh.find_inner_edge(n1, n2)
     mesh_before = deepcopy(mesh_analysis.mesh)
     if found:
-        topo, geo = mesh_analysis.isSplitOk(d)
+        topo, geo = mesh_analysis.isFlipOk(d)
         if not geo or not topo:
             return False, topo, geo
     else:
-        return False, False, True  # the geometrical criteria is True because if the dart is not found, it means it's a boundary dart
+        return False, False, True  # the geometrical criteria is True because if the dart is not found, it means it's a boundary dart and a topological criteria
 
 
     d2, d1, d11, d21, d211, n1, n2, n3, n4 = mesh_analysis.mesh.active_triangles(d)
@@ -65,10 +65,24 @@ def flip_edge(mesh_analysis, n1: Node, n2: Node) -> True:
     d211.set_face(f1)
     d11.set_face(f2)
 
-    topo = check_mesh(mesh_analysis, mesh_before)
-    if not topo:
-        mesh_analysis.mesh = deepcopy(mesh_before)
-        valid_action = False
+    #Update dart quality and nodes scores
+    d.set_quality(mesh_analysis.get_dart_geometric_quality(d))
+    d1.set_quality(mesh_analysis.get_dart_geometric_quality(d1))
+    d11.set_quality(mesh_analysis.get_dart_geometric_quality(d11))
+    d21.set_quality(mesh_analysis.get_dart_geometric_quality(d21))
+    d211.set_quality(mesh_analysis.get_dart_geometric_quality(d211))
+
+    n1.set_score(n1.get_score() + 1)
+    n2.set_score(n2.get_score() + 1)
+    n3.set_score(n3.get_score() - 1)
+    n4.set_score(n4.get_score() - 1)
+
+    after_check = check_mesh(mesh_analysis, mesh_before)
+    if not after_check:
+        raise ValueError("Some checks are missing")
+    # if not topo:
+    #     mesh_analysis.mesh = deepcopy(mesh_before)
+    #     valid_action = False
     return valid_action, topo, geo
 
 
@@ -222,6 +236,7 @@ def check_mesh(mesh_analysis, mesh_before=None) -> bool:
         # if beta2 relation is not symetrical
         elif d2 >= 0 and mesh_analysis.mesh.dart_info[d2, 2] != d:
             return False
+
         # null dart
         elif d2>=0 and mesh_analysis.mesh.dart_info[d2, 3] == mesh_analysis.mesh.dart_info[d, 3]:
             return False
@@ -236,13 +251,18 @@ def check_mesh(mesh_analysis, mesh_before=None) -> bool:
         #Check beta1
         if  mesh_analysis.mesh.dart_info[d11,1]!=d :
             return False
+        #check if the quality is the same for twin darts
+        if d2>=0 and mesh_analysis.mesh.dart_info[d2,5] != mesh_analysis.mesh.dart_info[d, 5]:
+            plot_mesh(mesh_analysis.mesh)
+            return False
 
         if d2 >= 0 :
             d = Dart(mesh_analysis.mesh, d)
             d2, d1, d11, d21, d211, n1, n2, n3, n4 = mesh_analysis.mesh.active_triangles(d)
-            if len(set([n1.id, n2.id, n3.id, n4.id])) < 4:
+            if len(set([n1.id, n2.id, n3.id, n4.id])) < 4 and d.get_quality() != 3: # not flat faces
+                plot_mesh(mesh_analysis.mesh)
                 return False
-        return True
+    return True
 
 
 def check_mesh_debug(mesh_analysis, mesh_before=None)->True:
