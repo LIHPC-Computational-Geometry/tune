@@ -1,7 +1,6 @@
 import unittest
 import os
 import mesh_model.mesh_struct.mesh as mesh
-from mesh_model.mesh_analysis.global_mesh_analysis import global_score
 from mesh_model.mesh_struct.mesh_elements import Dart, Node
 from mesh_model.random_quadmesh import random_mesh
 from environment.actions.quadrangular_actions import flip_edge_cntcw, flip_edge_cw, split_edge, collapse_edge, cleanup_edge

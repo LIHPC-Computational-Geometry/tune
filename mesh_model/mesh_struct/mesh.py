@@ -75,7 +75,7 @@ class Mesh:
             n_id = int(self.first_free_node)
             if isinstance(n_id, int):
                 self.first_free_node = abs(self.nodes[n_id, 2] + 1)
-                self.nodes[n_id] = [x, y, -1, 0]
+                self.nodes[n_id] = [x, y, -1, -1, -99]
             else:
                 print(n_id)
                 print(type(n_id))

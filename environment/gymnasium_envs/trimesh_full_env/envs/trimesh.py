@@ -1,16 +1,21 @@
+import copy
+import pygame
+import imageio
+import sys
+
+import numpy as np
+import gymnasium as gym
+
 from copy import deepcopy
 from enum import Enum
-import gymnasium as gym
+
 from gymnasium import spaces
-import pygame
 from pygame.locals import *
-import numpy as np
-import sys
-import imageio
+
 
 from mesh_model.random_trimesh import random_mesh
 from mesh_model.mesh_struct.mesh_elements import Dart
-from mesh_model.mesh_analysis.trimesh_analysis import TriMeshGeoAnalysis, TriMeshTopoAnalysis
+from mesh_model.mesh_analysis.trimesh_analysis import TriMeshQualityAnalysis
 from environment.gymnasium_envs.trimesh_full_env.envs.mesh_conv import get_x
 from environment.actions.triangular_actions import flip_edge, split_edge, collapse_edge, check_mesh
 from view.mesh_plotter.mesh_plots import plot_mesh
@@ -30,41 +35,52 @@ class Actions(Enum):
 class TriMeshEnvFull(gym.Env):
     metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 60}
 
-    def __init__(self, mesh=None, mesh_size=9, max_episode_steps=20, n_darts_selected=20, deep=6, with_degree_obs=False, action_restriction=False, render_mode=None):
-        self.mesh = mesh if mesh is not None else random_mesh(mesh_size)
-        self.m_analysis = TriMeshTopoAnalysis(self.mesh)
+    def __init__(
+            self,
+            mesh=None,
+            mesh_size=9,
+            max_episode_steps=20,
+            n_darts_selected=20,
+            deep=6,
+            with_quality_obs=False,
+            action_restriction=False,
+            render_mode=None
+    ) -> None:
+
+        assert render_mode is None or render_mode in self.metadata["render_modes"]
+        self.render_mode = render_mode
+
         self.mesh_size = mesh_size
-        self.nb_darts = len(self.mesh.dart_info)
+        self.mesh = mesh if mesh is not None else random_mesh(mesh_size)
+        self.m_analysis = TriMeshQualityAnalysis(self.mesh)
         self._nodes_scores, self._mesh_score, self._ideal_score, self._nodes_adjacency = self.m_analysis.global_score()
         self._ideal_rewards = (self._mesh_score - self._ideal_score)*10
         self.next_mesh_score = 0
         self.deep = deep
         self.n_darts_selected = n_darts_selected
         self.restricted = action_restriction
-        self.degree_observation = with_degree_obs
+        self.quality_observation = with_quality_obs
         self.window_size = 512  # The size of the PyGame window
         self.g = None
         self.nb_invalid_actions = 0
         self.darts_selected = [] # darts id observed
-        deep = self.deep*2 if self.degree_observation else deep
         self.episode_count = 0
         self.ep_len = 0
+        self.darts_selected = []
         self.max_steps = max_episode_steps
 
         self.observation_space = spaces.Box(
             low=-15,  # nodes min degree : 15
             high=15,  # nodes max degree : 15
-            shape=(self.n_darts_selected, self.deep * 2 if self.degree_observation else self.deep),
+            shape=(self.n_darts_selected, self.deep * 2 if self.quality_observation else self.deep),
             dtype=np.int64
         )
 
         self.observation = None
 
         # We have 3 action, flip, split, collapse
-        self.action_space = spaces.MultiDiscrete([1, self.n_darts_selected])
+        self.action_space = spaces.MultiDiscrete([3, self.n_darts_selected])
 
-        assert render_mode is None or render_mode in self.metadata["render_modes"]
-        self.render_mode = render_mode
         """
         If human-rendering is used, `self.window` will be a reference
         to the window that we draw to. `self.clock` will be a clock that is used
@@ -92,8 +108,7 @@ class TriMeshEnvFull(gym.Env):
             self.mesh = options['mesh']
         else:
             self.mesh = random_mesh(self.mesh_size)
-        self.m_analysis = TriMeshTopoAnalysis(self.mesh)
-        self.nb_darts = len(self.mesh.dart_info)
+        self.m_analysis = TriMeshQualityAnalysis(self.mesh)
         self._nodes_scores, self._mesh_score, self._ideal_score, self._nodes_adjacency = self.m_analysis.global_score()
         self._ideal_rewards = (self._mesh_score - self._ideal_score) * 10
         self.nb_invalid_actions = 0
@@ -102,24 +117,17 @@ class TriMeshEnvFull(gym.Env):
         self.observation = self._get_obs()
         info = self._get_info(terminated=False,valid_act=(None,None,None), action=(None,None), mesh_reward=None)
 
-        """
-        if self._ideal_score !=0:
-            self.render_mode = "human"
-        else:
-            self.render_mode = None
-        """
         if self.render_mode == "human":
             self._render_frame()
             self.recording = True
         else:
             self.recording = False
-            self.frames = []
 
         return self.observation, info
 
 
     def _get_obs(self):
-        irregularities, darts_list = get_x(self.m_analysis, self.n_darts_selected, self.deep, self.degree_observation, self.restricted, self._nodes_scores, self._nodes_adjacency)
+        irregularities, darts_list = get_x(self.m_analysis, self.n_darts_selected, self.deep, self.quality_observation, self.restricted, self._nodes_scores, self._nodes_adjacency)
         self.darts_selected = darts_list
         return irregularities
 
@@ -142,6 +150,8 @@ class TriMeshEnvFull(gym.Env):
             "invalid_split": 1.0 if action[0]==Actions.SPLIT.value and not valid_action else 0.0,
             "invalid_collapse": 1.0 if action[0]==Actions.COLLAPSE.value and not valid_action else 0.0,
             "mesh" : self.m_analysis.mesh,
+            "mesh_analysis": self.m_analysis,
+            "darts_selected": self.darts_selected,
         }
 
     def _action_to_dart_id(self, action: np.ndarray) -> int:
@@ -160,7 +170,7 @@ class TriMeshEnvFull(gym.Env):
         n1 = d.get_node()
         n2 = d1.get_node()
         valid_action, valid_topo, valid_geo = False, False, False
-        before_mesh = deepcopy(self.mesh)
+        # before_mesh = deepcopy(self.mesh)
         if action[0] == Actions.FLIP.value:
             valid_action, valid_topo, valid_geo = flip_edge(self.m_analysis, n1, n2)
         elif action[0] == Actions.SPLIT.value:
@@ -171,29 +181,24 @@ class TriMeshEnvFull(gym.Env):
             raise ValueError("Action not defined")
 
         if valid_action:
-            # An episode is done if the actual score is the same as the ideal
             next_nodes_score, self.next_mesh_score, _, next_nodes_adjacency = self.m_analysis.global_score()
+            # An episode is done if the actual score is the same as the ideal
             terminated = np.array_equal(self._ideal_score, self.next_mesh_score)
             mesh_reward = (self._mesh_score - self.next_mesh_score)*10
-            if mesh_reward == 10:
-                b_mesh_analysis = TriMeshTopoAnalysis(before_mesh)
-                plot_mesh(before_mesh)
-                plot_mesh(self.mesh)
-                bool1 = check_mesh(b_mesh_analysis)
-                bool2 = check_mesh(self.m_analysis)
+            # if mesh_reward == 10: # it should be impossible to improve only one irregularity
+            #     b_mesh_analysis = TriMeshTopoAnalysis(before_mesh)
+            #     plot_mesh(before_mesh)
+            #     plot_mesh(self.mesh)
+            #     bool1 = check_mesh(b_mesh_analysis)
+            #     bool2 = check_mesh(self.m_analysis)
             reward = mesh_reward
             self._nodes_scores, self._mesh_score, self._nodes_adjacency = next_nodes_score, self.next_mesh_score, next_nodes_adjacency
             self.observation = self._get_obs()
             self.nb_invalid_actions = 0
-        elif not valid_topo:
+        elif not valid_topo or not valid_geo:
             reward = -10
             mesh_reward = 0
             terminated = False
-            self.nb_invalid_actions += 1
-        elif not valid_geo:
-            mesh_reward = 0
-            terminated = False
-            reward = 0
             self.nb_invalid_actions += 1
         else:
             raise ValueError("Invalid action")

@@ -4,9 +4,8 @@ import numpy as np
 from mesh_model.mesh_analysis.global_mesh_analysis import NodeAnalysis
 from mesh_model.mesh_struct.mesh_elements import Dart, Node
 from mesh_model.mesh_struct.mesh import Mesh
-from mesh_model.mesh_analysis.trimesh_analysis import TriMeshGeoAnalysis, TriMeshTopoAnalysis
+from mesh_model.mesh_analysis.trimesh_analysis import TriMeshQualityAnalysis
 from environment.actions.triangular_actions import flip_edge_ids, split_edge_ids, collapse_edge_ids
-from view.mesh_plotter.mesh_plots import plot_mesh
 
 
 def regular_mesh(num_nodes_max: int) -> Mesh:
@@ -19,7 +18,7 @@ def regular_mesh(num_nodes_max: int) -> Mesh:
     nodes = [[0.0, 0.0], [1.0, 0.0], [0.5, 0.87]]
     faces = [[0, 1, 2]]
     mesh = Mesh(nodes, faces)
-    m_analysis = TriMeshGeoAnalysis(mesh)
+    m_analysis = TriMeshQualityAnalysis(mesh)
 
     num_nodes = 3
     dart_id = 0
@@ -74,7 +73,6 @@ def random_mesh(num_nodes_max: int) -> Mesh:
     """
     mesh = regular_mesh(num_nodes_max)
     mesh_shuffle(mesh, num_nodes_max)
-    #plot_mesh(mesh)
     return mesh
 
 
@@ -86,11 +84,12 @@ def mesh_shuffle_flip(mesh: Mesh) -> Mesh:
     """
     nb_flip = len(mesh.dart_info)
     nb_nodes = len(mesh.nodes)
+    m_analysis = TriMeshQualityAnalysis(mesh)
     for i in range(nb_flip):
         i1 = np.random.randint(nb_nodes)
         i2 = np.random.randint(nb_nodes)
         if i1 != i2:
-            flip_edge_ids(mesh, i1, i2)
+            flip_edge_ids(m_analysis, i1, i2)
     return mesh
 
 def mesh_shuffle(mesh: Mesh, num_nodes) -> Mesh:
@@ -103,10 +102,10 @@ def mesh_shuffle(mesh: Mesh, num_nodes) -> Mesh:
     nb_action_max = int(num_nodes)
     nb_action = 0
     active_darts_list = mesh.active_darts()
-    m_analysis = TriMeshTopoAnalysis(mesh)
+    m_analysis = TriMeshQualityAnalysis(mesh)
     i = 0
     while i < nb_action_max:
-        action_type = np.random.randint(0, 1)
+        action_type = np.random.randint(0, 3)
         d_id = np.random.randint(len(active_darts_list))
         d_id = active_darts_list[d_id][0]
         dart = Dart(mesh, d_id)

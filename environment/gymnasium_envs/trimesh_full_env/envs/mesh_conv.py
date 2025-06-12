@@ -3,9 +3,9 @@ from mesh_model.mesh_struct.mesh_elements import Dart, Node
 from mesh_model.mesh_struct.mesh import Mesh
 
 
-def get_x(m_analysis, n_darts_selected: int, deep :int, degree: bool, restricted:bool, nodes_scores: list[int], nodes_adjacency: list[int]):
+def get_x(m_analysis, n_darts_selected: int, deep :int, quality: bool, restricted:bool, nodes_scores: list[int], nodes_adjacency: list[int]):
     mesh = m_analysis.mesh
-    if degree:
+    if quality:
         template, darts_id = get_template_with_quality(m_analysis, deep)
     else:
         template, darts_id = get_template(m_analysis, deep, nodes_scores)

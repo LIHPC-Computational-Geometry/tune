@@ -1,6 +1,6 @@
 import torch
 from tqdm import tqdm
-from model_RL.utilities.actor_critic_networks import NaNExceptionActor, NaNExceptionCritic, Actor, Critic
+from model_RL.old_files.utilities import NaNExceptionActor, NaNExceptionCritic, Actor, Critic
 
 
 class AC:

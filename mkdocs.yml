@@ -23,6 +23,11 @@ nav:
   - Home: 'index.md'
   - 'Project Design':
     - 'Combinatorial map': 'cmap.md'
+    - 'Observation': 'observation.md'
+    - 'Actions': 'actions.md'
     - 'What to do': 'design.md'
   - 'Developer Guide':
     - 'Tools': 'dev/tools.md'
+  - 'Documentation' :
+    - 'Tests':
+        - 'tests/actions.md'

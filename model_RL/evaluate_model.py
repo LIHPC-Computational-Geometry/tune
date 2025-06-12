@@ -1,11 +1,9 @@
-from numpy import ndarray
-
-from environment.trimesh_env import TriMesh
-from mesh_model.mesh_analysis.global_mesh_analysis import global_score
-from mesh_model.mesh_struct.mesh import Mesh
 import numpy as np
 import copy
+
 from tqdm import tqdm
+
+from mesh_model.mesh_struct.mesh import Mesh
 
 
 def testPolicy(
@@ -13,7 +11,7 @@ def testPolicy(
         n_eval_episodes: int,
         dataset: list[Mesh],
         max_steps: int
-) -> tuple[ndarray, ndarray, ndarray, list[Mesh]]:
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, list[Mesh]]:
     """
     Tests policy on each mesh of a dataset with n_eval_episodes.
     :param policy: the policy to test

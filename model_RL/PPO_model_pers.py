@@ -1,4 +1,3 @@
-from mesh_model.mesh_analysis.global_mesh_analysis import global_score
 import copy
 import random
 from tqdm import tqdm
@@ -7,7 +6,6 @@ import torch
 import torch.nn as nn
 from torch.optim import Adam
 from torch.distributions import Categorical
-from mesh_model.mesh_analysis.quadmesh_analysis import isValidAction
 
 
 class NaNExceptionActor(Exception):
@@ -19,16 +17,17 @@ class NaNExceptionCritic(Exception):
 
 
 class Actor(nn.Module):
-    def __init__(self, env, input_dim, output_dim, lr=0.0001, eps=0):
+    def __init__(self, env, input_dim, n_actions, n_darts_observed, lr=0.0001, eps=0):
         super(Actor, self).__init__()
         self.fc1 = nn.Linear(input_dim, 64)
         self.fc2 = nn.Linear(64, 64)
-        self.fc3 = nn.Linear(64, output_dim)
+        self.fc3 = nn.Linear(64, n_actions*n_darts_observed)
         self.softmax = nn.Softmax(dim=-1)
         self.gamma = 0.9
         self.optimizer = Adam(self.parameters(), lr=lr, weight_decay=0.01)
         self.env = env
         self.eps = eps
+        self.n_actions = n_actions
 
     def reset(self, env=None):
         self.fc1.reset_parameters()
@@ -37,6 +36,7 @@ class Actor(nn.Module):
         self.optimizer = Adam(self.parameters(), lr=self.optimizer.defaults['lr'], weight_decay=self.optimizer.defaults['weight_decay'])
 
     def select_action(self, observation, info):
+        ma = info["mesh_analysis"]
         if np.random.rand() < self.eps:
             action = self.env.sample() # random choice of an action
             dart_id = self.env.darts_selected[action[1]]
@@ -44,7 +44,7 @@ class Actor(nn.Module):
             total_actions_possible = np.prod(self.env.action_space.nvec)
             prob = 1/total_actions_possible
             i = 0
-            while not isValidAction(self.env.mesh, dart_id, action_type):
+            while not ma.isValidAction(dart_id, action_type):
                 if i > 15:
                     return None, None
                 action = self.env.sample()
@@ -58,11 +58,11 @@ class Actor(nn.Module):
             action = dist.sample()
             action = action.tolist()
             prob = pmf[action]
-            action_dart = int(action/4)
-            action_type = action % 4
+            action_dart = int(action/self.n_actions)
+            action_type = action % self.n_actions
             dart_id = info["darts_selected"][action_dart]
             i = 0
-            while not isValidAction(info["mesh"], dart_id, action_type):
+            while not ma.isValidAction(dart_id, action_type):
                 if i > 15:
                     return None, None
                 pmf = self.forward(obs)
@@ -70,8 +70,8 @@ class Actor(nn.Module):
                 action = dist.sample()
                 action = action.tolist()
                 prob = pmf[action]
-                action_dart = int(action/4)
-                action_type = action % 4
+                action_dart = int(action/self.n_actions)
+                action_type = action % self.n_actions
                 dart_id = info["darts_selected"][action_dart]
                 i += 1
         action_list = [action, dart_id, action_type]
@@ -137,10 +137,11 @@ class Critic(nn.Module):
 
 
 class PPO:
-    def __init__(self, env, obs_size, max_steps, lr, gamma, nb_iterations, nb_episodes_per_iteration, nb_epochs, batch_size):
+    def __init__(self, env, obs_size, n_actions, n_darts_observed, max_steps, lr, gamma, nb_iterations, nb_episodes_per_iteration, nb_epochs, batch_size):
         self.env = env
         self.max_steps = max_steps
-        self.actor = Actor(self.env, obs_size, 4*10, lr=lr)
+        self.n_actions =n_actions
+        self.actor = Actor(self.env, obs_size, n_actions, n_darts_observed, lr=lr)
         self.critic = Critic(obs_size, lr=lr)
         self.lr = lr
         self.gamma = gamma
@@ -166,7 +167,7 @@ class PPO:
                 critic_loss = []
                 actor_loss = []
                 self.critic.optimizer.zero_grad()
-                for _, (s, o, a, r, G, old_prob, next_o, done) in enumerate(batch, 1):
+                for _, (ma, o, a, r, G, old_prob, next_o, done) in enumerate(batch, 1):
                     o = torch.tensor(o.flatten(), dtype=torch.float32)
                     next_o = torch.tensor(next_o.flatten(), dtype=torch.float32)
                     value = self.critic(o)
@@ -174,7 +175,7 @@ class PPO:
                     log_prob = torch.log(pmf[a[0]])
                     next_value = torch.tensor(0.0, dtype=torch.float32) if done else self.critic(next_o)
                     delta = r + 0.9 * next_value - value
-                    _, st, ideal_s, _ = global_score(s) # Comparaison à l'état s et pas s+1 ?
+                    _, st, ideal_s, _ = ma.global_score() # Comparaison à l'état s et pas s+1 ?
                     if st == ideal_s:
                         continue
                     advantage = 1 if done else G / (st - ideal_s)
@@ -226,13 +227,13 @@ class PPO:
                     done = False
                     step = 0
                     while step < self.max_steps:
-                        state = copy.deepcopy(info["mesh"])
+                        ma = copy.deepcopy(info["mesh_analysis"])
                         obs = next_obs
                         action, prob = self.actor.select_action(obs, info)
                         if action is None:
                             wins.append(0)
                             break
-                        gym_action = [action[2],int(action[0]/4)]
+                        gym_action = [action[2],int(action[0]/self.n_actions)]
                         next_obs, reward, terminated, truncated, info = self.env.step(gym_action)
                         ep_reward += reward
                         ep_mesh_reward += info["mesh_reward"]
@@ -241,13 +242,13 @@ class PPO:
                         if terminated:
                             if truncated:
                                 wins.append(0)
-                                trajectory.append((state, obs, action, reward, G, prob, next_obs, done))
+                                trajectory.append((ma, obs, action, reward, G, prob, next_obs, done))
                             else:
                                 wins.append(1)
                                 done = True
-                                trajectory.append((state, obs, action, reward, G, prob, next_obs, done))
+                                trajectory.append((ma, obs, action, reward, G, prob, next_obs, done))
                             break
-                        trajectory.append((state, obs, action, reward, G, prob, next_obs, done))
+                        trajectory.append((ma, obs, action, reward, G, prob, next_obs, done))
                         step += 1
                     if len(trajectory) != 0:
                         rewards.append(ep_reward)
@@ -275,4 +276,4 @@ class PPO:
             print("NaN Exception on Critic Network")
             return None, None, None, None
 
-        return self.actor, rewards, wins, len_ep, info["observation_registry"]
+        return self.actor, rewards, wins, len_ep, None

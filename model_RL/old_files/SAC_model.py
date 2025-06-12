@@ -1,4 +1,4 @@
-from model_RL.utilities.actor_critic_networks import NaNExceptionActor, NaNExceptionCritic, Actor, Critic
+from model_RL.old_files.utilities import NaNExceptionActor, NaNExceptionCritic, Actor, Critic
 
 import torch
 import random

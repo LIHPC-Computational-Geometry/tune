@@ -4,7 +4,6 @@ import random
 import torch
 import os
 import time
-import json
 import yaml
 import wandb
 
@@ -48,7 +47,7 @@ class HParamCallback(BaseCallback):
             "max_steps": config["env"]["max_episode_steps"],
             "max_timesteps": config["total_timesteps"],
             "deep": config["env"]["deep"],
-            "with_degree": config["env"]["with_degree_observation"],
+            "with_quality": config["env"]["with_quality_observation"],
             "nb_darts_selected": config["env"]["n_darts_selected"],
             "reward_mode": config["env"]["reward_function"],
 
@@ -179,7 +178,7 @@ class TensorboardCallback(BaseCallback):
 if __name__ == '__main__':
 
     # PARAMETERS CONFIGURATION
-    with open("training/trimesh_config_PPO_SB3.yaml", "r") as f:
+    with open("../training/config/trimesh_config_PPO_SB3.yaml", "r") as f:
         config = yaml.safe_load(f)
 
     experiment_name = config["experiment_name"]
@@ -207,12 +206,12 @@ if __name__ == '__main__':
     env = gym.make(
         config["env"]["env_id"],
         mesh=None,
-        mesh_size = 15,
+        mesh_size = 7,
         max_episode_steps=config["env"]["max_episode_steps"],
         n_darts_selected=config["env"]["n_darts_selected"],
         deep=config["env"]["deep"],
         action_restriction=config["env"]["action_restriction"],
-        with_degree_obs=config["env"]["with_degree_observation"],
+        with_quality_obs=config["env"]["with_quality_observation"],
         render_mode=config["env"]["render_mode"],
     )
 
@@ -236,7 +235,7 @@ if __name__ == '__main__':
         total_timesteps=config["total_timesteps"],
         tb_log_name=config["experiment_name"],
         callback=[HParamCallback(),
-                  WandbCallback(model_save_path=config["paths"]["wandb_model_saving_dir"] + config["experiment_name"]),
+
                   TensorboardCallback(model)],
         progress_bar=True
     )
