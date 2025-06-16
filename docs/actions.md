@@ -4,7 +4,7 @@
 
  The **flip** operation flips an inner edge adjacent to two triangles. This selected edge is then deleted and replaced by an edge on the opposite diagonal. The following diagram shows the steps involved in flipping strand d.
  
-<img src="img/actions/flip.png" width="300"/>
+<img src="img/actions/flip.png" width="600"/>
 
 However, in some configurations, flip action can lead to problematic configurations. That's why we choose to constraint flip action in these situations :
 
@@ -12,14 +12,15 @@ However, in some configurations, flip action can lead to problematic configurati
 * **Adjacency too high :** When nodes C and D already have an adjacency higher than 10, flip is not possible. 
 * **Configuration who tends to imply edge reversal**: To detect these situations, we look a the type of quad formed by the two adjacent faces, i.e. **quad ADBC**.
     * **concave quad:** When the quad is concave, flip operation necessarily lead to an edge reversal. We constraint it.
+  In the figures below, we can see when flipping dart 18 a face reversal.
   
-  <img src="img/actions/flip_c_bef.png" width="200"/>
-  <img src="img/actions/flip_c_after.png" width="200"/>
+  <img src="img/actions/flip_c_bef.png" width="350"/>
+  <img src="img/actions/flip_c_after.png" width="350"/>
 
-    * **triangular quad:** Avoid because it will create a flat triangle.
-  
-  <img src="img/actions/flip_before_tri.png" width="200"/>
-  <img src="img/actions/flip_after_tri.png" width="200"/>
+    * **triangular quad:** This configuration should be avoided, as it results in the creation of a degenerate (flat) triangle. As illustrated in the figures below, flipping dart 0 leads to a flattened face between nodes 2, 0, and 7.
+    * 
+  <img src="img/actions/flip_before_tri.png" width="350"/>
+  <img src="img/actions/flip_after_tri.png" width="350"/>
 
 **The only configuration we accept is convexe quads**
 
@@ -27,7 +28,7 @@ However, in some configurations, flip action can lead to problematic configurati
 
  The **split** operation split an inner edge adjacent to two triangles. A node is added in the middle of the edge and two faces are created.
 
-<img src="img/actions/split.png" width="300"/>
+<img src="img/actions/split.png" width="600"/>
 
 However, in some configurations, split action can also lead to problematic configurations. That's why we choose to constraint split action in these situations :
 
@@ -35,14 +36,14 @@ However, in some configurations, split action can also lead to problematic confi
 * **Adjacency too high :** When nodes C and D already have an adjacency higher than 10, split is not possible. 
 * **Configuration who tends to imply null darts**: As other actions are restricted to not allow flat faces, or reversed faces, split action can be performed on each configuration, see figure xxx.
 
-<img src="img/actions/split_concave.png" width="300"/>
-<img src="img/actions/split_triangular.png" width="300"/>
+<img src="img/actions/split_concave.png" width="340"/>
+<img src="img/actions/split_triangular.png" width="350"/>
 
 ## Collapse
 
 The **collapse** operation deletes an inner edge and also implies the deletion of its two adjacent faces F1 and F2.
 
-<img src="img/actions/split.png" width="300"/>
+<img src="img/actions/collapse.png" width="750"/>
 
 However, in some configurations, collapse action can also lead to problematic configurations. That's why we choose to constraint collapse action in these situations :
 
@@ -51,3 +52,5 @@ However, in some configurations, collapse action can also lead to problematic co
 * **Configuration who tends to imply edge reversal**: To detect these situations, we look a the type of darts in the surrounding. When there are some darts with concave surrounding, collapse action can lead to edge reversal.
 
 
+<img src="img/actions/collapse_reversal_before.png" width="400"/>
+<img src="img/actions/collapse_reversal_after.png" width="360"/>
