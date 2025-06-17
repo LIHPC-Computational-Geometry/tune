@@ -178,7 +178,7 @@ class TensorboardCallback(BaseCallback):
 if __name__ == '__main__':
 
     # PARAMETERS CONFIGURATION
-    with open("../training/config/trimesh_config_PPO_SB3.yaml", "r") as f:
+    with open("training/config/trimesh_config_PPO_SB3.yaml", "r") as f:
         config = yaml.safe_load(f)
 
     experiment_name = config["experiment_name"]
@@ -201,12 +201,12 @@ if __name__ == '__main__':
     log_dir = config["paths"]["log_dir"]
     os.makedirs(log_dir, exist_ok=True)
 
-    training_mesh = read_gmsh(config["dataset"]["training_mesh_file_path"])
+    #training_mesh = read_gmsh(config["dataset"]["training_mesh_file_path"])
     # Create the environment
     env = gym.make(
         config["env"]["env_id"],
         mesh=None,
-        mesh_size = 7,
+        mesh_size = config["env"]["mesh_size"],
         max_episode_steps=config["env"]["max_episode_steps"],
         n_darts_selected=config["env"]["n_darts_selected"],
         deep=config["env"]["deep"],

@@ -298,7 +298,7 @@ class GlobalMeshAnalysis(ABC):
         return val
 
     def signe(self, a: int):
-        if a <= 1e-5:
+        if a <= 1e-8:
             return 0
         else:
             return 1

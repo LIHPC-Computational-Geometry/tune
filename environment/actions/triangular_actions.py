@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import copy
-
+import numpy as np
 from mesh_model.mesh_analysis.global_mesh_analysis import NodeAnalysis
 from mesh_model.mesh_analysis.trimesh_analysis import TriMeshQualityAnalysis
 from mesh_model.mesh_struct.mesh_elements import Node, Dart
@@ -168,19 +168,14 @@ def collapse_edge(mesh_analysis, n1: Node, n2: Node) -> True:
 
     d2, d1, d11, d21, d211, n1, n2, n3, n4 = mesh.active_triangles(d)
 
-    d212 = d21.get_beta(2) #T1
-    d2112 = d211.get_beta(2) #T2
-    d12 = d1.get_beta(2) #T3
+    d212 = d21.get_beta(2)  # T1
+    d2112 = d211.get_beta(2)  # T2
+    d12 = d1.get_beta(2)  # T3
     if not mesh.is_dart_active(d12):
         print("error")
-    d112 = d11.get_beta(2) #T4
-
-    #Delete the darts around selected dart
+    d112 = d11.get_beta(2)  # T4
+    # Delete the darts around selected dart
     mesh_analysis.mesh.del_adj_triangles(d)
-
-    #Move n1 node in the middle of [n1, n2]
-    n1.set_xy((n1.x() + n2.x()) / 2, (n1.y() + n2.y()) / 2)
-    i = 0
 
     #Check if nodes n3 and n4 are not linked to deleted dart
 
@@ -212,6 +207,11 @@ def collapse_edge(mesh_analysis, n1: Node, n2: Node) -> True:
         d2112.set_beta(2, d212)
 
     n2_score = n2.get_score()
+    n2x = n2.x()
+    n2y =n2.y()
+    mid = np.array([(n1.x() + n2x) / 2, (n1.y() + n2y) / 2])
+    near_n1 = np.array([(n1.x() * 0.9 + n2x * 0.1), (n1.y() * 0.9 + n2y * 0.1)])
+    near_n2 = np.array([(n1.x() * 0.1 + n2x * 0.9), (n1.y() * 0.1 + n2y * 0.9)])
     #delete n2 node
     mesh_analysis.mesh.del_node(n2)
 
@@ -223,7 +223,8 @@ def collapse_edge(mesh_analysis, n1: Node, n2: Node) -> True:
     # d12.set_quality(mesh_analysis.get_dart_geometric_quality(d12))
     # d212.set_quality(mesh_analysis.get_dart_geometric_quality(d212, mesh_before))
 
-    # Update node relations and dart quality of old n2 side
+    # Update node relations
+    i = 0
     if mesh.is_dart_active(d12):
         d121 = d12.get_beta(1)
         d121.set_node(n1)
@@ -253,6 +254,20 @@ def collapse_edge(mesh_analysis, n1: Node, n2: Node) -> True:
                 plot_mesh(mesh_analysis.mesh)
                 raise ValueError("Potential infinite loop in action collapse")
 
+
+        if mesh_analysis.is_star_vertex(n1, mid):
+            n1.set_xy(mid[0], mid[1])
+        elif mesh_analysis.is_star_vertex(n1, near_n1):
+            n1.set_xy(near_n1[0], near_n1[1])
+        elif mesh_analysis.is_star_vertex(n1, near_n2):
+            n1.set_xy(near_n2[0], near_n2[1])
+        elif mesh_analysis.is_star_vertex(n1, np.array([n1.x(), n1.y()])):
+            pass
+        elif mesh_analysis.is_star_vertex(n1, np.array([n2x, n2y])):
+            n1.set_xy(n2x, n2y)
+        else:
+            raise ValueError("No star vertex found")
+
         # Update dart quality
         n1_analysis = NodeAnalysis(n1)
         adj_darts = n1_analysis.adjacent_darts()
@@ -265,10 +280,10 @@ def collapse_edge(mesh_analysis, n1: Node, n2: Node) -> True:
             _d112 = _d11.get_beta(2)
             # if d2, d12 or d112 is None, dart quality is -1 and was not modified by collapse action
             if _d2 is not None and _d2.id not in d_updated:
-                _d.set_quality(mesh_analysis.get_dart_geometric_quality(_d))
+                _d.set_quality(mesh_analysis.get_dart_geometric_quality(_d, mesh_before))
                 d_updated.append(_d.id)
             if _d12 is not None and _d12.id not in d_updated:
-                _d1.set_quality(mesh_analysis.get_dart_geometric_quality(_d1))
+                _d1.set_quality(mesh_analysis.get_dart_geometric_quality(_d1, mesh_before))
                 d_updated.append(_d1.id)
             if _d112 is not None and _d112.id not in d_updated:
                 _d11.set_quality(mesh_analysis.get_dart_geometric_quality(_d11))
@@ -276,6 +291,7 @@ def collapse_edge(mesh_analysis, n1: Node, n2: Node) -> True:
 
     after_check = check_mesh(mesh_analysis, mesh_before)
     if not after_check:
+        mesh_analysis.is_star_vertex(n1, np.array([n1.x(), n1.y()]), True)
         raise ValueError("Some checks are missing")
     return True, topo, geo
 
@@ -320,10 +336,10 @@ def check_mesh(mesh_analysis, m=None) -> bool:
             plot_mesh(m)
             plot_mesh(mesh_analysis.mesh)
             return False
-        if dart_info[5] == 6:
-            plot_mesh(m)
-            plot_mesh(mesh_analysis.mesh)
-            return False
+        #if dart_info[5] not in [-1,0,1,2]:
+            #plot_mesh(m)
+            #plot_mesh(mesh_analysis.mesh)
+            #return False
     return True
 
 

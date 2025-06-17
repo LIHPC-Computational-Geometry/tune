@@ -33,7 +33,7 @@ def log_init(log_writer, config):
 if __name__ == '__main__':
 
     # PARAMETERS CONFIGURATION
-    with open("../training/config/trimesh_config_PPO_perso.yaml", "r") as f:
+    with open("training/config/trimesh_config_PPO_perso.yaml", "r") as f:
         config = yaml.safe_load(f)
 
     # Create log dir
@@ -64,7 +64,7 @@ if __name__ == '__main__':
         n_darts_selected=config["env"]["n_darts_selected"],
         deep=config["env"]["deep"],
         action_restriction=config["env"]["action_restriction"],
-        with_degree_obs=config["env"]["with_degree_observation"],
+        with_quality_obs=config["env"]["with_quality_observation"],
         render_mode=config["env"]["render_mode"],
     )
 
