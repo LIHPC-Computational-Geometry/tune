@@ -37,6 +37,7 @@ class HParamCallback(BaseCallback):
         hparam_dict = {
             "algorithm": self.model.__class__.__name__,
             "experiment": experiment_name,
+            "description": config["description"],
             "learning rate": self.model.learning_rate,
             "gamma": self.model.gamma,
             "batch_size": config["ppo"]["batch_size"],
@@ -167,9 +168,9 @@ class TensorboardCallback(BaseCallback):
         Records policy evaluation results : before and after dataset images
         """
         print("-------- Testing Policy ---------")
-        dataset = [TM.random_mesh(30) for _ in range(9)] # dataset of 9 meshes of size 30
+        dataset = [TM.random_mesh(30) for _ in range(4)] # dataset of 9 meshes of size 30
         before = dataset_plt(dataset) # plot the datasat as image
-        length, wins, rewards, normalized_return, final_meshes = testPolicy(self.model, 10, config, dataset) # test model policy on the dataset
+        length, wins, rewards, normalized_return, final_meshes = testPolicy(self.model, 5, config, dataset) # test model policy on the dataset
         after = dataset_plt(final_meshes)
         self.logger.record("figures/before", Figure(before, close=True), exclude=("stdout", "log"))
         self.logger.record("figures/after", Figure(after, close=True), exclude=("stdout", "log"))
@@ -190,13 +191,13 @@ if __name__ == '__main__':
     torch.manual_seed(seed)
     torch.backends.cudnn.deterministic = True
 
-    # WANDB
-    run = wandb.init(
-        project="Trimesh-learning",
-        name=config["experiment_name"],
-        sync_tensorboard=True,  # auto-upload sb3's tensorboard metrics
-        save_code=True,  # optional
-    )
+    # # WANDB
+    # run = wandb.init(
+    #     project="Trimesh-learning",
+    #     name=config["experiment_name"],
+    #     sync_tensorboard=True,  # auto-upload sb3's tensorboard metrics
+    #     save_code=True,  # optional
+    # )
     # Create tensorboard log dir
     log_dir = config["paths"]["log_dir"]
     os.makedirs(log_dir, exist_ok=True)
@@ -205,7 +206,7 @@ if __name__ == '__main__':
     # Create the environment
     env = gym.make(
         config["env"]["env_id"],
-        mesh=None,
+        #mesh=training_mesh,
         mesh_size = config["env"]["mesh_size"],
         max_episode_steps=config["env"]["max_episode_steps"],
         n_darts_selected=config["env"]["n_darts_selected"],
@@ -213,6 +214,7 @@ if __name__ == '__main__':
         action_restriction=config["env"]["action_restriction"],
         with_quality_obs=config["env"]["with_quality_observation"],
         render_mode=config["env"]["render_mode"],
+        analysis_type="old",
     )
 
     check_env(env, warn=True)
@@ -243,4 +245,4 @@ if __name__ == '__main__':
     print("-----------Learning ended------------")
     print(f"Temps d'apprentissage : {end_time - start_time:.4} s")
     model.save(config["paths"]["policy_saving_dir"] + config["experiment_name"])
-    run.finish()
+    # run.finish()

@@ -2,6 +2,7 @@ import copy
 import pygame
 import imageio
 import sys
+import os
 
 import numpy as np
 import gymnasium as gym
@@ -15,7 +16,7 @@ from pygame.locals import *
 
 from mesh_model.random_trimesh import random_mesh
 from mesh_model.mesh_struct.mesh_elements import Dart
-from mesh_model.mesh_analysis.trimesh_analysis import TriMeshQualityAnalysis
+from mesh_model.mesh_analysis.trimesh_analysis import TriMeshQualityAnalysis, TriMeshOldAnalysis
 from environment.gymnasium_envs.trimesh_full_env.envs.mesh_conv import get_x
 from environment.actions.triangular_actions import flip_edge, split_edge, collapse_edge, check_mesh
 from view.mesh_plotter.mesh_plots import plot_mesh
@@ -40,19 +41,28 @@ class TriMeshEnvFull(gym.Env):
             mesh=None,
             mesh_size=9,
             max_episode_steps=20,
-            n_darts_selected=20,
+            n_darts_selected=7,
             deep=6,
             with_quality_obs=False,
             action_restriction=False,
-            render_mode=None
+            render_mode=None,
+            analysis_type = "quality"
     ) -> None:
 
         assert render_mode is None or render_mode in self.metadata["render_modes"]
         self.render_mode = render_mode
 
-        self.mesh_size = mesh_size
-        self.mesh = mesh if mesh is not None else random_mesh(mesh_size)
-        self.m_analysis = TriMeshQualityAnalysis(self.mesh)
+        # If a mesh has been entered, it is used, otherwise a random mesh is generated.
+        if mesh is not None:
+            self.config = {"mesh": mesh}
+            self.mesh = copy.deepcopy(mesh)
+            self.mesh_size = 0
+        else:
+            self.config = {"mesh": None}
+            self.mesh_size = mesh_size
+            self.mesh = random_mesh(mesh_size)
+        self.analysis_type = analysis_type
+        self.m_analysis = TriMeshQualityAnalysis(self.mesh) if self.analysis_type == "quality" else TriMeshOldAnalysis(self.mesh)
         self._nodes_scores, self._mesh_score, self._ideal_score, self._nodes_adjacency = self.m_analysis.global_score()
         self._ideal_rewards = (self._mesh_score - self._ideal_score)*10
         self.next_mesh_score = 0
@@ -68,6 +78,12 @@ class TriMeshEnvFull(gym.Env):
         self.ep_len = 0
         self.darts_selected = []
         self.max_steps = max_episode_steps
+
+        self.actions_info = {
+            "n_flip": 0,
+            "n_split": 0,
+            "n_collapse": 0,
+        }
 
         self.observation_space = spaces.Box(
             low=-15,  # nodes min degree : 15
@@ -100,15 +116,19 @@ class TriMeshEnvFull(gym.Env):
 
             self.recording = False
             self.frames = []
+            self._render_frame()
 
     def reset(self, seed=None, options=None):
         # We need the following line to seed self.np_random
         super().reset(seed=seed)
         if options is not None:
             self.mesh = options['mesh']
+        elif self.config["mesh"] is not None:
+            self.mesh = copy.deepcopy(self.config["mesh"])
         else:
             self.mesh = random_mesh(self.mesh_size)
-        self.m_analysis = TriMeshQualityAnalysis(self.mesh)
+
+        self.m_analysis = TriMeshQualityAnalysis(self.mesh) if self.analysis_type=="quality" else TriMeshOldAnalysis(self.mesh)
         self._nodes_scores, self._mesh_score, self._ideal_score, self._nodes_adjacency = self.m_analysis.global_score()
         self._ideal_rewards = (self._mesh_score - self._ideal_score) * 10
         self.nb_invalid_actions = 0
@@ -117,9 +137,15 @@ class TriMeshEnvFull(gym.Env):
         self.observation = self._get_obs()
         info = self._get_info(terminated=False,valid_act=(None,None,None), action=(None,None), mesh_reward=None)
 
+        self.actions_info = {
+            "n_flip": 0,
+            "n_split": 0,
+            "n_collapse": 0,
+        }
+
         if self.render_mode == "human":
-            self._render_frame()
             self.recording = True
+            self._render_frame()
         else:
             self.recording = False
 
@@ -173,10 +199,13 @@ class TriMeshEnvFull(gym.Env):
         # before_mesh = deepcopy(self.mesh)
         if action[0] == Actions.FLIP.value:
             valid_action, valid_topo, valid_geo = flip_edge(self.m_analysis, n1, n2)
+            self.actions_info["n_flip"] += 1
         elif action[0] == Actions.SPLIT.value:
             valid_action, valid_topo, valid_geo = split_edge(self.m_analysis, n1, n2)
+            self.actions_info["n_split"] += 1
         elif action[0] == Actions.COLLAPSE.value:
             valid_action, valid_topo, valid_geo = collapse_edge(self.m_analysis, n1, n2)
+            self.actions_info["n_collapse"] += 1
         else:
             raise ValueError("Action not defined")
 
@@ -214,7 +243,14 @@ class TriMeshEnvFull(gym.Env):
         #Saving episode rendering as gif
         if terminated or self.ep_len>= self.max_steps:
             if self.recording and self.frames:
-                imageio.mimsave(f"training/episode_recording/episode_{self.episode_count}.gif", self.frames, fps=1)
+                base_path = f"training/episode_recording/del/episode_star_{self.episode_count}"
+                filename = base_path + ".gif"
+                index = 1
+                while os.path.exists(filename):
+                    filename = f"{base_path}_{index}.gif"
+                    index += 1
+
+                imageio.mimsave(filename, self.frames, fps=1)
                 print("Image recorded")
                 self.episode_count +=1
 

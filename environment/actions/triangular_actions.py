@@ -3,7 +3,6 @@ from __future__ import annotations
 import copy
 import numpy as np
 from mesh_model.mesh_analysis.global_mesh_analysis import NodeAnalysis
-from mesh_model.mesh_analysis.trimesh_analysis import TriMeshQualityAnalysis
 from mesh_model.mesh_struct.mesh_elements import Node, Dart
 from view.mesh_plotter.mesh_plots import plot_mesh
 
@@ -103,7 +102,7 @@ def split_edge(mesh_analysis, n1: Node, n2: Node) -> True:
 
     d2, d1, d11, d21, d211, n1, n2, n3, n4 = mesh_analysis.mesh.active_triangles(d)
 
-    # create a new node in the middle of [n1, n2]
+    # Create a new node in the middle of [n1, n2]
     N5 = mesh_analysis.mesh.add_node((n1.x() + n2.x()) / 2, (n1.y() + n2.y()) / 2)
 
     # modify existing triangles
@@ -254,19 +253,30 @@ def collapse_edge(mesh_analysis, n1: Node, n2: Node) -> True:
                 plot_mesh(mesh_analysis.mesh)
                 raise ValueError("Potential infinite loop in action collapse")
 
-
-        if mesh_analysis.is_star_vertex(n1, mid):
-            n1.set_xy(mid[0], mid[1])
-        elif mesh_analysis.is_star_vertex(n1, near_n1):
-            n1.set_xy(near_n1[0], near_n1[1])
-        elif mesh_analysis.is_star_vertex(n1, near_n2):
-            n1.set_xy(near_n2[0], near_n2[1])
-        elif mesh_analysis.is_star_vertex(n1, np.array([n1.x(), n1.y()])):
-            pass
-        elif mesh_analysis.is_star_vertex(n1, np.array([n2x, n2y])):
-            n1.set_xy(n2x, n2y)
+        found, new_x, new_y = mesh_analysis.find_star_vertex(n1)
+        if found:
+            n1.set_xy(new_x, new_y)
         else:
+            plot_mesh(mesh_before)
+            plot_mesh(mesh_analysis.mesh)
+            mesh_analysis.find_star_vertex(n1, plot=True)
             raise ValueError("No star vertex found")
+
+        # if mesh_analysis.is_star_vertex(n1, mid):
+        #     n1.set_xy(mid[0], mid[1])
+        # elif mesh_analysis.is_star_vertex(n1, near_n1):
+        #     n1.set_xy(near_n1[0], near_n1[1])
+        # elif mesh_analysis.is_star_vertex(n1, near_n2):
+        #     n1.set_xy(near_n2[0], near_n2[1])
+        # elif mesh_analysis.is_star_vertex(n1, np.array([n1.x(), n1.y()])):
+        #     pass
+        # elif mesh_analysis.is_star_vertex(n1, np.array([n2x, n2y])):
+        #     n1.set_xy(n2x, n2y)
+        # else:
+        #     plot_mesh(mesh_before)
+        #     plot_mesh(mesh_analysis.mesh)
+        #     mesh_analysis.is_star_vertex(n1, np.array([n1.x(), n1.y()]), True)
+        #     raise ValueError("No star vertex found")
 
         # Update dart quality
         n1_analysis = NodeAnalysis(n1)
@@ -336,10 +346,10 @@ def check_mesh(mesh_analysis, m=None) -> bool:
             plot_mesh(m)
             plot_mesh(mesh_analysis.mesh)
             return False
-        #if dart_info[5] not in [-1,0,1,2]:
-            #plot_mesh(m)
-            #plot_mesh(mesh_analysis.mesh)
-            #return False
+        if dart_info[5] not in [-1,0,1,2]:
+            plot_mesh(m)
+            plot_mesh(mesh_analysis.mesh)
+            return False
     return True
 
 
