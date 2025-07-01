@@ -1,10 +1,8 @@
 import math
 from math import radians, cos, sin
 
-from networkx.classes import nodes
 from scipy.spatial import ConvexHull, Delaunay
 from shapely import affinity
-from shapely.constructive import centroid
 
 from shapely.geometry import Polygon, Point, LineString
 

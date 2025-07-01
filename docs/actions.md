@@ -18,7 +18,7 @@ However, in some configurations, flip action can lead to problematic configurati
   <img src="img/actions/flip_c_after.png" width="350"/>
 
     * **triangular quad:** This configuration should be avoided, as it results in the creation of a degenerate (flat) triangle. As illustrated in the figures below, flipping dart 0 leads to a flattened face between nodes 2, 0, and 7.
-    * 
+  
   <img src="img/actions/flip_before_tri.png" width="350"/>
   <img src="img/actions/flip_after_tri.png" width="350"/>
 
@@ -51,7 +51,6 @@ However, in some configurations, collapse action can also lead to problematic co
 * **Adjacency too high :** When nodes A already has an adjacency higher than 10, collapse is not possible. 
 * **Configuration who tends to imply edge reversal**: To detect these situations, we look a the type of darts in the surrounding. When there are some darts with concave surrounding, collapse action can lead to edge reversal.
 
-
 <img src="img/actions/collapse_reversal_before.png" width="400"/>
 <img src="img/actions/collapse_reversal_after.png" width="360"/>
 
@@ -65,15 +64,15 @@ However, in some configurations, collapse action can also lead to problematic co
 
 The **flip** action can be decomposed as follows:
 
-- Check whether the dart `d` exists.  
-- Update the **beta1** relations.  
-- Update the links from nodes `n1` and `n2`,  if they were previously linked to the flipped dart.  
-- Update the links from faces `F1` and `F2`, if they were previously linked to the flipped dart.  
-- Update the node links for `d` and `d2`.  
-- Update the face links depending on the orientation (darts which change of face):
-  - If **counterclockwise**: update links for `d1` and `d21`.  
-  - If **clockwise**: update links for `d2111` and `d111`.  
-- Update the scores of the nodes.
+* Check whether the dart `d` exists.  
+* Update the **beta1** relations.  
+* Update the links from nodes `n1` and `n2`,  if they were previously linked to the flipped dart.  
+* Update the links from faces `F1` and `F2`, if they were previously linked to the flipped dart.  
+* Update the node links for `d` and `d2`.  
+* Update the face links depending on the orientation (darts which change of face):
+  * If **counterclockwise**: update links for `d1` and `d21`.  
+  * If **clockwise**: update links for `d2111` and `d111`.  
+* Update the scores of the nodes.
 
 ## Split 
 
@@ -81,12 +80,12 @@ The **flip** action can be decomposed as follows:
 
 The **split** action can be decomposed as follows:
 
-- Check whether the dart `d` exists.  
-- Create a new node **n10** in the middle of [n1,n2]
-- Update node links of `d` and `d21`, they are now linked to `n10`
-- Create a new face with yellow darts
-- Update the **beta2** relations (`d1112`, `d111`,`d212`, `d21`).
-- Update the scores of the nodes.
+* Check whether the dart `d` exists.  
+* Create a new node **n10** in the middle of [n1,n2]
+* Update node links of `d` and `d21`, they are now linked to `n10`
+* Create a new face with yellow darts
+* Update the **beta2** relations (`d1112`, `d111`,`d212`, `d21`).
+* Update the scores of the nodes.
 
 ## Collapse 
 
@@ -94,12 +93,12 @@ The **split** action can be decomposed as follows:
 
 The **collapse** action can be decomposed as follows:
 
-- Check whether the dart `d` exists.  
-- Save the score of node `n1` for later computation.  
-- If `n3` is not on the boundary, move its coordinates to the midpoint between `n3` and `n1`.  
-- Check if nodes `n2` and `n4` are linked to the dart being deleted. If so, reassign their links to existing darts (node `n3` will be checked later).  
-- Delete the face associated with `d`, along with its related darts.  
-- Reassign all darts previously linked to `n1` so they now point to `n3`.  
-- Link the dart associated with `n3` to an existing node.  
-- Update the **beta2** relations (`d2`/`d12`, `d112`/`d1112`).  
-- Recalculate the scores of the affected nodes.
+* Check whether the dart `d` exists.  
+* Save the score of node `n1` for later computation.  
+* If `n3` is not on the boundary, move its coordinates to the midpoint between `n3` and `n1`.  
+* Check if nodes `n2` and `n4` are linked to the dart being deleted. If so, reassign their links to existing darts (node `n3` will be checked later).  
+* Delete the face associated with `d`, along with its related darts.  
+* Reassign all darts previously linked to `n1` so they now point to `n3`.  
+* Link the dart associated with `n3` to an existing node.  
+* Update the **beta2** relations (`d2`/`d12`, `d112`/`d1112`).  
+* Recalculate the scores of the affected nodes.

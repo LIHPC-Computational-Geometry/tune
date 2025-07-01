@@ -231,7 +231,7 @@ class TensorboardCallback(BaseCallback):
 if __name__ == '__main__':
 
     # PARAMETERS CONFIGURATION
-    with open("../training/config/quadmesh_config_PPO_SB3.yaml", "r") as f:
+    with open("training/config/quadmesh_config_PPO_SB3.yaml", "r") as f:
         config = yaml.safe_load(f)
 
     experiment_name = config["experiment_name"]
