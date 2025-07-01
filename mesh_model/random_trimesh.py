@@ -99,7 +99,7 @@ def mesh_shuffle(mesh: Mesh, num_nodes) -> Mesh:
     :param num_nodes: number nodes of the mesh
     :return: a mesh with randomly flipped darts.
     """
-    nb_action_max = 7
+    nb_action_max = 3
     nb_action = 0
     active_darts_list = mesh.active_darts()
     m_analysis = TriMeshQualityAnalysis(mesh)
