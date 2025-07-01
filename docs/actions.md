@@ -18,7 +18,7 @@ However, in some configurations, flip action can lead to problematic configurati
   <img src="img/actions/flip_c_after.png" width="350"/>
 
     * **triangular quad:** This configuration should be avoided, as it results in the creation of a degenerate (flat) triangle. As illustrated in the figures below, flipping dart 0 leads to a flattened face between nodes 2, 0, and 7.
-  
+
   <img src="img/actions/flip_before_tri.png" width="350"/>
   <img src="img/actions/flip_after_tri.png" width="350"/>
 
