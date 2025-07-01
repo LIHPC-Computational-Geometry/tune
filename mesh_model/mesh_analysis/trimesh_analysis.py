@@ -8,7 +8,6 @@ from shapely.geometry import Polygon, Point, LineString
 
 import numpy as np
 import matplotlib.pyplot as plt
-from yaml import warnings
 
 from mesh_model.mesh_analysis.global_mesh_analysis import GlobalMeshAnalysis, NodeAnalysis
 from mesh_model.mesh_struct.mesh_elements import Dart, Node, Face
