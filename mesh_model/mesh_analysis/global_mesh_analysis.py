@@ -171,7 +171,6 @@ class GlobalMeshAnalysis(ABC):
     def get_dart_geometric_quality(self, d: Dart) -> int:
         pass
 
-
     def global_score(self):
         """
         Calculate the overall mesh score. The mesh cannot achieve a better score than the ideal one.
@@ -189,7 +188,7 @@ class GlobalMeshAnalysis(ABC):
                 n_a = NodeAnalysis(node)
                 n_score = n_a.score_calculation()
                 nodes_score.append(n_score)
-                nodes_adjacency.append(6)
+                nodes_adjacency.append(n_a.degree())
                 mesh_ideal_score += n_score
                 mesh_score += abs(n_score)
             else:
@@ -298,7 +297,4 @@ class GlobalMeshAnalysis(ABC):
         return val
 
     def signe(self, a: int):
-        if a <= 1e-8:
-            return 0
-        else:
-            return 1
+        pass

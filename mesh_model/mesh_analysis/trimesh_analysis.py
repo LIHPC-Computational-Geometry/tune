@@ -541,6 +541,11 @@ class TriMeshAnalysis(GlobalMeshAnalysis):
         else:
             return None
 
+    def signe(self, a: int):
+        if a <= 1e-8: # We compare to 1e-8 and not 0; otherwise, the triangular configuration may not be detected.
+            return 0
+        else:
+            return 1
 
 class TriMeshQualityAnalysis(TriMeshAnalysis):
     """

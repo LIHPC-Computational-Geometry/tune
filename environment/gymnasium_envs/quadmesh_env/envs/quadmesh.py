@@ -1,4 +1,3 @@
-
 import copy
 import pygame
 import imageio
@@ -13,8 +12,7 @@ from pygame.locals import *
 
 from mesh_model.random_quadmesh import random_mesh
 from mesh_model.mesh_struct.mesh_elements import Dart
-from mesh_model.mesh_analysis.global_mesh_analysis import GlobalMeshAnalysis
-from mesh_model.mesh_analysis.quadmesh_analysis import isTruncated
+from mesh_model.mesh_analysis.quadmesh_analysis import QuadMeshOldAnalysis
 from environment.gymnasium_envs.quadmesh_env.envs.mesh_conv import get_x
 from environment.actions.quadrangular_actions import flip_edge_cntcw, flip_edge_cw, split_edge, collapse_edge, cleanup_edge
 from environment.observation_register import ObservationRegistry
@@ -70,7 +68,7 @@ class QuadMeshEnv(gym.Env):
         else :
             self.config = {"mesh": None}
             self.mesh = random_mesh()
-        self.mesh_analysis = GlobalMeshAnalysis(self.mesh)
+        self.mesh_analysis = QuadMeshOldAnalysis(self.mesh)
         #self.mesh_size = len(self.mesh.nodes)
         #self.nb_darts = len(self.mesh.dart_info)
         self._nodes_scores, self._mesh_score, self._ideal_score, self._nodes_adjacency = self.mesh_analysis.global_score()
@@ -115,8 +113,8 @@ class QuadMeshEnv(gym.Env):
 
         # Observation and action spaces
         self.observation_space = gym.spaces.Box(
-            low=-6,  # nodes min degree : -6
-            high=2,  # nodes max degree : 2
+            low=-8,  # nodes min degree : -6
+            high=4,  # nodes max degree : 2
             shape=(self.n_darts_selected, deep),
             dtype=np.int64
         )
@@ -124,8 +122,6 @@ class QuadMeshEnv(gym.Env):
 
         # We have 4 actions, flip clockwise, flip counterclockwise, split, collapse
         self.action_space = gym.spaces.MultiDiscrete([4, self.n_darts_selected])
-
-
 
     def reset(self, seed=None, options=None):
         # We need the following line to seed self.np_random
@@ -136,6 +132,8 @@ class QuadMeshEnv(gym.Env):
             self.mesh = copy.deepcopy(self.config["mesh"])
         else:
             self.mesh = random_mesh()
+
+        self.mesh_analysis = QuadMeshOldAnalysis(self.mesh)
         #self.nb_darts = len(self.mesh.dart_info)
         self._nodes_scores, self._mesh_score, self._ideal_score, self._nodes_adjacency = self.mesh_analysis.global_score()
         self._ideal_rewards = (self._mesh_score - self._ideal_score) * 10
@@ -161,9 +159,8 @@ class QuadMeshEnv(gym.Env):
 
         return self.observation, info
 
-
     def _get_obs(self):
-        irregularities, darts_list = get_x(self.mesh, self.n_darts_selected, self.deep, self.degree_observation, self.restricted, self._nodes_scores, self._nodes_adjacency)
+        irregularities, darts_list = get_x(self.mesh_analysis, self.n_darts_selected, self.deep, self.degree_observation, self.restricted, self._nodes_scores, self._nodes_adjacency)
         self.darts_selected = darts_list
         return irregularities
 
@@ -187,6 +184,7 @@ class QuadMeshEnv(gym.Env):
             "invalid_collapse": 1.0 if action[0]==Actions.COLLAPSE.value and not valid_action else 0.0,
             "invalid_cleanup": 1.0 if action[0]==Actions.CLEANUP.value and not valid_action else 0.0,
             "mesh" : self.mesh,
+            "mesh_analysis" : self.mesh_analysis,
             "darts_selected" : self.darts_selected,
             "observation_registry" : self.observation_registry if self.observation_count else None,
         }
@@ -209,19 +207,19 @@ class QuadMeshEnv(gym.Env):
         valid_action, valid_topo, valid_geo = False, False, False
         if action[0] == Actions.FLIP_CW.value:
             self.actions_info["n_flip_cw"] += 1
-            valid_action, valid_topo, valid_geo = flip_edge_cw(self.mesh, n1, n2)
+            valid_action, valid_topo, valid_geo = flip_edge_cw(self.mesh_analysis, n1, n2)
         elif action[0] == Actions.FLIP_CNTCW.value:
             self.actions_info["n_flip_cntcw"] += 1
-            valid_action, valid_topo, valid_geo = flip_edge_cntcw(self.mesh, n1, n2)
+            valid_action, valid_topo, valid_geo = flip_edge_cntcw(self.mesh_analysis, n1, n2)
         elif action[0] == Actions.SPLIT.value:
             self.actions_info["n_split"] += 1
-            valid_action, valid_topo, valid_geo = split_edge(self.mesh, n1, n2)
+            valid_action, valid_topo, valid_geo = split_edge(self.mesh_analysis, n1, n2)
         elif action[0] == Actions.COLLAPSE.value:
             self.actions_info["n_collapse"] += 1
-            valid_action, valid_topo, valid_geo = collapse_edge(self.mesh, n1, n2)
+            valid_action, valid_topo, valid_geo = collapse_edge(self.mesh_analysis, n1, n2)
         elif action[0] == Actions.CLEANUP.value:
             self.actions_info["n_cleanup"] += 1
-            valid_action, valid_topo, valid_geo = cleanup_edge(self.mesh, n1, n2)
+            valid_action, valid_topo, valid_geo = cleanup_edge(self.mesh_analysis, n1, n2)
         else:
             raise ValueError("Action not defined")
 
@@ -254,7 +252,7 @@ class QuadMeshEnv(gym.Env):
         else:
             raise ValueError("Invalid action")
         if self.nb_invalid_actions > 10 :
-            truncated = isTruncated(self.mesh, self.darts_selected)
+            truncated = self.mesh_analysis.isTruncated(self.darts_selected)
         else:
             truncated = False
         valid_act = valid_action, valid_topo, valid_geo
@@ -270,7 +268,6 @@ class QuadMeshEnv(gym.Env):
                 self.episode_count +=1
 
         return self.observation, reward, terminated, truncated, info
-
 
     def _render_frame(self):
         if self.render_mode == "human" and self.window is None:

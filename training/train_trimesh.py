@@ -1,29 +1,22 @@
 from __future__ import annotations
 
-import wandb
-import time
-import yaml
-import os
 import random
 import torch
+import os
+import time
+import yaml
+import wandb
 
-import numpy as np
 import gymnasium as gym
-import matplotlib.pyplot as plt
+import numpy as np
 
 from torch.utils.tensorboard import SummaryWriter
+from stable_baselines3.common.env_checker import check_env
 
 #Internal import
 from environment.gymnasium_envs import trimesh_full_env
-
-from mesh_model.reader import read_gmsh
-
 from model_RL.PPO_model_pers import PPO
 
-from view.mesh_plotter.create_plots import plot_training_results, plot_test_results
-from view.mesh_plotter.mesh_plots import plot_dataset
-
-from model_RL.evaluate_model import testPolicy
 
 def log_init(log_writer, config):
     log_writer.add_text("Description", config["description"])
@@ -36,6 +29,8 @@ if __name__ == '__main__':
     with open("training/config/trimesh_config_PPO_perso.yaml", "r") as f:
         config = yaml.safe_load(f)
 
+    experiment_name = config["experiment_name"]
+
     # Create log dir
     log_dir = config["paths"]["log_dir"]
     os.makedirs(log_dir, exist_ok=True)
@@ -43,7 +38,7 @@ if __name__ == '__main__':
     wandb.tensorboard.patch(root_logdir=log_dir)
     wandb.init(
         project="Trimesh-learning",
-        name=config["experiment_name"],
+        name=experiment_name,
         config=config,
         sync_tensorboard=True,
         save_code=True
@@ -60,18 +55,22 @@ if __name__ == '__main__':
     env = gym.make(
         config["env"]["env_id"],
         # mesh=read_gmsh(config["dataset"]["evaluation_mesh_file_path"]),
+        mesh_size=config["env"]["mesh_size"],
         max_episode_steps=config["env"]["max_episode_steps"],
         n_darts_selected=config["env"]["n_darts_selected"],
         deep=config["env"]["deep"],
         action_restriction=config["env"]["action_restriction"],
         with_quality_obs=config["env"]["with_quality_observation"],
         render_mode=config["env"]["render_mode"],
+        analysis_type=config["env"]["analysis_type"],
     )
+
+    check_env(env, warn=True)
 
     model = PPO(
         env=env,
         obs_size= config["env"]["obs_size"],
-        n_actions=config["env"]["n_actions"],
+        n_actions=config["ppo"]["n_actions"],
         n_darts_observed=config["env"]["n_darts_selected"],
         max_steps=config["env"]["max_episode_steps"],
         lr=config["ppo"]["learning_rate"],

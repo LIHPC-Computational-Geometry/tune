@@ -7,11 +7,13 @@ total_timesteps : 10000
 paths:
   log_dir : "training/results/quad-sb3/"
   policy_saving_dir : "training/policy_saved/quad-sb3/"
-  wandb_model_saving_dir : "training/wandb_models/"
+  wandb_model_saving_dir : "training/wandb_models/quad-sb3/"
+  episode_recording_dir: "training/results/quad-sb3/episode_recording/"
+  observation_counts_dir: "training/results/quad-sb3/observation_counts/"
 
 dataset:
-  evaluation_mesh_file_path : "mesh_files/simple_quad.msh"
-  training_mesh_file_path : "mesh_files/simple_quad.msh"
+  evaluation_mesh_file_path : "../mesh_files/simple_quad.msh"
+  training_mesh_file_path : "../mesh_files/simple_quad.msh"
 
 seed : 1
 
@@ -27,6 +29,7 @@ env:
   reward_function : 0 # 0 if basics, 1 if penalize, 2 otherwise
   render_mode : null
   obs_count : true
+  analysis_type : "old"
 
 ppo:
   policy : MlpPolicy
@@ -46,9 +49,9 @@ eval:
   n_darts_selected: 10
   deep: 12
   obs_size: 120
-  render_mode: "human"
+  render_mode: null
   action_restriction: false
-  with_degree_observation: false
+  with_quality_observation: false
 
 
 metrics:

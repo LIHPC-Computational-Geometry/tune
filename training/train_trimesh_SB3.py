@@ -194,7 +194,7 @@ if __name__ == '__main__':
     # # WANDB
     # run = wandb.init(
     #     project="Trimesh-learning",
-    #     name=config["experiment_name"],
+    #     name=experiment_name,
     #     sync_tensorboard=True,  # auto-upload sb3's tensorboard metrics
     #     save_code=True,  # optional
     # )
@@ -214,7 +214,7 @@ if __name__ == '__main__':
         action_restriction=config["env"]["action_restriction"],
         with_quality_obs=config["env"]["with_quality_observation"],
         render_mode=config["env"]["render_mode"],
-        analysis_type="old",
+        analysis_type=config["env"]["analysis_type"],
     )
 
     check_env(env, warn=True)

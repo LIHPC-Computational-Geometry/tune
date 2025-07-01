@@ -5,7 +5,9 @@ description : ""
 paths:
   log_dir : "training/results/quad-perso/"
   policy_saving_dir : "training/policy_saved/quad-perso/"
-  wandb_model_saving_dir : "training/wandb_models/"
+  wandb_model_saving_dir : "training/wandb_models/quad-perso/"
+  episode_recording_dir: "training/results/quad-perso/episode_recording/"
+  observation_counts_dir: "training/results/quad-perso/observation_counts/"
 
 dataset:
   evaluation_mesh_file_path : "mesh_files/simple_quad.msh"
@@ -24,10 +26,12 @@ env:
   reward_function : 0 # 0 if basics, 1 if penalize, 2 otherwise
   render_mode: null
   obs_count: true
+  analysis_type : "old"
 
 ppo:
-  n_iterations : 5
-  n_episodes_per_iteration : 50
+  n_actions : 4
+  n_iterations : 2
+  n_episodes_per_iteration : 20
   n_epochs : 5
   batch_size: 64
   learning_rate : 0.0001
