@@ -254,4 +254,5 @@ class TestQuadActions(unittest.TestCase):
         self.assertEqual(ma.global_score()[1], 0)
 
 
-
+if __name__ == '__main__':
+    unittest.main()

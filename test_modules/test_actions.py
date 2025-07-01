@@ -1,5 +1,5 @@
 import unittest
-
+import scipy
 import mesh_model.mesh_struct.mesh as mesh
 from mesh_model.mesh_analysis.trimesh_analysis import TriMeshQualityAnalysis
 from mesh_model.mesh_struct.mesh_elements import Dart, Node
@@ -123,4 +123,5 @@ class TestActions(unittest.TestCase):
         collapse_edge(m_analysis, n5, n7)
 
 
-
+if __name__ == '__main__':
+    unittest.main()
