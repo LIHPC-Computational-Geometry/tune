@@ -1,6 +1,7 @@
 from mesh_model.mesh_analysis.trimesh_analysis import TriMeshAnalysis
+from mesh_model.mesh_analysis.global_mesh_analysis import NodeAnalysis
 from mesh_model.mesh_struct.mesh import Mesh
-from mesh_model.mesh_struct.mesh_elements import Dart
+from mesh_model.mesh_struct.mesh_elements import Dart, Face
 from math import sqrt, degrees
 
 FLIP = 0

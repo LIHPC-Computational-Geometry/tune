@@ -1,4 +1,9 @@
+import math
+
 import numpy as np
+import matplotlib.pyplot as plt
+from shapely.geometry import Polygon, Point, LineString
+from shapely import affinity
 
 from mesh_model.mesh_struct.mesh_elements import Dart, Node, Face
 from mesh_model.mesh_struct.mesh import Mesh
@@ -88,8 +93,7 @@ class QuadMeshAnalysis(GlobalMeshAnalysis):
                 np.linalg.norm(u3) < 1e-8 or
                 np.linalg.norm(u4) < 1e-8 or
                 np.linalg.norm(u5) < 1e-8):
-            plot_mesh(self.mesh)
-            #raise ValueError("near zero vector") # Quad invalid because one side is almost zero
+            raise ValueError("near zero vector") # Quad invalid because one side is almost zero
 
         # Calculate cross product at each node
         cp_A = self.cross_product(-1 * u3, u4)
@@ -285,8 +289,7 @@ class QuadMeshOldAnalysis(QuadMeshAnalysis):
 
     def isValidAction(self, dart_id: int, action: int) -> (bool, bool):
         """
-        Test if an action is valid. You can select the ype of action between {flip clockwise, flip counterclockwise, split, collapse, cleanup, all action, one action no matter wich one}.    :param mesh:
-        :param mesh: a mesh
+        Test if an action is valid. You can select the ype of action between {flip clockwise, flip counterclockwise, split, collapse, cleanup, all action, one action no matter wich one}.
         :param dart_id: a dart on which to test the action
         :param action: an action type
         :return:

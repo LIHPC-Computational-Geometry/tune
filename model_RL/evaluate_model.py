@@ -3,6 +3,8 @@ import copy
 
 from tqdm import tqdm
 
+from environment.old_files.trimesh_env import TriMesh
+from mesh_model.mesh_analysis.trimesh_analysis import TriMeshOldAnalysis
 from mesh_model.mesh_struct.mesh import Mesh
 
 
@@ -58,7 +60,9 @@ def isBetterPolicy(actual_best_policy, policy_to_test):
 
 
 def isBetterMesh(best_mesh, actual_mesh):
-    if best_mesh is None or global_score(best_mesh)[1] > global_score(actual_mesh)[1]:
+    ma1 = TriMeshOldAnalysis(best_mesh)
+    ma2 = TriMeshOldAnalysis(actual_mesh)
+    if best_mesh is None or ma1.global_score()[1] > ma2.global_score()[1]:
         return True
     else:
         return False

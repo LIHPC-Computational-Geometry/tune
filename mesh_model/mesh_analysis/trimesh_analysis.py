@@ -398,80 +398,80 @@ class TriMeshAnalysis(GlobalMeshAnalysis):
                 return False
         return True
 
-    def find_star_vertex2(self, n1:Node, n2:Node) -> (float, float):
-        adj_nodes = []
-        nodes_coord = []
-        for d_info in self.mesh.active_darts():
-            if d_info[3] == n1.id or d_info[3] == n2.id:
-                d2 = Dart(self.mesh, d_info[2])
-                if d2 is not None:
-                    n = d2.get_node()
-                    adj_nodes.append(n)
-                    nodes_coord.append([n.x(), n.y()])
-                else:
-                    raise ValueError("Collapse action may not be done near boundary")
-        nodes_coord = np.array(nodes_coord)
-
-        # Ordonner les voisins autour de v
-        vectors = nodes_coord - v
-        angles = np.arctan2(vectors[:, 1], vectors[:, 0])
-        order = np.argsort(angles)
-        neighbors_ordered = nodes_coord[order]
-
-        hull = ConvexHull(nodes_coord)
-        delaunay = Delaunay(nodes_coord)
-        plt.plot(nodes_coord[:, 0], nodes_coord[:, 1], 'o')
-
-        for simplex in hull.simplices:
-            plt.plot(nodes_coord[simplex, 0], nodes_coord[simplex, 1], 'k-')
-        plt.plot(nodes_coord[hull.vertices, 0], nodes_coord[hull.vertices, 1], 'r--', lw=2)
-        plt.plot(nodes_coord[hull.vertices[0], 0], nodes_coord[hull.vertices[0], 1], 'ro')
-        plt.show()
-
-        _ = scipy.spatial.delaunay_plot_2d(delaunay)
-        plt.show()
-
-        mid = np.array([(n1.x() + n2.x()) / 2, (n1.y() + n2.y()) / 2])
-        is_star_vertex = delaunay.find_simplex(mid) >=0
-
-        # Calcul des angles des voisins autour de v
-        vectors = nodes_coord - mid
-        angles = np.arctan2(vectors[:, 1], vectors[:, 0])
-        order = np.argsort(angles)
-        neighbors_ordered = nodes_coord[order]
-
-        # Construire le polygone
-        poly = Polygon(neighbors_ordered)
-
-        # Vérifier si v est à l'intérieur ou sur la frontière
-        point_v = Point(mid)
-        is_star = poly.contains(point_v) or poly.touches(point_v)
-
-        plt.figure(figsize=(6, 6))
-        # Polygone
-        x, y = poly.exterior.xy
-        plt.fill(x, y, alpha=0.3, edgecolor='red', facecolor='lightcoral', label='Polygone formé par les voisins')
-
-        # Voisins
-        plt.scatter(nodes_coord[:, 0], nodes_coord[:, 1], color='blue', zorder=5, label='Voisins')
-
-        # Sommet testé
-        plt.scatter(mid[0], mid[1], color='green', s=100, zorder=5, label='Sommet testé')
-
-        plt.legend()
-        plt.gca().set_aspect('equal')
-        plt.title(f"Le sommet est-il étoilé ? {is_star}")
-        plt.show()
-
-        if is_star:
-            return mid
-        elif poly.contains(Point(n1.x(), n1.y())) or poly.touches(Point(n1.x(), n1.y())):
-            return n1.x(), n1.y()
-        elif poly.contains(Point(n2.x(), n2.y())) or poly.touches(Point(n2.x(), n2.y())):
-            return n2.x(), n2.y()
-        else:
-            plot_mesh(self.mesh)
-            raise ValueError("No star vertex was found")
+    # def find_star_vertex2(self, n1:Node, n2:Node) -> (float, float):
+    #     adj_nodes = []
+    #     nodes_coord = []
+    #     for d_info in self.mesh.active_darts():
+    #         if d_info[3] == n1.id or d_info[3] == n2.id:
+    #             d2 = Dart(self.mesh, d_info[2])
+    #             if d2 is not None:
+    #                 n = d2.get_node()
+    #                 adj_nodes.append(n)
+    #                 nodes_coord.append([n.x(), n.y()])
+    #             else:
+    #                 raise ValueError("Collapse action may not be done near boundary")
+    #     nodes_coord = np.array(nodes_coord)
+    #
+    #     # Ordonner les voisins autour de v
+    #     vectors = nodes_coord - v
+    #     angles = np.arctan2(vectors[:, 1], vectors[:, 0])
+    #     order = np.argsort(angles)
+    #     neighbors_ordered = nodes_coord[order]
+    #
+    #     hull = ConvexHull(nodes_coord)
+    #     delaunay = Delaunay(nodes_coord)
+    #     plt.plot(nodes_coord[:, 0], nodes_coord[:, 1], 'o')
+    #
+    #     for simplex in hull.simplices:
+    #         plt.plot(nodes_coord[simplex, 0], nodes_coord[simplex, 1], 'k-')
+    #     plt.plot(nodes_coord[hull.vertices, 0], nodes_coord[hull.vertices, 1], 'r--', lw=2)
+    #     plt.plot(nodes_coord[hull.vertices[0], 0], nodes_coord[hull.vertices[0], 1], 'ro')
+    #     plt.show()
+    #
+    #     _ = scipy.spatial.delaunay_plot_2d(delaunay)
+    #     plt.show()
+    #
+    #     mid = np.array([(n1.x() + n2.x()) / 2, (n1.y() + n2.y()) / 2])
+    #     is_star_vertex = delaunay.find_simplex(mid) >=0
+    #
+    #     # Calcul des angles des voisins autour de v
+    #     vectors = nodes_coord - mid
+    #     angles = np.arctan2(vectors[:, 1], vectors[:, 0])
+    #     order = np.argsort(angles)
+    #     neighbors_ordered = nodes_coord[order]
+    #
+    #     # Construire le polygone
+    #     poly = Polygon(neighbors_ordered)
+    #
+    #     # Vérifier si v est à l'intérieur ou sur la frontière
+    #     point_v = Point(mid)
+    #     is_star = poly.contains(point_v) or poly.touches(point_v)
+    #
+    #     plt.figure(figsize=(6, 6))
+    #     # Polygone
+    #     x, y = poly.exterior.xy
+    #     plt.fill(x, y, alpha=0.3, edgecolor='red', facecolor='lightcoral', label='Polygone formé par les voisins')
+    #
+    #     # Voisins
+    #     plt.scatter(nodes_coord[:, 0], nodes_coord[:, 1], color='blue', zorder=5, label='Voisins')
+    #
+    #     # Sommet testé
+    #     plt.scatter(mid[0], mid[1], color='green', s=100, zorder=5, label='Sommet testé')
+    #
+    #     plt.legend()
+    #     plt.gca().set_aspect('equal')
+    #     plt.title(f"Le sommet est-il étoilé ? {is_star}")
+    #     plt.show()
+    #
+    #     if is_star:
+    #         return mid
+    #     elif poly.contains(Point(n1.x(), n1.y())) or poly.touches(Point(n1.x(), n1.y())):
+    #         return n1.x(), n1.y()
+    #     elif poly.contains(Point(n2.x(), n2.y())) or poly.touches(Point(n2.x(), n2.y())):
+    #         return n2.x(), n2.y()
+    #     else:
+    #         plot_mesh(self.mesh)
+    #         raise ValueError("No star vertex was found")
 
 
     def get_adjacent_faces(self, n: Node, d_from: Dart, d_to: Dart) -> list:
