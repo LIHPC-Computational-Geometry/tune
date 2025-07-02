@@ -59,7 +59,6 @@ class NodeAnalysis:
         angle_rad = atan2(cross, dot)
         angle = degrees(angle_rad) % 360
         if np.isnan(angle):
-            plot_mesh(self.n.mesh)
             raise ValueError("Angle error")
         return angle
 
@@ -135,8 +134,6 @@ class NodeAnalysis:
             else:
                 adjacency += 0.5
         if adjacency != int(adjacency):
-            #adjacency = int(adjacency+0.5)
-            plot_mesh(self.n.mesh)
             raise ValueError("Adjacency error")
         return adjacency
 

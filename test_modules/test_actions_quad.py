@@ -40,6 +40,7 @@ class TestQuadActions(unittest.TestCase):
         self.assertEqual(6, cmap.nb_nodes())
         plot_mesh(cmap)
         self.assertFalse(flip_edge_cntcw(ma, n11, n10)[0])
+        self.assertEqual(flip_edge_cw(ma, n01, n20), (True, True, True))
 
     def test_split(self):
         cmap = mesh.Mesh()

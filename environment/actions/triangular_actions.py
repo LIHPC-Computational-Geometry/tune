@@ -79,8 +79,6 @@ def flip_edge(mesh_analysis, n1: Node, n2: Node) -> True:
 
     after_check = check_mesh(mesh_analysis, mesh_before)
     if not after_check:
-        plot_mesh(mesh_before)
-        plot_mesh(mesh_analysis.mesh)
         raise ValueError("Some checks are missing")
 
     return valid_action, topo, geo
@@ -242,7 +240,6 @@ def collapse_edge(mesh_analysis, n1: Node, n2: Node) -> True:
                     ds = ds11.get_beta(2)
                     if i > 30:
                         i = 0
-                        plot_mesh(mesh_analysis.mesh)
                         raise ValueError("Potential infinite loop in action collapse")
             else:
                 ds = d2s.get_beta(1)
@@ -250,15 +247,14 @@ def collapse_edge(mesh_analysis, n1: Node, n2: Node) -> True:
                 ds1 = ds.get_beta(1)
             if i > 30:
                 i = 0
-                plot_mesh(mesh_analysis.mesh)
                 raise ValueError("Potential infinite loop in action collapse")
 
         found, new_x, new_y = mesh_analysis.find_star_vertex(n1)
         if found:
             n1.set_xy(new_x, new_y)
         else:
-            plot_mesh(mesh_before)
-            plot_mesh(mesh_analysis.mesh)
+            # plot_mesh(mesh_before)
+            # plot_mesh(mesh_analysis.mesh)
             mesh_analysis.find_star_vertex(n1, plot=True)
             raise ValueError("No star vertex found")
 
@@ -301,7 +297,7 @@ def collapse_edge(mesh_analysis, n1: Node, n2: Node) -> True:
 
     after_check = check_mesh(mesh_analysis, mesh_before)
     if not after_check:
-        mesh_analysis.is_star_vertex(n1, np.array([n1.x(), n1.y()]), True)
+        # mesh_analysis.is_star_vertex(n1, np.array([n1.x(), n1.y()]), True)
         raise ValueError("Some checks are missing")
     return True, topo, geo
 
@@ -352,54 +348,54 @@ def check_mesh(mesh_analysis, m=None) -> bool:
             return False
     return True
 
-
-def check_mesh_debug(mesh_analysis, mesh_before=None)->True:
-    for dart_info in mesh_analysis.mesh.active_darts():
-        #Check beta2 relation
-        d = dart_info[0]
-        d2 = dart_info[2]
-        # if associated twin dart no longer exist
-        if d2 >= 0 and mesh_analysis.mesh.dart_info[d2, 0] < 0:
-            plot_mesh(mesh_analysis.mesh)
-            if mesh_before is not None:
-                plot_mesh(mesh_before)
-            raise ValueError("error beta2")
-        # if beta2 relation is not symetrical
-        elif d2 >= 0 and mesh_analysis.mesh.dart_info[d2, 2] != d:
-            plot_mesh(mesh_analysis.mesh)
-            if mesh_before is not None:
-                plot_mesh(mesh_before)
-            raise ValueError("error beta2")
-        # null dart
-        elif d2>=0 and mesh_analysis.mesh.dart_info[d2, 3] == mesh_analysis.mesh.dart_info[d, 3]:
-            plot_mesh(mesh_analysis.mesh)
-            if mesh_before is not None:
-                plot_mesh(mesh_before)
-            raise ValueError("same node for twin darts")
-        #if adjacent face is the same
-        elif  d2>=0 and mesh_analysis.mesh.dart_info[d2, 4] == mesh_analysis.mesh.dart_info[d, 4]:
-            plot_mesh(mesh_analysis.mesh)
-            if mesh_before is not None:
-                plot_mesh(mesh_before)
-            raise ValueError("same adjacent face")
-
-
-        d1 = mesh_analysis.mesh.dart_info[d,1]
-        d11 = mesh_analysis.mesh.dart_info[d1,1]
-
-        #Check beta1
-        if  mesh_analysis.mesh.dart_info[d11,1]!=d :
-            plot_mesh(mesh_analysis.mesh)
-            if mesh_before is not None:
-                plot_mesh(mesh_before)
-            raise ValueError("error beta1")
-
-        if d2 >= 0 :
-            d = Dart(mesh_analysis.mesh, d)
-            d2, d1, d11, d21, d211, n1, n2, n3, n4 = mesh_analysis.mesh.active_triangles(d)
-
-            if len(set([n1.id, n2.id, n3.id, n4.id])) < 4:
-                plot_mesh(mesh_analysis.mesh)
-                if mesh_before is not None:
-                    plot_mesh(mesh_before)
-                raise ValueError("same traingle for two faces")
+#
+# def check_mesh_debug(mesh_analysis, mesh_before=None)->True:
+#     for dart_info in mesh_analysis.mesh.active_darts():
+#         #Check beta2 relation
+#         d = dart_info[0]
+#         d2 = dart_info[2]
+#         # if associated twin dart no longer exist
+#         if d2 >= 0 and mesh_analysis.mesh.dart_info[d2, 0] < 0:
+#             plot_mesh(mesh_analysis.mesh)
+#             if mesh_before is not None:
+#                 plot_mesh(mesh_before)
+#             raise ValueError("error beta2")
+#         # if beta2 relation is not symetrical
+#         elif d2 >= 0 and mesh_analysis.mesh.dart_info[d2, 2] != d:
+#             plot_mesh(mesh_analysis.mesh)
+#             if mesh_before is not None:
+#                 plot_mesh(mesh_before)
+#             raise ValueError("error beta2")
+#         # null dart
+#         elif d2>=0 and mesh_analysis.mesh.dart_info[d2, 3] == mesh_analysis.mesh.dart_info[d, 3]:
+#             plot_mesh(mesh_analysis.mesh)
+#             if mesh_before is not None:
+#                 plot_mesh(mesh_before)
+#             raise ValueError("same node for twin darts")
+#         #if adjacent face is the same
+#         elif  d2>=0 and mesh_analysis.mesh.dart_info[d2, 4] == mesh_analysis.mesh.dart_info[d, 4]:
+#             plot_mesh(mesh_analysis.mesh)
+#             if mesh_before is not None:
+#                 plot_mesh(mesh_before)
+#             raise ValueError("same adjacent face")
+#
+#
+#         d1 = mesh_analysis.mesh.dart_info[d,1]
+#         d11 = mesh_analysis.mesh.dart_info[d1,1]
+#
+#         #Check beta1
+#         if  mesh_analysis.mesh.dart_info[d11,1]!=d :
+#             plot_mesh(mesh_analysis.mesh)
+#             if mesh_before is not None:
+#                 plot_mesh(mesh_before)
+#             raise ValueError("error beta1")
+#
+#         if d2 >= 0 :
+#             d = Dart(mesh_analysis.mesh, d)
+#             d2, d1, d11, d21, d211, n1, n2, n3, n4 = mesh_analysis.mesh.active_triangles(d)
+#
+#             if len(set([n1.id, n2.id, n3.id, n4.id])) < 4:
+#                 plot_mesh(mesh_analysis.mesh)
+#                 if mesh_before is not None:
+#                     plot_mesh(mesh_before)
+#                 raise ValueError("same traingle for two faces")
