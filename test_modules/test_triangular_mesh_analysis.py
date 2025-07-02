@@ -1,7 +1,7 @@
 import unittest
 
 from mesh_model.mesh_struct.mesh import Mesh
-from mesh_model.mesh_struct.mesh_elements import Dart
+from mesh_model.mesh_struct.mesh_elements import Dart, Node
 from mesh_model.mesh_analysis.trimesh_analysis import TriMeshQualityAnalysis, TriMeshOldAnalysis
 from environment.actions.triangular_actions import split_edge_ids
 from view.mesh_plotter.mesh_plots import plot_mesh
@@ -154,6 +154,42 @@ class TestMeshQualityAnalysis(unittest.TestCase):
         for d_info in cmap.active_darts():
             darts_list.append(d_info[0])
         self.assertFalse(m_analysis.isTruncated(darts_list))
+
+    def test_get_geometric_quality(self):
+        nodes = [[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0], [2.0, 0.0]]
+        faces = [[0, 1, 2], [0, 2, 3], [1, 4, 2], [0, 1, 4], [0, 4, 1]]
+        cmap = Mesh(nodes, faces)
+        plot_mesh(cmap)
+        m_analysis = TriMeshQualityAnalysis(cmap)
+
+        # Half flat
+        d_to_test = Dart(cmap, 0)
+        self.assertEqual(m_analysis.get_dart_geometric_quality(d_to_test), 4)
+
+        # Full flat
+        d_to_test = Dart(cmap, 11)
+        self.assertEqual(m_analysis.get_dart_geometric_quality(d_to_test), 6)
+
+        nodes = [[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0]]
+        faces = [[0, 1, 2], [2, 1, 3]]
+        cmap = Mesh(nodes, faces)
+        plot_mesh(cmap)
+        m_analysis = TriMeshQualityAnalysis(cmap)
+
+        # Crossed
+        d_to_test = Dart(cmap, 1)
+        self.assertEqual(m_analysis.get_dart_geometric_quality(d_to_test), 3)
+
+    def test_find_star_vertex(self):
+        # Polygon with ker
+        nodes = [[0.0, 0.0], [1.0, 1.0], [1.0, -1.0], [0.0, -2.0], [-1.0, 0.0], [-0.5, 0.5], [-0.25, -0.25]]
+        faces = [[0, 2, 1], [0, 3, 2], [0, 4, 3], [0, 5, 4], [0, 1, 5]]
+        cmap = Mesh(nodes, faces)
+        plot_mesh(cmap)
+        m_analysis = TriMeshQualityAnalysis(cmap)
+        n_to_test = Node(cmap, 0)
+        self.assertTrue(m_analysis.find_star_vertex(n_to_test)[0])
+
 
 class TestMeshOldAnalysis(unittest.TestCase):
 

@@ -4,7 +4,7 @@ import os
 from mesh_model.mesh_struct.mesh import Mesh
 from mesh_model.mesh_struct.mesh_elements import Dart
 from mesh_model.mesh_analysis.quadmesh_analysis import QuadMeshOldAnalysis
-from environment.actions.triangular_actions import split_edge_ids
+from environment.actions.quadrangular_actions import split_edge_ids, flip_edge_cw_ids
 from view.mesh_plotter.mesh_plots import plot_mesh
 from mesh_model.reader import read_gmsh
 
@@ -31,30 +31,39 @@ class TestMeshOldAnalysis(unittest.TestCase):
         filename = os.path.join(TESTFILE_FOLDER, 't1_quad.msh')
         cmap = read_gmsh(filename)
         qma = QuadMeshOldAnalysis(cmap)
+
         #Boundary dart
         self.assertEqual(qma.isValidAction(20, 0), (False, True))
 
-        # Flip test
+        # Flip Clockwise test
         self.assertEqual(qma.isValidAction(3, 0), (True, True))
         self.assertEqual(qma.isValidAction(27, 0), (False, True))
 
-        #Split test
-        self.assertEqual(qma.isValidAction(0, 1), (True, True))
+        # Flip Counterclockwise test
+        self.assertEqual(qma.isValidAction(3, 1), (True, True))
         self.assertEqual(qma.isValidAction(27, 1), (False, True))
 
-        #Collapse test
+        #Split test
         self.assertEqual(qma.isValidAction(0, 2), (True, True))
-        plot_mesh(cmap)
         self.assertEqual(qma.isValidAction(27, 2), (False, True))
 
-        #All action test
+        #Collapse test
+        self.assertEqual(qma.isValidAction(0, 3), (True, True))
+        plot_mesh(cmap)
         self.assertEqual(qma.isValidAction(27, 3), (False, True))
-        self.assertEqual(qma.isValidAction(9, 3), (True, True))
+
+        #Cleanup test action id = 4
+
+        #All action test
+        self.assertEqual(qma.isValidAction(27, 5), (False, True))
+        flip_edge_cw_ids(qma,13,37)
+        self.assertEqual(qma.isValidAction(66, 5), (False, False))
+        self.assertEqual(qma.isValidAction(9, 5), (True, True))
 
         #One action test
-        self.assertEqual(qma.isValidAction(0, 4), (True, True))
-        self.assertEqual(qma.isValidAction(9, 4), (True, True))
-        self.assertEqual(qma.isValidAction(27, 4), (False, True))
+        self.assertEqual(qma.isValidAction(0, 6), (True, True))
+        self.assertEqual(qma.isValidAction(9, 6), (True, True))
+        self.assertEqual(qma.isValidAction(27, 6), (False, True))
 
         #Invalid action
         with self.assertRaises(ValueError):
