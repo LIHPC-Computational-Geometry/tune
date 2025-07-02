@@ -18,11 +18,6 @@ from environment.gymnasium_envs import quadmesh_env
 from mesh_model.reader import read_gmsh
 
 from model_RL.PPO_model_pers import PPO
-from model_RL.evaluate_model import testPolicy
-
-from view.mesh_plotter.create_plots import plot_training_results, plot_test_results
-from view.mesh_plotter.mesh_plots import plot_dataset
-
 
 
 def log_init(log_writer, config):

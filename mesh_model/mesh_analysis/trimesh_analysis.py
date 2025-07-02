@@ -254,289 +254,6 @@ class TriMeshAnalysis(GlobalMeshAnalysis):
         centroid = star_poly.centroid
         return True, centroid.x ,centroid.y
 
-    # def is_star_vertex(self, n1:Node, new_coordinates, plot=False):
-    #     #plot_mesh(self.mesh)
-    #
-    #     # Retrieve all neighboring vertices in order
-    #     d = n1.get_dart()
-    #     d2 = d.get_beta(2)
-    #     n_start = d2.get_node() #First neighbour to retrieve
-    #
-    #     adj_nodes = [n_start]
-    #     nodes_coord = [[n_start.x(), n_start.y()]]
-    #
-    #     d = d2.get_beta(1)
-    #     d2 = d.get_beta(2)
-    #     n = d2.get_node()
-    #
-    #     # As long as we haven't returned to the first neighbor, we keep searching.
-    #     # This works because the collapse action is restricted to inner darts that are not connected to a boundary node.
-    #     # Therefore, we are guaranteed to find the first vertex by following the beta1 and beta2 relations.
-    #
-    #     while n != n_start:
-    #         adj_nodes.append(n)
-    #         nodes_coord.append([n.x(), n.y()])
-    #         d = d2.get_beta(1)
-    #         d2 = d.get_beta(2)
-    #         n = d2.get_node()
-    #
-    #     nodes_coord = np.array(nodes_coord)
-    #
-    #     # Create a Polygon with shapely package
-    #     poly = Polygon(nodes_coord)
-    #     # Create the point for wich we want to check star property
-    #     point_v = Point(new_coordinates)
-    #
-    #     if plot :
-    #         plt.figure(figsize=(6, 6))
-    #         # Polygone
-    #         x, y = poly.exterior.xy
-    #         plt.fill(x, y, alpha=0.3, edgecolor='red', facecolor='lightcoral',
-    #                  label='Polygon formed par by neighbours vertices')
-    #
-    #         # Voisins
-    #         plt.scatter(nodes_coord[:, 0], nodes_coord[:, 1], color='blue', zorder=5, label='Neighbours')
-    #
-    #         # Sommet testé
-    #         plt.scatter(new_coordinates[0], new_coordinates[1], color='green', s=100, zorder=5, label='Vertex to test')
-    #
-    #         plt.legend()
-    #         plt.gca().set_aspect('equal')
-    #         plt.show()
-    #
-    #     # If polygon is convexe
-    #     if poly.is_valid and poly.is_simple and poly.convex_hull.equals(poly):
-    #         return True
-    #     p_before = None
-    #     # Si concave : vérifier visibilité
-    #     for p in poly.exterior.coords[:-1]:
-    #         full_seg = LineString([new_coordinates, p])
-    #         new_seg_end = full_seg.interpolate(full_seg.length - 1e-5)
-    #         seg = LineString([new_coordinates, new_seg_end])
-    #         if not poly.contains_properly(seg):
-    #             return False
-    #         elif seg.crosses(poly.boundary):
-    #             return False
-    #         elif seg.touches(poly.boundary):
-    #             return False
-    #         elif p_before is not None: # test coolinearity of two vectors
-    #             v1 = new_coordinates[0]-p[0], new_coordinates[1]-p[1]
-    #             v2 = new_coordinates[0]-p_before[0], new_coordinates[1]-p_before[1]
-    #
-    #             det = v1[0] * v2[1] - v1[1] * v2[0]
-    #             if -1e-5 < det < 1e-5:
-    #                 return False
-    #         p_before = p
-    #     return Truedef is_star_vertex2(self, n1:Node, n2:Node, v):
-        #plot_mesh(self.mesh)
-        #
-        # adj_nodes = []
-        # nodes_coord = []
-        # d = n1.get_dart()
-        # d2 = d.get_beta(2)
-        # n = d2.get_node()
-        # while n != n2:
-        #     adj_nodes.append(n)
-        #     nodes_coord.append([n.x(), n.y()])
-        #     d = d2.get_beta(1)
-        #     d2 = d.get_beta(2)
-        #     n = d2.get_node()
-        # d = d.get_beta(1)
-        # d2 = d.get_beta(2)
-        # n = d2.get_node()
-        # while n != n1:
-        #     if n not in adj_nodes:
-        #         adj_nodes.append(n)
-        #         nodes_coord.append([n.x(), n.y()])
-        #     d = d2.get_beta(1)
-        #     d2 = d.get_beta(2)
-        #     n = d2.get_node()
-        # d = d.get_beta(1)
-        # d2 = d.get_beta(2)
-        # n = d2.get_node()
-        # while n != n2:
-        #     if n not in adj_nodes:
-        #         adj_nodes.append(n)
-        #         nodes_coord.append([n.x(), n.y()])
-        #     d = d2.get_beta(1)
-        #     d2 = d.get_beta(2)
-        #     n = d2.get_node()
-        #
-        # nodes_coord = np.array(nodes_coord)
-        #
-        # # Créer le polygone
-        # poly = Polygon(nodes_coord)
-        # point_v = Point(v)
-        #
-        # # Vérifier si polygone est convexe
-        # if poly.is_valid and poly.is_simple and poly.convex_hull.equals(poly):
-        #     return True
-        #
-        # # Si concave : vérifier visibilité
-        # for p in poly.exterior.coords[:-1]:
-        #     seg = LineString([v, p])
-        #     if not poly.contains(seg):
-        #         # plt.figure(figsize=(6, 6))
-        #         # # Polygone
-        #         # x, y = poly.exterior.xy
-        #         # plt.fill(x, y, alpha=0.3, edgecolor='red', facecolor='lightcoral',
-        #         #          label='Polygon formed par by neighbours vertices')
-        #         #
-        #         # # Voisins
-        #         # plt.scatter(nodes_coord[:, 0], nodes_coord[:, 1], color='blue', zorder=5, label='Neighbours')
-        #         #
-        #         # # Sommet testé
-        #         # plt.scatter(v[0], v[1], color='green', s=100, zorder=5, label='Vertex to test')
-        #         #
-        #         # plt.legend()
-        #         # plt.gca().set_aspect('equal')
-        #         # plt.show()
-        #         return False
-        # return True
-
-    # def is_star_vertex2(self, n1:Node, n2:Node, v):
-    #     #plot_mesh(self.mesh)
-    #
-    #     adj_nodes = []
-    #     nodes_coord = []
-    #     d = n1.get_dart()
-    #     d2 = d.get_beta(2)
-    #     n = d2.get_node()
-    #     while n != n2:
-    #         adj_nodes.append(n)
-    #         nodes_coord.append([n.x(), n.y()])
-    #         d = d2.get_beta(1)
-    #         d2 = d.get_beta(2)
-    #         n = d2.get_node()
-    #     d = d.get_beta(1)
-    #     d2 = d.get_beta(2)
-    #     n = d2.get_node()
-    #     while n != n1:
-    #         if n not in adj_nodes:
-    #             adj_nodes.append(n)
-    #             nodes_coord.append([n.x(), n.y()])
-    #         d = d2.get_beta(1)
-    #         d2 = d.get_beta(2)
-    #         n = d2.get_node()
-    #     d = d.get_beta(1)
-    #     d2 = d.get_beta(2)
-    #     n = d2.get_node()
-    #     while n != n2:
-    #         if n not in adj_nodes:
-    #             adj_nodes.append(n)
-    #             nodes_coord.append([n.x(), n.y()])
-    #         d = d2.get_beta(1)
-    #         d2 = d.get_beta(2)
-    #         n = d2.get_node()
-    #
-    #     nodes_coord = np.array(nodes_coord)
-    #
-    #     # Créer le polygone
-    #     poly = Polygon(nodes_coord)
-    #     point_v = Point(v)
-    #
-    #     # Vérifier si polygone est convexe
-    #     if poly.is_valid and poly.is_simple and poly.convex_hull.equals(poly):
-    #         return True
-    #
-    #     # Si concave : vérifier visibilité
-    #     for p in poly.exterior.coords[:-1]:
-    #         seg = LineString([v, p])
-    #         if not poly.contains(seg):
-    #             # plt.figure(figsize=(6, 6))
-    #             # # Polygone
-    #             # x, y = poly.exterior.xy
-    #             # plt.fill(x, y, alpha=0.3, edgecolor='red', facecolor='lightcoral',
-    #             #          label='Polygon formed par by neighbours vertices')
-    #             #
-    #             # # Voisins
-    #             # plt.scatter(nodes_coord[:, 0], nodes_coord[:, 1], color='blue', zorder=5, label='Neighbours')
-    #             #
-    #             # # Sommet testé
-    #             # plt.scatter(v[0], v[1], color='green', s=100, zorder=5, label='Vertex to test')
-    #             #
-    #             # plt.legend()
-    #             # plt.gca().set_aspect('equal')
-    #             # plt.show()
-    #             return False
-    #     return True
-
-    # def find_star_vertex2(self, n1:Node, n2:Node) -> (float, float):
-    #     adj_nodes = []
-    #     nodes_coord = []
-    #     for d_info in self.mesh.active_darts():
-    #         if d_info[3] == n1.id or d_info[3] == n2.id:
-    #             d2 = Dart(self.mesh, d_info[2])
-    #             if d2 is not None:
-    #                 n = d2.get_node()
-    #                 adj_nodes.append(n)
-    #                 nodes_coord.append([n.x(), n.y()])
-    #             else:
-    #                 raise ValueError("Collapse action may not be done near boundary")
-    #     nodes_coord = np.array(nodes_coord)
-    #
-    #     # Ordonner les voisins autour de v
-    #     vectors = nodes_coord - v
-    #     angles = np.arctan2(vectors[:, 1], vectors[:, 0])
-    #     order = np.argsort(angles)
-    #     neighbors_ordered = nodes_coord[order]
-    #
-    #     hull = ConvexHull(nodes_coord)
-    #     delaunay = Delaunay(nodes_coord)
-    #     plt.plot(nodes_coord[:, 0], nodes_coord[:, 1], 'o')
-    #
-    #     for simplex in hull.simplices:
-    #         plt.plot(nodes_coord[simplex, 0], nodes_coord[simplex, 1], 'k-')
-    #     plt.plot(nodes_coord[hull.vertices, 0], nodes_coord[hull.vertices, 1], 'r--', lw=2)
-    #     plt.plot(nodes_coord[hull.vertices[0], 0], nodes_coord[hull.vertices[0], 1], 'ro')
-    #     plt.show()
-    #
-    #     _ = scipy.spatial.delaunay_plot_2d(delaunay)
-    #     plt.show()
-    #
-    #     mid = np.array([(n1.x() + n2.x()) / 2, (n1.y() + n2.y()) / 2])
-    #     is_star_vertex = delaunay.find_simplex(mid) >=0
-    #
-    #     # Calcul des angles des voisins autour de v
-    #     vectors = nodes_coord - mid
-    #     angles = np.arctan2(vectors[:, 1], vectors[:, 0])
-    #     order = np.argsort(angles)
-    #     neighbors_ordered = nodes_coord[order]
-    #
-    #     # Construire le polygone
-    #     poly = Polygon(neighbors_ordered)
-    #
-    #     # Vérifier si v est à l'intérieur ou sur la frontière
-    #     point_v = Point(mid)
-    #     is_star = poly.contains(point_v) or poly.touches(point_v)
-    #
-    #     plt.figure(figsize=(6, 6))
-    #     # Polygone
-    #     x, y = poly.exterior.xy
-    #     plt.fill(x, y, alpha=0.3, edgecolor='red', facecolor='lightcoral', label='Polygone formé par les voisins')
-    #
-    #     # Voisins
-    #     plt.scatter(nodes_coord[:, 0], nodes_coord[:, 1], color='blue', zorder=5, label='Voisins')
-    #
-    #     # Sommet testé
-    #     plt.scatter(mid[0], mid[1], color='green', s=100, zorder=5, label='Sommet testé')
-    #
-    #     plt.legend()
-    #     plt.gca().set_aspect('equal')
-    #     plt.title(f"Le sommet est-il étoilé ? {is_star}")
-    #     plt.show()
-    #
-    #     if is_star:
-    #         return mid
-    #     elif poly.contains(Point(n1.x(), n1.y())) or poly.touches(Point(n1.x(), n1.y())):
-    #         return n1.x(), n1.y()
-    #     elif poly.contains(Point(n2.x(), n2.y())) or poly.touches(Point(n2.x(), n2.y())):
-    #         return n2.x(), n2.y()
-    #     else:
-    #         plot_mesh(self.mesh)
-    #         raise ValueError("No star vertex was found")
-
-
     def get_adjacent_faces(self, n: Node, d_from: Dart, d_to: Dart) -> list:
         adj_faces = []
         d2 = d_from
@@ -1003,3 +720,286 @@ class TriMeshOldAnalysis(TriMeshAnalysis):
             if self.isValidAction(d_id, 4)[0]: # if on action is valid, it means it's valid topologically and geometrically, so no need to verify the two
                 return False
         return True
+
+
+    # def is_star_vertex(self, n1:Node, new_coordinates, plot=False):
+    #     #plot_mesh(self.mesh)
+    #
+    #     # Retrieve all neighboring vertices in order
+    #     d = n1.get_dart()
+    #     d2 = d.get_beta(2)
+    #     n_start = d2.get_node() #First neighbour to retrieve
+    #
+    #     adj_nodes = [n_start]
+    #     nodes_coord = [[n_start.x(), n_start.y()]]
+    #
+    #     d = d2.get_beta(1)
+    #     d2 = d.get_beta(2)
+    #     n = d2.get_node()
+    #
+    #     # As long as we haven't returned to the first neighbor, we keep searching.
+    #     # This works because the collapse action is restricted to inner darts that are not connected to a boundary node.
+    #     # Therefore, we are guaranteed to find the first vertex by following the beta1 and beta2 relations.
+    #
+    #     while n != n_start:
+    #         adj_nodes.append(n)
+    #         nodes_coord.append([n.x(), n.y()])
+    #         d = d2.get_beta(1)
+    #         d2 = d.get_beta(2)
+    #         n = d2.get_node()
+    #
+    #     nodes_coord = np.array(nodes_coord)
+    #
+    #     # Create a Polygon with shapely package
+    #     poly = Polygon(nodes_coord)
+    #     # Create the point for wich we want to check star property
+    #     point_v = Point(new_coordinates)
+    #
+    #     if plot :
+    #         plt.figure(figsize=(6, 6))
+    #         # Polygone
+    #         x, y = poly.exterior.xy
+    #         plt.fill(x, y, alpha=0.3, edgecolor='red', facecolor='lightcoral',
+    #                  label='Polygon formed par by neighbours vertices')
+    #
+    #         # Voisins
+    #         plt.scatter(nodes_coord[:, 0], nodes_coord[:, 1], color='blue', zorder=5, label='Neighbours')
+    #
+    #         # Sommet testé
+    #         plt.scatter(new_coordinates[0], new_coordinates[1], color='green', s=100, zorder=5, label='Vertex to test')
+    #
+    #         plt.legend()
+    #         plt.gca().set_aspect('equal')
+    #         plt.show()
+    #
+    #     # If polygon is convexe
+    #     if poly.is_valid and poly.is_simple and poly.convex_hull.equals(poly):
+    #         return True
+    #     p_before = None
+    #     # Si concave : vérifier visibilité
+    #     for p in poly.exterior.coords[:-1]:
+    #         full_seg = LineString([new_coordinates, p])
+    #         new_seg_end = full_seg.interpolate(full_seg.length - 1e-5)
+    #         seg = LineString([new_coordinates, new_seg_end])
+    #         if not poly.contains_properly(seg):
+    #             return False
+    #         elif seg.crosses(poly.boundary):
+    #             return False
+    #         elif seg.touches(poly.boundary):
+    #             return False
+    #         elif p_before is not None: # test coolinearity of two vectors
+    #             v1 = new_coordinates[0]-p[0], new_coordinates[1]-p[1]
+    #             v2 = new_coordinates[0]-p_before[0], new_coordinates[1]-p_before[1]
+    #
+    #             det = v1[0] * v2[1] - v1[1] * v2[0]
+    #             if -1e-5 < det < 1e-5:
+    #                 return False
+    #         p_before = p
+    #     return Truedef is_star_vertex2(self, n1:Node, n2:Node, v):
+        #plot_mesh(self.mesh)
+        #
+        # adj_nodes = []
+        # nodes_coord = []
+        # d = n1.get_dart()
+        # d2 = d.get_beta(2)
+        # n = d2.get_node()
+        # while n != n2:
+        #     adj_nodes.append(n)
+        #     nodes_coord.append([n.x(), n.y()])
+        #     d = d2.get_beta(1)
+        #     d2 = d.get_beta(2)
+        #     n = d2.get_node()
+        # d = d.get_beta(1)
+        # d2 = d.get_beta(2)
+        # n = d2.get_node()
+        # while n != n1:
+        #     if n not in adj_nodes:
+        #         adj_nodes.append(n)
+        #         nodes_coord.append([n.x(), n.y()])
+        #     d = d2.get_beta(1)
+        #     d2 = d.get_beta(2)
+        #     n = d2.get_node()
+        # d = d.get_beta(1)
+        # d2 = d.get_beta(2)
+        # n = d2.get_node()
+        # while n != n2:
+        #     if n not in adj_nodes:
+        #         adj_nodes.append(n)
+        #         nodes_coord.append([n.x(), n.y()])
+        #     d = d2.get_beta(1)
+        #     d2 = d.get_beta(2)
+        #     n = d2.get_node()
+        #
+        # nodes_coord = np.array(nodes_coord)
+        #
+        # # Créer le polygone
+        # poly = Polygon(nodes_coord)
+        # point_v = Point(v)
+        #
+        # # Vérifier si polygone est convexe
+        # if poly.is_valid and poly.is_simple and poly.convex_hull.equals(poly):
+        #     return True
+        #
+        # # Si concave : vérifier visibilité
+        # for p in poly.exterior.coords[:-1]:
+        #     seg = LineString([v, p])
+        #     if not poly.contains(seg):
+        #         # plt.figure(figsize=(6, 6))
+        #         # # Polygone
+        #         # x, y = poly.exterior.xy
+        #         # plt.fill(x, y, alpha=0.3, edgecolor='red', facecolor='lightcoral',
+        #         #          label='Polygon formed par by neighbours vertices')
+        #         #
+        #         # # Voisins
+        #         # plt.scatter(nodes_coord[:, 0], nodes_coord[:, 1], color='blue', zorder=5, label='Neighbours')
+        #         #
+        #         # # Sommet testé
+        #         # plt.scatter(v[0], v[1], color='green', s=100, zorder=5, label='Vertex to test')
+        #         #
+        #         # plt.legend()
+        #         # plt.gca().set_aspect('equal')
+        #         # plt.show()
+        #         return False
+        # return True
+
+    # def is_star_vertex2(self, n1:Node, n2:Node, v):
+    #     #plot_mesh(self.mesh)
+    #
+    #     adj_nodes = []
+    #     nodes_coord = []
+    #     d = n1.get_dart()
+    #     d2 = d.get_beta(2)
+    #     n = d2.get_node()
+    #     while n != n2:
+    #         adj_nodes.append(n)
+    #         nodes_coord.append([n.x(), n.y()])
+    #         d = d2.get_beta(1)
+    #         d2 = d.get_beta(2)
+    #         n = d2.get_node()
+    #     d = d.get_beta(1)
+    #     d2 = d.get_beta(2)
+    #     n = d2.get_node()
+    #     while n != n1:
+    #         if n not in adj_nodes:
+    #             adj_nodes.append(n)
+    #             nodes_coord.append([n.x(), n.y()])
+    #         d = d2.get_beta(1)
+    #         d2 = d.get_beta(2)
+    #         n = d2.get_node()
+    #     d = d.get_beta(1)
+    #     d2 = d.get_beta(2)
+    #     n = d2.get_node()
+    #     while n != n2:
+    #         if n not in adj_nodes:
+    #             adj_nodes.append(n)
+    #             nodes_coord.append([n.x(), n.y()])
+    #         d = d2.get_beta(1)
+    #         d2 = d.get_beta(2)
+    #         n = d2.get_node()
+    #
+    #     nodes_coord = np.array(nodes_coord)
+    #
+    #     # Créer le polygone
+    #     poly = Polygon(nodes_coord)
+    #     point_v = Point(v)
+    #
+    #     # Vérifier si polygone est convexe
+    #     if poly.is_valid and poly.is_simple and poly.convex_hull.equals(poly):
+    #         return True
+    #
+    #     # Si concave : vérifier visibilité
+    #     for p in poly.exterior.coords[:-1]:
+    #         seg = LineString([v, p])
+    #         if not poly.contains(seg):
+    #             # plt.figure(figsize=(6, 6))
+    #             # # Polygone
+    #             # x, y = poly.exterior.xy
+    #             # plt.fill(x, y, alpha=0.3, edgecolor='red', facecolor='lightcoral',
+    #             #          label='Polygon formed par by neighbours vertices')
+    #             #
+    #             # # Voisins
+    #             # plt.scatter(nodes_coord[:, 0], nodes_coord[:, 1], color='blue', zorder=5, label='Neighbours')
+    #             #
+    #             # # Sommet testé
+    #             # plt.scatter(v[0], v[1], color='green', s=100, zorder=5, label='Vertex to test')
+    #             #
+    #             # plt.legend()
+    #             # plt.gca().set_aspect('equal')
+    #             # plt.show()
+    #             return False
+    #     return True
+
+    # def find_star_vertex2(self, n1:Node, n2:Node) -> (float, float):
+    #     adj_nodes = []
+    #     nodes_coord = []
+    #     for d_info in self.mesh.active_darts():
+    #         if d_info[3] == n1.id or d_info[3] == n2.id:
+    #             d2 = Dart(self.mesh, d_info[2])
+    #             if d2 is not None:
+    #                 n = d2.get_node()
+    #                 adj_nodes.append(n)
+    #                 nodes_coord.append([n.x(), n.y()])
+    #             else:
+    #                 raise ValueError("Collapse action may not be done near boundary")
+    #     nodes_coord = np.array(nodes_coord)
+    #
+    #     # Ordonner les voisins autour de v
+    #     vectors = nodes_coord - v
+    #     angles = np.arctan2(vectors[:, 1], vectors[:, 0])
+    #     order = np.argsort(angles)
+    #     neighbors_ordered = nodes_coord[order]
+    #
+    #     hull = ConvexHull(nodes_coord)
+    #     delaunay = Delaunay(nodes_coord)
+    #     plt.plot(nodes_coord[:, 0], nodes_coord[:, 1], 'o')
+    #
+    #     for simplex in hull.simplices:
+    #         plt.plot(nodes_coord[simplex, 0], nodes_coord[simplex, 1], 'k-')
+    #     plt.plot(nodes_coord[hull.vertices, 0], nodes_coord[hull.vertices, 1], 'r--', lw=2)
+    #     plt.plot(nodes_coord[hull.vertices[0], 0], nodes_coord[hull.vertices[0], 1], 'ro')
+    #     plt.show()
+    #
+    #     _ = scipy.spatial.delaunay_plot_2d(delaunay)
+    #     plt.show()
+    #
+    #     mid = np.array([(n1.x() + n2.x()) / 2, (n1.y() + n2.y()) / 2])
+    #     is_star_vertex = delaunay.find_simplex(mid) >=0
+    #
+    #     # Calcul des angles des voisins autour de v
+    #     vectors = nodes_coord - mid
+    #     angles = np.arctan2(vectors[:, 1], vectors[:, 0])
+    #     order = np.argsort(angles)
+    #     neighbors_ordered = nodes_coord[order]
+    #
+    #     # Construire le polygone
+    #     poly = Polygon(neighbors_ordered)
+    #
+    #     # Vérifier si v est à l'intérieur ou sur la frontière
+    #     point_v = Point(mid)
+    #     is_star = poly.contains(point_v) or poly.touches(point_v)
+    #
+    #     plt.figure(figsize=(6, 6))
+    #     # Polygone
+    #     x, y = poly.exterior.xy
+    #     plt.fill(x, y, alpha=0.3, edgecolor='red', facecolor='lightcoral', label='Polygone formé par les voisins')
+    #
+    #     # Voisins
+    #     plt.scatter(nodes_coord[:, 0], nodes_coord[:, 1], color='blue', zorder=5, label='Voisins')
+    #
+    #     # Sommet testé
+    #     plt.scatter(mid[0], mid[1], color='green', s=100, zorder=5, label='Sommet testé')
+    #
+    #     plt.legend()
+    #     plt.gca().set_aspect('equal')
+    #     plt.title(f"Le sommet est-il étoilé ? {is_star}")
+    #     plt.show()
+    #
+    #     if is_star:
+    #         return mid
+    #     elif poly.contains(Point(n1.x(), n1.y())) or poly.touches(Point(n1.x(), n1.y())):
+    #         return n1.x(), n1.y()
+    #     elif poly.contains(Point(n2.x(), n2.y())) or poly.touches(Point(n2.x(), n2.y())):
+    #         return n2.x(), n2.y()
+    #     else:
+    #         plot_mesh(self.mesh)
+    #         raise ValueError("No star vertex was found")
