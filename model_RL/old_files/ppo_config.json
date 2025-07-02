@@ -5,7 +5,7 @@
     "batch_size": 64,
     "learning_rate": 0.0001,
     "gamma": 0.9,
-    "verbose": 1,
-    "tensorboard_log": "training/results/quad/",
-    "total_timesteps": 80000
+    "verbose": 2,
+    "tensorboard_log": "training/results/tri/",
+    "total_timesteps": 20000
 }

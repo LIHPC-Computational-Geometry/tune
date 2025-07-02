@@ -13,13 +13,14 @@ Mesh class.
 class Mesh:
     def __init__(self, nodes=[], faces=[]):
         """
-        Vertices are stored in a numpy array containing coordinates (x,y, dart id)
+        Vertices are stored in a numpy array containing coordinates (x,y, dart id, ideal adjacency, vertex score)
         Faces are stored in a numpy array of simple (dart ids)
-        Darts are stored in a numpy array, where each dart is a 5-tuple (dart id, beta_1, beta_2, vertex_id, face_id)
+        Darts are stored in a numpy array, where each dart is a 5-tuple (dart id, beta_1, beta_2, vertex_id, face_id, geo_quality)
+        Ideal adjacency, vertex scores and geometric quality are not defined here. You must use Mesh analysis class to define them
         """
-        self.nodes = numpy.empty((0, 3))
+        self.nodes = numpy.empty((0, 5), dtype=float)
         self.faces = numpy.empty(0, dtype=int)
-        self.dart_info = numpy.empty((0, 5), dtype=int)
+        self.dart_info = numpy.empty((0, 6), dtype=int)
         self.first_free_dart = 0
         self.first_free_node = 0
         self.first_free_face = 0
@@ -61,19 +62,20 @@ class Mesh:
     def add_node(self, x: float, y: float) -> Node:
         """
         Add a vertex in the mesh, this node is not connected to a dart here
+        The ideal adjacency and vertex score are not defined here
         :param x: X coordinate
         :param y: Y coordinate
         :return: the created node
         """
         if len(self.nodes) <= self.first_free_node:
-            self.nodes = numpy.append(self.nodes, [[x, y, -1]], axis=0)
+            self.nodes = numpy.append(self.nodes, [[x, y, -1, -1, -99]], axis=0)
             self.first_free_node += 1
             return Node(self, len(self.nodes) - 1)
         elif self.first_free_node >= 0:
             n_id = int(self.first_free_node)
             if isinstance(n_id, int):
                 self.first_free_node = abs(self.nodes[n_id, 2] + 1)
-                self.nodes[n_id] = [x, y, -1]
+                self.nodes[n_id] = [x, y, -1, -1, -99]
             else:
                 print(n_id)
                 print(type(n_id))
@@ -272,17 +274,18 @@ class Mesh:
             df_current = df_current.get_beta(1)
             end = (df_current.id == f.get_dart().id)
 
-    def add_dart(self, a1: int = -1, a2: int = -1, v: int = -1, f: int = -1) -> Dart:
+    def add_dart(self, a1: int = -1, a2: int = -1, v: int = -1, f: int = -1, q: int = -99) -> Dart:
         """
         This function add a dart in the mesh. It must not be used directly
         :param a1: dart index to connect by alpha1
         :param a2: dart index to connect by alpha2
         :param v:  vertex index this dart point to
         :param f: face to connect
+        :param q: geometric quality around the dart
         :return: the created dart
         """
         if len(self.dart_info) <= self.first_free_dart:
-            self.dart_info = numpy.append(self.dart_info, [[len(self.dart_info), a1, a2, v, f]], axis=0)
+            self.dart_info = numpy.append(self.dart_info, [[len(self.dart_info), a1, a2, v, f, q]], axis=0)
             self.first_free_dart += 1
             return Dart(self, len(self.dart_info) - 1)
         elif len(self.dart_info) > self.first_free_dart:
@@ -308,7 +311,16 @@ class Mesh:
         """
         self.dart_info[d.id][0] = -self.first_free_dart - 1
         self.first_free_dart = d.id
+        d.active = False
 
+    def is_dart_active(self, d: Dart) -> bool:
+        """Check if the dart has been deleted"""
+        if d is None:
+            return False
+        elif self.dart_info[d.id,0] < 0:
+            return False
+        elif self.dart_info[d.id,0] >=0 :
+            return True
 
     def set_beta2(self, dart: Dart) -> None:
         """
@@ -404,6 +416,8 @@ class Mesh:
                 dp = None
 
         return parallel_darts
+
+
 
 def inverseQuad(A: Node, B: Node, C: Node, D: Node):
     u1 = numpy.array([B.x() - A.x(), B.y() - A.y()]) # vect(AB)

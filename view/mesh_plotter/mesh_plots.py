@@ -11,7 +11,8 @@ def plot_mesh(mesh: Mesh) -> None:
     Plot a mesh using matplotlib
     :param mesh: a Mesh
     """
-    _, _ = plt.subplots()
+    fig, ax = plt.subplots(figsize=(15, 15))
+
     subplot_mesh(mesh)
     plt.show(block=True)
 
@@ -43,8 +44,37 @@ def subplot_mesh(mesh: Mesh) -> None:
             n1 = d1.get_node()
             n2 = d2.get_node()
             n3 = d3.get_node()
+
+            # Nodes coordinates
+            p1 = np.array([n1.x(), n1.y()])
+            p2 = np.array([n2.x(), n2.y()])
+            p3 = np.array([n3.x(), n3.y()])
+
             polygon = np.array([(n1.x(), n1.y()), (n2.x(), n2.y()), (n3.x(), n3.y()), (n1.x(), n1.y())])
             plt.plot(polygon[:, 0], polygon[:, 1], 'k-')
+
+            # Plot darts ID
+            mid1 = (p1 + p2) / 2
+            mid2 = (p2 + p3) / 2
+            mid3 = (p3 + p1) / 2
+
+            centroid = (p1 + p2 + p3) / 3
+
+            pos1 = mid1 +0.2* (centroid - mid1)
+            pos2 = mid2 +0.2* (centroid - mid2)
+            pos3 = mid3 +0.2* (centroid - mid3)
+
+            plt.text(*pos1, f"{d1.id}", color='blue', fontsize=10, ha='center', va='center')
+            plt.text(*pos2, f"{d2.id}", color='blue', fontsize=10, ha='center', va='center')
+            plt.text(*pos3, f"{d3.id}", color='blue', fontsize=10, ha='center', va='center')
+
+        # Plot nodes ID
+        n_id =0
+        for n_info in mesh.nodes:
+            if n_info[2] >=0:
+                plt.text(n_info[0] + 0.03, n_info[1] - 0.02, f"{n_id}", fontsize=12, color='red', ha='right', va='top')
+            n_id+=1
+
     elif quad:
         for dart_id in faces:
             d1 = Dart(mesh, dart_id)

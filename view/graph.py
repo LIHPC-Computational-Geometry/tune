@@ -1,6 +1,7 @@
 import pygame
 import sys
 from pygame import math
+import warnings
 
 edge_color_normal = pygame.Color(30, 30, 30)  # Dark Grey
 vertex_color_normal = pygame.Color(255, 0, 0)  # Red
@@ -123,11 +124,14 @@ class Graph:
         return len(self.vertices) - 1
 
     def create_edge(self, i1: int, i2: int) -> int:
+        n1, n2 = None, None
         for v in self.vertices:
             if v.idx == i1:
                 n1 = v
             elif v.idx == i2:
                 n2 = v
+        if n1 is None or n2 is None:
+            warnings.warn("try to create an edge between nodes not found")
         self.add_edge(Edge(n1, n2))
         return len(self.edges) - 1
 

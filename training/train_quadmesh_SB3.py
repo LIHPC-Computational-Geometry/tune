@@ -8,8 +8,8 @@ import time
 import wandb
 
 import matplotlib.pyplot as plt
-import numpy as np
 import gymnasium as gym
+import numpy as np
 
 
 from stable_baselines3 import PPO
@@ -231,7 +231,7 @@ class TensorboardCallback(BaseCallback):
 if __name__ == '__main__':
 
     # PARAMETERS CONFIGURATION
-    with open("training/config_PPO_SB3.yaml", "r") as f:
+    with open("training/config/quadmesh_config_PPO_SB3.yaml", "r") as f:
         config = yaml.safe_load(f)
 
     experiment_name = config["experiment_name"]

@@ -1,30 +1,23 @@
 from __future__ import annotations
 
-import wandb
-import time
-import yaml
-import os
 import random
 import torch
+import yaml
+import os
+import time
+import wandb
 
-import numpy as np
-import gymnasium as gym
 import matplotlib.pyplot as plt
+import gymnasium as gym
+import numpy as np
 
 from torch.utils.tensorboard import SummaryWriter
 
 #Internal import
 from environment.gymnasium_envs import quadmesh_env
-
-from mesh_model.random_quadmesh import random_mesh
 from mesh_model.reader import read_gmsh
 
 from model_RL.PPO_model_pers import PPO
-from model_RL.evaluate_model import testPolicy
-
-from view.mesh_plotter.create_plots import plot_training_results, plot_test_results
-from view.mesh_plotter.mesh_plots import plot_dataset
-
 
 
 def log_init(log_writer, config):
@@ -61,8 +54,10 @@ def log_end(log_writer, config, obs_registry):
 if __name__ == '__main__':
 
     # PARAMETERS CONFIGURATION
-    with open("training/config_PPO_perso.yaml", "r") as f:
+    with open("training/config/quadmesh_config_PPO_perso.yaml", "r") as f:
         config = yaml.safe_load(f)
+
+    experiment_name = config["experiment_name"]
 
     # Create log dir
     log_dir = config["paths"]["log_dir"]
@@ -100,6 +95,8 @@ if __name__ == '__main__':
     model = PPO(
         env=env,
         obs_size= config["env"]["obs_size"],
+        n_actions=config["ppo"]["n_actions"],
+        n_darts_observed=config["env"]["n_darts_selected"],
         max_steps=config["env"]["max_episode_steps"],
         lr=config["ppo"]["learning_rate"],
         gamma=config["ppo"]["gamma"],

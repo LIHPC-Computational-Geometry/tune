@@ -1,11 +1,11 @@
-from numpy import ndarray
-
-from environment.trimesh_env import TriMesh
-from mesh_model.mesh_analysis.global_mesh_analysis import global_score
-from mesh_model.mesh_struct.mesh import Mesh
 import numpy as np
 import copy
+
 from tqdm import tqdm
+
+from environment.old_files.trimesh_env import TriMesh
+from mesh_model.mesh_analysis.trimesh_analysis import TriMeshOldAnalysis
+from mesh_model.mesh_struct.mesh import Mesh
 
 
 def testPolicy(
@@ -13,7 +13,7 @@ def testPolicy(
         n_eval_episodes: int,
         dataset: list[Mesh],
         max_steps: int
-) -> tuple[ndarray, ndarray, ndarray, list[Mesh]]:
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, list[Mesh]]:
     """
     Tests policy on each mesh of a dataset with n_eval_episodes.
     :param policy: the policy to test
@@ -60,7 +60,9 @@ def isBetterPolicy(actual_best_policy, policy_to_test):
 
 
 def isBetterMesh(best_mesh, actual_mesh):
-    if best_mesh is None or global_score(best_mesh)[1] > global_score(actual_mesh)[1]:
+    ma1 = TriMeshOldAnalysis(best_mesh)
+    ma2 = TriMeshOldAnalysis(actual_mesh)
+    if best_mesh is None or ma1.global_score()[1] > ma2.global_score()[1]:
         return True
     else:
         return False

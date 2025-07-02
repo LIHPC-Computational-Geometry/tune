@@ -1,5 +1,5 @@
 from mesh_model.mesh_struct.mesh import Mesh
-from mesh_model.mesh_analysis.global_mesh_analysis import global_score
+from mesh_model.mesh_analysis.global_mesh_analysis import GlobalMeshAnalysis
 
 
 class MeshDisplay:
@@ -35,5 +35,6 @@ class MeshDisplay:
         Calculates the irregularities of each node and the real and ideal score of the mesh
         :return: a list of three elements (nodes_score, mesh_score, ideal_mesh_score)
         """
-        nodes_score, mesh_score, ideal_mesh_score, adjacency = global_score(self.mesh)
+        ma = GlobalMeshAnalysis(self.mesh)
+        nodes_score, mesh_score, ideal_mesh_score, adjacency = ma.global_score()
         return [nodes_score, mesh_score, ideal_mesh_score]

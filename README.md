@@ -34,25 +34,27 @@ For training on triangular meshes, you can use an agent with all three actions: 
 ##### 1. Using `tune/model_RL/PPO_model`
 
 - Configure the model and environment parameters in:  
-  `tune/training/train.py`
+  `tune/training/config/trimesh_config_PPO_perso.yaml`
 
 - Then run the following command from the `tune/` directory:
   ```bash
-  python main.py
+  python -m training.train_trimesh.py
   ```
-
-
+  
 ##### 2. Using PPO from Stable Baselines 3 (SB3)
 
 - Configure the model and environment parameters in:  
-    - `tune/environment/environment_config.json`
-    - `tune/model_RL/parameters/PPO_config.json`
+  `tune/training/config/trimesh_config_PPO_SB3.yaml`
 
-- Then run the training script in pycharm `tune/training/train_trimesh_SB3.py`
+- Then run the following command from the `tune/` directory:
+  ```bash
+  python -m training.train_trimesh_SB3.py
+  ```
 
 ###### Flip-Only Training (SB3 PPO)
 
 To train an agent using only the flip action with SB3 PPO, run the training script in pycharm `tune/training/train_trimesh_flip_SB3.py`
+> ❗ This environment may be deprecated.
 
 ---
 
@@ -65,21 +67,26 @@ For training on quadrangular meshes, you can use an agent with all four actions:
 
 #### 🚀 Starting Training
 
-##### 1. Configure the model and environment parameters in :
-  - `tune/environment/environment_config.json`
-  - `tune/model_RL/parameters/PPO_config.json`
-  
-##### 2. Using `tune/model_RL/PPO_model_pers`
-Run the following command from the `tune/` directory:
-  ```bash
-  python -m training.train_quadmesh
-  ```
+##### 1. Using `tune/model_RL/PPO_model`
 
-##### 3. Using PPO from Stable Baselines 3 (SB3)
-Run the following command from the `tune/` directory:
+- Configure the model and environment parameters in:  
+  `tune/training/config/quadmesh_config_PPO_perso.yaml`
+
+- Then run the following command from the `tune/` directory:
   ```bash
-  python -m training.train_quadmesh_SB3
+  python -m training.train_quadmesh.py
   ```
+  
+##### 2. Using PPO from Stable Baselines 3 (SB3)
+
+- Configure the model and environment parameters in:  
+  `tune/training/config/quadmesh_config_PPO_SB3.yaml`
+
+- Then run the following command from the `tune/` directory:
+  ```bash
+  python -m training.train_quadmesh_SB3.py
+  ```
+  
 #### 🧪 Testing a Saved SB3 Policy
 
 After training, the model is saved as a `.zip` file in the `tune/training/policy_saved/` directory. To evaluate the policy, follow these steps in `tune/training/exploit_SB3_policy.py` :
