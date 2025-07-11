@@ -16,6 +16,7 @@ from stable_baselines3.common.env_checker import check_env
 #Internal import
 from environment.gymnasium_envs import trimesh_full_env
 from model_RL.PPO_model_pers import PPO
+from mesh_model.reader import read_gmsh, read_dataset
 
 
 def log_init(log_writer, config):
@@ -30,6 +31,22 @@ if __name__ == '__main__':
         config = yaml.safe_load(f)
 
     experiment_name = config["experiment_name"]
+
+    #TRAINING MESHES
+    training_dataset = read_dataset(config["dataset"]["training_dataset_dir"])
+    training_single_mesh = read_gmsh(config["dataset"]["training_mesh_file_path"])
+    mesh_size = config["env"]["mesh_size"]
+
+    if training_dataset is not None:
+        learning_meshes = training_dataset
+    elif mesh_size > 1:
+        learning_meshes = None
+    elif training_single_mesh is not None:
+        learning_meshes = training_single_mesh
+    else:
+        raise ValueError("Training mesh not found")
+
+
 
     # Create log dir
     log_dir = config["paths"]["log_dir"]
@@ -54,8 +71,7 @@ if __name__ == '__main__':
     # Create the environment
     env = gym.make(
         config["env"]["env_id"],
-        # mesh=read_gmsh(config["dataset"]["evaluation_mesh_file_path"]),
-        mesh_size=config["env"]["mesh_size"],
+        learning_mesh=learning_meshes,
         max_episode_steps=config["env"]["max_episode_steps"],
         n_darts_selected=config["env"]["n_darts_selected"],
         deep=config["env"]["deep"],

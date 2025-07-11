@@ -19,7 +19,7 @@ from stable_baselines3.common.logger import Figure, HParam
 from wandb.integration.sb3 import WandbCallback
 
 from environment.actions.smoothing import smoothing_mean
-from mesh_model.reader import read_gmsh
+from mesh_model.reader import read_gmsh, read_dataset
 from view.mesh_plotter.mesh_plots import dataset_plt, plot_mesh
 from training.exploit_SB3_policy import testPolicy
 
@@ -167,13 +167,13 @@ class TensorboardCallback(BaseCallback):
         """
         Records policy evaluation results : before and after dataset images
         """
-        print("-------- Testing Policy ---------")
-        dataset = [TM.random_mesh(30) for _ in range(4)] # dataset of 9 meshes of size 30
-        before = dataset_plt(dataset) # plot the datasat as image
-        length, wins, rewards, normalized_return, final_meshes = testPolicy(self.model, 5, config, dataset) # test model policy on the dataset
-        after = dataset_plt(final_meshes)
-        self.logger.record("figures/before", Figure(before, close=True), exclude=("stdout", "log"))
-        self.logger.record("figures/after", Figure(after, close=True), exclude=("stdout", "log"))
+        print("-------- Not Testing Policy ---------")
+        # dataset = [TM.random_mesh(30) for _ in range(4)] # dataset of 9 meshes of size 30
+        # before = dataset_plt(dataset) # plot the datasat as image
+        # length, wins, rewards, normalized_return, final_meshes = testPolicy(self.model, 5, config, dataset) # test model policy on the dataset
+        # after = dataset_plt(final_meshes)
+        # self.logger.record("figures/before", Figure(before, close=True), exclude=("stdout", "log"))
+        # self.logger.record("figures/after", Figure(after, close=True), exclude=("stdout", "log"))
         self.logger.dump(step=0)
 
 if __name__ == '__main__':
@@ -182,7 +182,23 @@ if __name__ == '__main__':
     with open("training/config/trimesh_config_PPO_SB3.yaml", "r") as f:
         config = yaml.safe_load(f)
 
+    # TRAINING MESHES
+    training_dataset = read_dataset(config["dataset"]["training_dataset_dir"])
+    training_single_mesh = read_gmsh(config["dataset"]["training_mesh_file_path"])
+    mesh_size = config["env"]["mesh_size"]
+
+    if training_dataset is not None:
+        learning_meshes = training_dataset
+    elif mesh_size > 1:
+        learning_meshes = None
+    elif training_single_mesh is not None:
+        learning_meshes = training_single_mesh
+    else:
+        raise ValueError("Training mesh not found")
+
+
     experiment_name = config["experiment_name"]
+
 
     # SEEDING
     seed = config["seed"]
@@ -191,13 +207,14 @@ if __name__ == '__main__':
     torch.manual_seed(seed)
     torch.backends.cudnn.deterministic = True
 
-    # # WANDB
-    # run = wandb.init(
-    #     project="Trimesh-learning",
-    #     name=experiment_name,
-    #     sync_tensorboard=True,  # auto-upload sb3's tensorboard metrics
-    #     save_code=True,  # optional
-    # )
+    # WANDB
+    run = wandb.init(
+        project="Trimesh-learning",
+        name=experiment_name,
+        sync_tensorboard=True,  # auto-upload sb3's tensorboard metrics
+        save_code=True,  # optional
+    )
+
     # Create tensorboard log dir
     log_dir = config["paths"]["log_dir"]
     os.makedirs(log_dir, exist_ok=True)
@@ -206,8 +223,7 @@ if __name__ == '__main__':
     # Create the environment
     env = gym.make(
         config["env"]["env_id"],
-        #mesh=training_mesh,
-        mesh_size = config["env"]["mesh_size"],
+        learning_mesh=learning_meshes,
         max_episode_steps=config["env"]["max_episode_steps"],
         n_darts_selected=config["env"]["n_darts_selected"],
         deep=config["env"]["deep"],
@@ -245,4 +261,4 @@ if __name__ == '__main__':
     print("-----------Learning ended------------")
     print(f"Temps d'apprentissage : {end_time - start_time:.4} s")
     model.save(config["paths"]["policy_saving_dir"] + config["experiment_name"])
-    # run.finish()
+    run.finish()

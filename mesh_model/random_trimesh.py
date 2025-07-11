@@ -1,4 +1,6 @@
 from __future__ import annotations
+import string
+import os
 import numpy as np
 
 from mesh_model.mesh_analysis.global_mesh_analysis import NodeAnalysis
@@ -6,6 +8,7 @@ from mesh_model.mesh_struct.mesh_elements import Dart, Node
 from mesh_model.mesh_struct.mesh import Mesh
 from mesh_model.mesh_analysis.trimesh_analysis import TriMeshQualityAnalysis
 from environment.actions.triangular_actions import flip_edge_ids, split_edge_ids, collapse_edge_ids
+from mesh_model.writer import write_json
 
 
 def regular_mesh(num_nodes_max: int) -> Mesh:
@@ -99,7 +102,7 @@ def mesh_shuffle(mesh: Mesh, num_nodes) -> Mesh:
     :param num_nodes: number nodes of the mesh
     :return: a mesh with randomly flipped darts.
     """
-    nb_action_max = 3
+    nb_action_max = 10
     nb_action = 0
     active_darts_list = mesh.active_darts()
     m_analysis = TriMeshQualityAnalysis(mesh)
@@ -124,5 +127,24 @@ def mesh_shuffle(mesh: Mesh, num_nodes) -> Mesh:
         active_darts_list = mesh.active_darts()
     return mesh
 
+def random_dataset(nb_nodes: int, mesh_dir: string) -> None:
+    """
+    Save random meshes in destination folder.
+    :param nb_nodes: number of nodes of the initial regular mesh we generate
+    :param nb_rd_actions: number of actions performed on the mesh to deteriorate
+    :param mesh_dir: directory to save meshes in json format
+    """
+    nb_meshes = 100
+    for i in range(nb_meshes):
+        mesh = random_mesh(nb_nodes)
+        if i < 10:
+            filename = "mesh_00"+str(i)+".json"
+        elif i<100:
+            filename = "mesh_0"+str(i)+".json"
+        else:
+            filename = "mesh_"+str(i)+".json"
+        filepath = os.path.join(mesh_dir, filename)
+        write_json(filepath, mesh)
 
-
+if __name__ == '__main__':
+    random_dataset(30,"../training/dataset/test_random_30")

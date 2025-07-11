@@ -55,13 +55,16 @@ def get_template(m_analysis, deep: int, nodes_scores):
             # template niveau 2 deep = 6
             n_id = m_analysis.find_template_opposite_node(d)
             if n_id is not None:
-                template[n_darts - 1, 3] = n_id.get_score()
+                n = Node(m_analysis.mesh, n_id)
+                template[n_darts - 1, 3] = n.get_score()
             n_id = m_analysis.find_template_opposite_node(d1)
             if n_id is not None:
-                template[n_darts - 1, 4] = n_id.get_score()
+                n = Node(m_analysis.mesh, n_id)
+                template[n_darts - 1, 4] = n.get_score()
             n_id = m_analysis.find_template_opposite_node(d11)
             if n_id is not None:
-                template[n_darts - 1, 5] = n_id.get_score()
+                n = Node(m_analysis.mesh, n_id)
+                template[n_darts - 1, 5] = n.get_score()
 
         if deep>6:
             # template niveau 3 - deep = 12
@@ -69,30 +72,36 @@ def get_template(m_analysis, deep: int, nodes_scores):
             #Triangle F2
             n_id = m_analysis.find_template_opposite_node(d21)
             if n_id is not None:
-                template[n_darts - 1, 6] = n_id.get_score()
+                n = Node(m_analysis.mesh, n_id)
+                template[n_darts - 1, 6] = n.get_score()
             n_id = m_analysis.find_template_opposite_node(d211)
             if n_id is not None:
-                template[n_darts - 1, 7] = n_id.get_score()
+                n = Node(m_analysis.mesh, n_id)
+                template[n_darts - 1, 7] = n.get_score()
             # Triangle T3
             d12 = d1.get_beta(2)
             d121 = d12.get_beta(1)
             d1211 = d121.get_beta(1)
             n_id = m_analysis.find_template_opposite_node(d121)
             if n_id is not None:
-                template[n_darts - 1, 8] = n_id.get_score()
+                n = Node(m_analysis.mesh, n_id)
+                template[n_darts - 1, 8] = n.get_score()
             n_id = m_analysis.find_template_opposite_node(d1211)
             if n_id is not None:
-                template[n_darts - 1, 9] = n_id.get_score()
+                n = Node(m_analysis.mesh, n_id)
+                template[n_darts - 1, 9] = n.get_score()
             # Triangle T4
             d112 = d11.get_beta(2)
             d1121 = d112.get_beta(1)
             d11211 = d1121.get_beta(1)
             n_id = m_analysis.find_template_opposite_node(d1121)
             if n_id is not None:
-                template[n_darts - 1, 10] = n_id.get_score()
+                n = Node(m_analysis.mesh, n_id)
+                template[n_darts - 1, 10] = n.get_score()
             n_id = m_analysis.find_template_opposite_node(d11211)
             if n_id is not None:
-                template[n_darts - 1, 11] = n_id.get_score()
+                n = Node(m_analysis.mesh, n_id)
+                template[n_darts - 1, 11] = n.get_score()
 
     template = template[:n_darts, :]
 

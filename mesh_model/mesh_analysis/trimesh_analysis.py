@@ -63,7 +63,13 @@ class TriMeshAnalysis(GlobalMeshAnalysis):
         for d_info in self.mesh.active_darts():
             d_id = d_info[0]
             d = Dart(self.mesh, d_id)
-            d.set_quality(self.get_dart_geometric_quality(d))
+            quality = self.get_dart_geometric_quality(d)
+            if isinstance(quality, int):
+                d.set_quality(quality)
+            else:
+                plot_mesh(self.mesh)
+                quality = self.get_dart_geometric_quality(d)
+                print(quality)
 
     def get_dart_geometric_quality(self, d: Dart, m=None) -> int:
         """
@@ -217,7 +223,150 @@ class TriMeshAnalysis(GlobalMeshAnalysis):
         box_final = affinity.translate(box_rot, origin_pt.x, origin_pt.y)
 
         star_poly = star_poly.intersection(box_final)
-        if star_poly.is_empty:
+        if star_poly.is_empty :
+            plt.figure(figsize=(6, 6))
+            # Polygone
+            x, y = poly.exterior.xy
+            plt.fill(x, y, alpha=0.3, edgecolor='blue',
+                     label='Polygon formed par by neighbours vertices')
+
+            # Voisins
+            plt.scatter(nodes_coord[:, 0], nodes_coord[:, 1], color='blue', zorder=5, label='Neighbours')
+
+            plt.legend()
+            plt.gca().set_aspect('equal')
+            plt.show()
+            return False, 0, 0
+
+        if plot:
+            plt.figure(figsize=(6, 6))
+            # Polygone
+            x, y = poly.exterior.xy
+            plt.fill(x, y, alpha=0.3, edgecolor='blue',
+                     label='Polygon formed par by neighbours vertices')
+
+            # Voisins
+            plt.scatter(nodes_coord[:, 0], nodes_coord[:, 1], color='blue', zorder=5, label='Neighbours')
+
+            # Polygone
+            x_s, y_s = star_poly.exterior.xy
+            plt.fill(x_s, y_s, alpha=0.3, facecolor='lightcoral',
+                     label='Star area')
+
+            plt.legend()
+            plt.gca().set_aspect('equal')
+            plt.show()
+
+        centroid = star_poly.centroid
+        return True, centroid.x ,centroid.y
+
+    def find_star_vertex_debug(self, n:Node, plot=False)-> (bool, float, float):
+        # Retrieve all neighboring vertices in order
+        d = n.get_dart()
+        d2 = d.get_beta(2)
+        n_start = d2.get_node()  # First neighbour to retrieve
+
+        adj_nodes = [n_start]
+        nodes_coord = [[n_start.x(), n_start.y()]]
+
+        d = d2.get_beta(1)
+        d2 = d.get_beta(2)
+        n_neighbour = d2.get_node()
+
+        # As long as we haven't returned to the first neighbor, we keep searching.
+        # This works because the collapse action is restricted to inner darts that are not connected to a boundary node.
+        # Therefore, we are guaranteed to find the first vertex by following the beta1 and beta2 relations.
+
+        while n_neighbour != n_start:
+            adj_nodes.append(n_neighbour)
+            nodes_coord.append([n_neighbour.x(), n_neighbour.y()])
+            d = d2.get_beta(1)
+            d2 = d.get_beta(2)
+            n_neighbour = d2.get_node()
+
+        nodes_coord = np.array(nodes_coord)
+
+        # Create a Polygon with shapely package
+        poly = Polygon(nodes_coord)
+
+        # If polygon is convexe
+        if poly.is_valid and poly.is_simple and poly.convex_hull.equals(poly):
+            centroid = poly.centroid
+            return True, centroid.x, centroid.y
+
+        #Else if polygon is concav, we're looking if there is a "star area"
+        p_before = None
+        p_first = None
+        star_poly = poly
+        for p in poly.exterior.coords[:-1]:
+            if p_before is not None:
+                # one side of the polygon
+                seg = LineString([p, p_before])
+
+                # we create a big quad box
+                box =  Polygon([(-5, 0), (5, 0), (5, 5), (-5, 5)])
+
+                # segment angle
+                dx = seg.coords[1][0] - seg.coords[0][0]
+                dy = seg.coords[1][1] - seg.coords[0][1]
+                angle = math.degrees(math.atan2(dy, dx))
+
+                #moving box
+                box_rot = affinity.rotate(box, angle, origin=(0, 0))
+                origin_pt = Point(seg.coords[0])
+                box_final = affinity.translate(box_rot, origin_pt.x, origin_pt.y)
+
+                if plot:
+                    plt.figure(figsize=(6, 6))
+                    # Polygone
+                    x, y = poly.exterior.xy
+                    plt.fill(x, y, alpha=0.3, edgecolor='blue',
+                             label='Polygon formed par by neighbours vertices')
+
+                    # Voisins
+                    plt.scatter(nodes_coord[:, 0], nodes_coord[:, 1], color='blue', zorder=5, label='Neighbours')
+
+                    # Polygone
+                    x_s, y_s = box_final.exterior.xy
+                    plt.fill(x_s, y_s, alpha=0.3, facecolor='lightcoral',
+                             label='Star area')
+
+                    plt.legend()
+                    plt.gca().set_aspect('equal')
+                    plt.show()
+
+                star_poly = star_poly.intersection(box_final)
+
+                if star_poly.is_empty or not isinstance(star_poly, Polygon):
+                    plt.figure(figsize=(6, 6))
+                    # Polygone
+                    x, y = poly.exterior.xy
+                    plt.fill(x, y, alpha=0.3, edgecolor='blue',
+                             label='Polygon formed par by neighbours vertices')
+
+                    # Voisins
+                    plt.scatter(nodes_coord[:, 0], nodes_coord[:, 1], color='blue', zorder=5, label='Neighbours')
+
+                    plt.legend()
+                    plt.gca().set_aspect('equal')
+                    plt.show()
+                    return False, 0, 0
+            elif p_before is None:
+                p_first = p
+            p_before = p
+
+        #We do the same for the last segment
+        seg = LineString([p_first, p_before])
+        box = Polygon([(-1e5, 0), (1e5, 0), (1e5, 1e5), (-1e5, 1e5)])
+        dx = seg.coords[1][0] - seg.coords[0][0]
+        dy = seg.coords[1][1] - seg.coords[0][1]
+        angle = math.degrees(math.atan2(dy, dx))
+        box_rot = affinity.rotate(box, angle, origin=(0, 0))
+        origin_pt = Point(seg.coords[0])
+        box_final = affinity.translate(box_rot, origin_pt.x, origin_pt.y)
+
+        star_poly = star_poly.intersection(box_final)
+        if star_poly.is_empty :
             plt.figure(figsize=(6, 6))
             # Polygone
             x, y = poly.exterior.xy
@@ -722,80 +871,10 @@ class TriMeshOldAnalysis(TriMeshAnalysis):
         return True
 
 
-    # def is_star_vertex(self, n1:Node, new_coordinates, plot=False):
-    #     #plot_mesh(self.mesh)
+
     #
-    #     # Retrieve all neighboring vertices in order
-    #     d = n1.get_dart()
-    #     d2 = d.get_beta(2)
-    #     n_start = d2.get_node() #First neighbour to retrieve
     #
-    #     adj_nodes = [n_start]
-    #     nodes_coord = [[n_start.x(), n_start.y()]]
-    #
-    #     d = d2.get_beta(1)
-    #     d2 = d.get_beta(2)
-    #     n = d2.get_node()
-    #
-    #     # As long as we haven't returned to the first neighbor, we keep searching.
-    #     # This works because the collapse action is restricted to inner darts that are not connected to a boundary node.
-    #     # Therefore, we are guaranteed to find the first vertex by following the beta1 and beta2 relations.
-    #
-    #     while n != n_start:
-    #         adj_nodes.append(n)
-    #         nodes_coord.append([n.x(), n.y()])
-    #         d = d2.get_beta(1)
-    #         d2 = d.get_beta(2)
-    #         n = d2.get_node()
-    #
-    #     nodes_coord = np.array(nodes_coord)
-    #
-    #     # Create a Polygon with shapely package
-    #     poly = Polygon(nodes_coord)
-    #     # Create the point for wich we want to check star property
-    #     point_v = Point(new_coordinates)
-    #
-    #     if plot :
-    #         plt.figure(figsize=(6, 6))
-    #         # Polygone
-    #         x, y = poly.exterior.xy
-    #         plt.fill(x, y, alpha=0.3, edgecolor='red', facecolor='lightcoral',
-    #                  label='Polygon formed par by neighbours vertices')
-    #
-    #         # Voisins
-    #         plt.scatter(nodes_coord[:, 0], nodes_coord[:, 1], color='blue', zorder=5, label='Neighbours')
-    #
-    #         # Sommet testé
-    #         plt.scatter(new_coordinates[0], new_coordinates[1], color='green', s=100, zorder=5, label='Vertex to test')
-    #
-    #         plt.legend()
-    #         plt.gca().set_aspect('equal')
-    #         plt.show()
-    #
-    #     # If polygon is convexe
-    #     if poly.is_valid and poly.is_simple and poly.convex_hull.equals(poly):
-    #         return True
-    #     p_before = None
-    #     # Si concave : vérifier visibilité
-    #     for p in poly.exterior.coords[:-1]:
-    #         full_seg = LineString([new_coordinates, p])
-    #         new_seg_end = full_seg.interpolate(full_seg.length - 1e-5)
-    #         seg = LineString([new_coordinates, new_seg_end])
-    #         if not poly.contains_properly(seg):
-    #             return False
-    #         elif seg.crosses(poly.boundary):
-    #             return False
-    #         elif seg.touches(poly.boundary):
-    #             return False
-    #         elif p_before is not None: # test coolinearity of two vectors
-    #             v1 = new_coordinates[0]-p[0], new_coordinates[1]-p[1]
-    #             v2 = new_coordinates[0]-p_before[0], new_coordinates[1]-p_before[1]
-    #
-    #             det = v1[0] * v2[1] - v1[1] * v2[0]
-    #             if -1e-5 < det < 1e-5:
-    #                 return False
-    #         p_before = p
-    #     return Truedef is_star_vertex2(self, n1:Node, n2:Node, v):
+    #     def is_star_vertex2(self, n1:Node, n2:Node, v):
         #plot_mesh(self.mesh)
         #
         # adj_nodes = []

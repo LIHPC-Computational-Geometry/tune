@@ -1,7 +1,25 @@
 import string
+import json
+import os
 
 from mesh_model.mesh_struct.mesh import Mesh
 
+def getMeshFiles(d):
+    l = []
+    for sdp, Lsd, Lnf in os.walk(d):
+        for f in Lnf:
+            if (f.endswith(".msh")):
+                l.append(f)
+    l.sort()
+    return l
+
+def getFiles(d):
+    l = []
+    for sdp, Lsd, Lnf in os.walk(d):
+        for f in Lnf:
+            l.append(f)
+    l.sort()
+    return l
 
 def read_medit(filename: string) -> Mesh:
     """
@@ -108,8 +126,26 @@ def read_gmsh(filename: string) -> Mesh:
                     else:
                         print("element_type " + str(elem_type) + " not handled")
                         exit(1)
-
     f.close()
     mesh = Mesh(nodes, faces)
 
     return mesh
+
+def read_json(filename) -> Mesh:
+    with open(filename, 'r') as f:
+        json_mesh = json.load(f)
+    mesh = Mesh(json_mesh['nodes'], json_mesh['faces'])
+    return mesh
+
+def read_dataset(dataset_dir) -> list[Mesh]:
+    mesh_dataset = []
+    for f in getFiles(dataset_dir):
+        if (f.endswith(".msh")):
+            msh_f = dataset_dir + "/" + f
+            cmap = read_gmsh(msh_f)
+            mesh_dataset.append(cmap)
+        elif (f.endswith(".json")):
+            json_f = dataset_dir + "/" + f
+            cmap = read_json(json_f)
+            mesh_dataset.append(cmap)
+    return mesh_dataset

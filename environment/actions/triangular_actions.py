@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import copy
 import numpy as np
+import warnings
+
 from mesh_model.mesh_analysis.global_mesh_analysis import NodeAnalysis
 from mesh_model.mesh_struct.mesh_elements import Node, Dart
 from view.mesh_plotter.mesh_plots import plot_mesh
@@ -253,9 +255,9 @@ def collapse_edge(mesh_analysis, n1: Node, n2: Node) -> True:
         if found:
             n1.set_xy(new_x, new_y)
         else:
-            # plot_mesh(mesh_before)
-            # plot_mesh(mesh_analysis.mesh)
-            mesh_analysis.find_star_vertex(n1, plot=True)
+            plot_mesh(mesh_before)
+            plot_mesh(mesh_analysis.mesh)
+            mesh_analysis.find_star_vertex_debug(n1, plot=True)
             raise ValueError("No star vertex found")
 
         # if mesh_analysis.is_star_vertex(n1, mid):
@@ -297,8 +299,9 @@ def collapse_edge(mesh_analysis, n1: Node, n2: Node) -> True:
 
     after_check = check_mesh(mesh_analysis, mesh_before)
     if not after_check:
-        # mesh_analysis.is_star_vertex(n1, np.array([n1.x(), n1.y()]), True)
+        found, x, y = mesh_analysis.find_star_vertex_debug(n1, True)
         raise ValueError("Some checks are missing")
+        #warnings.warn("Aftercheck problem")
     return True, topo, geo
 
 def check_mesh(mesh_analysis, m=None) -> bool:

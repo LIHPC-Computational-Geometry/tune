@@ -1,4 +1,5 @@
 import copy
+import random
 import pygame
 import imageio
 import sys
@@ -15,6 +16,7 @@ from pygame.locals import *
 
 
 from mesh_model.random_trimesh import random_mesh
+from mesh_model.mesh_struct.mesh import Mesh
 from mesh_model.mesh_struct.mesh_elements import Dart
 from mesh_model.mesh_analysis.trimesh_analysis import TriMeshQualityAnalysis, TriMeshOldAnalysis
 from environment.gymnasium_envs.trimesh_full_env.envs.mesh_conv import get_x
@@ -38,9 +40,8 @@ class TriMeshEnvFull(gym.Env):
 
     def __init__(
             self,
-            mesh=None,
-            mesh_size=9,
-            max_episode_steps=20,
+            learning_mesh=None,
+            max_episode_steps=50,
             n_darts_selected=7,
             deep=6,
             with_quality_obs=False,
@@ -52,15 +53,20 @@ class TriMeshEnvFull(gym.Env):
         assert render_mode is None or render_mode in self.metadata["render_modes"]
         self.render_mode = render_mode
 
-        # If a mesh has been entered, it is used, otherwise a random mesh is generated.
-        if mesh is not None:
-            self.config = {"mesh": mesh}
-            self.mesh = copy.deepcopy(mesh)
+        # If a mesh has been entered, it is used, else if it's a dataset, a random mesh is picked from it, otherwise a random mesh is generated.
+        if isinstance(learning_mesh, Mesh):
+            self.config = {"mesh": learning_mesh, "learning_meshes" : None}
+            self.mesh = copy.deepcopy(learning_mesh)
             self.mesh_size = 0
-        else:
-            self.config = {"mesh": None}
-            self.mesh_size = mesh_size
-            self.mesh = random_mesh(mesh_size)
+        elif isinstance(learning_mesh, int):
+            self.config = {"mesh": None, "learning_meshes" : None}
+            self.mesh_size = learning_mesh
+            self.mesh = random_mesh(self.mesh_size)
+        elif isinstance(learning_mesh, list):
+            self.config = {"mesh": None, "learning_meshes": learning_mesh}
+            self.mesh = copy.deepcopy(random.choice(learning_mesh))
+            self.mesh_size = 0
+
         self.analysis_type = analysis_type
         self.m_analysis = TriMeshQualityAnalysis(self.mesh) if self.analysis_type == "quality" else TriMeshOldAnalysis(self.mesh)
         self._nodes_scores, self._mesh_score, self._ideal_score, self._nodes_adjacency = self.m_analysis.global_score()
@@ -125,6 +131,8 @@ class TriMeshEnvFull(gym.Env):
             self.mesh = options['mesh']
         elif self.config["mesh"] is not None:
             self.mesh = copy.deepcopy(self.config["mesh"])
+        elif self.config["learning_meshes"] is not None:
+            self.mesh = copy.deepcopy(random.choice(self.config["learning_meshes"]))
         else:
             self.mesh = random_mesh(self.mesh_size)
 
@@ -225,7 +233,7 @@ class TriMeshEnvFull(gym.Env):
             self.observation = self._get_obs()
             self.nb_invalid_actions = 0
         elif not valid_topo or not valid_geo:
-            reward = -10
+            reward = -5
             mesh_reward = 0
             terminated = False
             self.nb_invalid_actions += 1
@@ -243,7 +251,7 @@ class TriMeshEnvFull(gym.Env):
         #Saving episode rendering as gif
         if terminated or self.ep_len>= self.max_steps:
             if self.recording and self.frames:
-                base_path = f"training/episode_recording/del/episode_star_{self.episode_count}"
+                base_path = f"results/episode_recording/random9_sb3/episode_med_{self.episode_count}"
                 filename = base_path + ".gif"
                 index = 1
                 while os.path.exists(filename):
