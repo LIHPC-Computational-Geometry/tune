@@ -31,6 +31,7 @@ class TriMeshAnalysis(GlobalMeshAnalysis):
             self.set_adjacency()
             self.set_scores()
             self.set_geometric_quality()
+            self.set_is_starred()
 
     def isValidAction(self, dart_id: int, action: int) -> (bool,bool):
         pass
@@ -71,6 +72,34 @@ class TriMeshAnalysis(GlobalMeshAnalysis):
                 quality = self.get_dart_geometric_quality(d)
                 print(quality)
 
+    def set_is_starred(self) -> None:
+        for d_info in self.mesh.active_darts():
+            d_id = d_info[0]
+            d = Dart(self.mesh, d_id)
+            found, x, y = self.get_dart_kernel(d)
+            if isinstance(found, int):
+                d.set_starred(is_starred=found)
+            else:
+                plot_mesh(self.mesh)
+                found, x, y = self.get_dart_kernel(d)
+                print(found)
+
+    def update_starred(self) -> None:
+        d_updated = []
+        for d_info in self.mesh.active_darts():
+            d_id = d_info[0]
+            d2_id = d_info[2]
+            if d_id not in d_updated and d2_id not in d_updated:
+                d_updated.append(d_id)
+                d = Dart(self.mesh, d_id)
+                found, x, y = self.get_dart_kernel(d)
+                if isinstance(found, int):
+                    d.set_starred(is_starred=found)
+                else:
+                    plot_mesh(self.mesh)
+                    found, x, y = self.get_dart_kernel(d)
+                    print(found)
+
     def get_dart_geometric_quality(self, d: Dart, m=None) -> int:
         """
         Calculate the geometric quality of the surrounding of a dart and his twin dart.
@@ -102,7 +131,7 @@ class TriMeshAnalysis(GlobalMeshAnalysis):
                 np.linalg.norm(u3) < 1e-8 or
                 np.linalg.norm(u4) < 1e-8 or
                 np.linalg.norm(u5) < 1e-8):
-            plot_mesh(self.mesh)
+            plot_mesh(self.mesh, debug=True)
             #raise ValueError("near zero vector") # Quad invalid because one side is almost zero
 
         # Calculate cross product at each node
@@ -129,13 +158,14 @@ class TriMeshAnalysis(GlobalMeshAnalysis):
                 return 2 # triangular quad
             elif sum_cp == 1:
                 print(cp_A, cp_B, cp_C, cp_D)
-                return 4 # half_face_flat
+                return 3 # half_face_flat
             elif sum_cp == 2:
-                return 5 # half face flat
+                return 3 # half face flat
         elif zero_count >= 2:
-            return 6 # full flat face
+            return 3 # full flat face
         else:
             raise ValueError("Quality configuration doesn't exist")
+
 
     def find_star_vertex(self, n:Node, plot=False)-> (bool, float, float):
         # Retrieve all neighboring vertices in order
@@ -161,104 +191,14 @@ class TriMeshAnalysis(GlobalMeshAnalysis):
             d2 = d.get_beta(2)
             n_neighbour = d2.get_node()
 
+        nodes_coord.append(nodes_coord[0])  # We add the first point to close the ring
         nodes_coord = np.array(nodes_coord)
 
         # Create a Polygon with shapely package
         poly = Polygon(nodes_coord)
+        found, x, y = self.find_star_vertex_from_poly(poly, nodes_coord)
+        return found, x, y
 
-        # If polygon is convexe
-        if poly.is_valid and poly.is_simple and poly.convex_hull.equals(poly):
-            centroid = poly.centroid
-            return True, centroid.x, centroid.y
-
-        #Else if polygon is concav, we're looking if there is a "star area"
-        p_before = None
-        p_first = None
-        star_poly = poly
-        for p in poly.exterior.coords[:-1]:
-            if p_before is not None:
-                # one side of the polygon
-                seg = LineString([p, p_before])
-
-                # we create a big quad box
-                box =  Polygon([(-1e5, 0), (1e5, 0), (1e5, 1e5), (-1e5, 1e5)])
-
-                # segment angle
-                dx = seg.coords[1][0] - seg.coords[0][0]
-                dy = seg.coords[1][1] - seg.coords[0][1]
-                angle = math.degrees(math.atan2(dy, dx))
-
-                #moving box
-                box_rot = affinity.rotate(box, angle, origin=(0, 0))
-                origin_pt = Point(seg.coords[0])
-                box_final = affinity.translate(box_rot, origin_pt.x, origin_pt.y)
-
-                star_poly = star_poly.intersection(box_final)
-                if star_poly.is_empty:
-                    plt.figure(figsize=(6, 6))
-                    # Polygone
-                    x, y = poly.exterior.xy
-                    plt.fill(x, y, alpha=0.3, edgecolor='blue',
-                             label='Polygon formed par by neighbours vertices')
-
-                    # Voisins
-                    plt.scatter(nodes_coord[:, 0], nodes_coord[:, 1], color='blue', zorder=5, label='Neighbours')
-
-                    plt.legend()
-                    plt.gca().set_aspect('equal')
-                    plt.show()
-                    return False, 0, 0
-            elif p_before is None:
-                p_first = p
-            p_before = p
-
-        #We do the same for the last segment
-        seg = LineString([p_first, p_before])
-        box = Polygon([(-1e5, 0), (1e5, 0), (1e5, 1e5), (-1e5, 1e5)])
-        dx = seg.coords[1][0] - seg.coords[0][0]
-        dy = seg.coords[1][1] - seg.coords[0][1]
-        angle = math.degrees(math.atan2(dy, dx))
-        box_rot = affinity.rotate(box, angle, origin=(0, 0))
-        origin_pt = Point(seg.coords[0])
-        box_final = affinity.translate(box_rot, origin_pt.x, origin_pt.y)
-
-        star_poly = star_poly.intersection(box_final)
-        if star_poly.is_empty :
-            plt.figure(figsize=(6, 6))
-            # Polygone
-            x, y = poly.exterior.xy
-            plt.fill(x, y, alpha=0.3, edgecolor='blue',
-                     label='Polygon formed par by neighbours vertices')
-
-            # Voisins
-            plt.scatter(nodes_coord[:, 0], nodes_coord[:, 1], color='blue', zorder=5, label='Neighbours')
-
-            plt.legend()
-            plt.gca().set_aspect('equal')
-            plt.show()
-            return False, 0, 0
-
-        if plot:
-            plt.figure(figsize=(6, 6))
-            # Polygone
-            x, y = poly.exterior.xy
-            plt.fill(x, y, alpha=0.3, edgecolor='blue',
-                     label='Polygon formed par by neighbours vertices')
-
-            # Voisins
-            plt.scatter(nodes_coord[:, 0], nodes_coord[:, 1], color='blue', zorder=5, label='Neighbours')
-
-            # Polygone
-            x_s, y_s = star_poly.exterior.xy
-            plt.fill(x_s, y_s, alpha=0.3, facecolor='lightcoral',
-                     label='Star area')
-
-            plt.legend()
-            plt.gca().set_aspect('equal')
-            plt.show()
-
-        centroid = star_poly.centroid
-        return True, centroid.x ,centroid.y
 
     def find_star_vertex_debug(self, n:Node, plot=False)-> (bool, float, float):
         # Retrieve all neighboring vertices in order
@@ -380,6 +320,7 @@ class TriMeshAnalysis(GlobalMeshAnalysis):
             plt.gca().set_aspect('equal')
             plt.show()
             return False, 0, 0
+        centroid = star_poly.centroid
 
         if plot:
             plt.figure(figsize=(6, 6))
@@ -395,12 +336,12 @@ class TriMeshAnalysis(GlobalMeshAnalysis):
             x_s, y_s = star_poly.exterior.xy
             plt.fill(x_s, y_s, alpha=0.3, facecolor='lightcoral',
                      label='Star area')
-
+            plt.scatter(centroid.x, centroid.y, color='red', marker='x', s=100, zorder=10, label='Centroid')
             plt.legend()
             plt.gca().set_aspect('equal')
             plt.show()
 
-        centroid = star_poly.centroid
+
         return True, centroid.x ,centroid.y
 
     def get_adjacent_faces(self, n: Node, d_from: Dart, d_to: Dart) -> list:
@@ -600,6 +541,133 @@ class TriMeshQualityAnalysis(TriMeshAnalysis):
         #     for d in adj_darts:
         #         if d.get_quality() == 1:
         #             geo = False
+        return topo, geo
+
+    def isTruncated(self, darts_list) -> bool:
+        for d_id in darts_list:
+            if self.isValidAction( d_id, 4)[0]:
+                return False
+        return True
+
+class TriMeshNewAnalysis(TriMeshAnalysis):
+    """
+    The base of triangular mesh analysis
+    """
+    def __init__(self, mesh: Mesh):
+        super().__init__(mesh=mesh)
+
+    def isValidAction(self, dart_id: int, action: int) -> (bool,bool):
+        d = Dart(self.mesh, dart_id)
+        #boundary_darts = self.get_boundary_darts()
+
+        geo = True # The geometric validity is automatically set to True, it is not tested here
+
+        if d.get_beta(2) is None: #if d in boundary_darts:
+            return False, geo
+        elif action == FLIP:
+            return self.isFlipOk(d)
+        elif action == SPLIT:
+            return self.isSplitOk(d)
+        elif action == COLLAPSE:
+            return self.isCollapseOk(d)
+        elif action == TEST_ALL:
+            topo, geo = self.isFlipOk(d)
+            if not (topo and geo):
+                return False, False
+            topo, geo = self.isSplitOk(d)
+            if not (topo and geo):
+                return False, False
+            topo, geo = self.isCollapseOk(d)
+            if not (topo and geo):
+                return False, False
+            elif topo and geo:
+                return True, True
+        elif action == ONE_VALID:
+            topo_flip, geo_flip = self.isFlipOk(d)
+            if (topo_flip and geo_flip):
+                return True, True
+            topo_split, geo_split = self.isSplitOk(d)
+            if (topo_split and geo_split):
+                return True, True
+            topo_collapse, geo_collapse = self.isCollapseOk(d)
+            if (topo_collapse and geo_collapse):
+                return True, True
+            return False, False
+        else:
+            raise ValueError("No valid action")
+
+    def isFlipOk(self, d: Dart) -> (bool, bool):
+        topo = True
+        geo = True
+
+        #if d is on boundary, flip is not possible
+        if d.get_beta(2) is None:
+            topo = False
+            return topo, geo
+
+        d2, d1, d11, d21, d211, A, B, C, D = self.mesh.active_triangles(d)
+
+        nA_analysis = NodeAnalysis(A)
+        nB_analysis = NodeAnalysis(B)
+
+        if not nA_analysis.test_degree() or not nB_analysis.test_degree():
+            topo = False
+
+        #Edge reversal not allowed
+        if d.get_quality() != 0:
+            geo = False
+
+        return topo, geo
+
+    def isSplitOk(self, d: Dart) -> (bool,bool):
+        topo = True
+        geo = True
+        if d.get_beta(2) is None:
+            topo = False
+            return topo, geo
+        _, _, _, _, _, A, B, C, D = self.mesh.active_triangles(d)
+
+        nC_analysis = NodeAnalysis(C)
+        nD_analysis = NodeAnalysis(D)
+        if not nC_analysis.test_degree() or not nD_analysis.test_degree():
+            topo = False
+
+        if d.get_quality() not in [0,1,2]: # if the face around is crossed or flat, or half flat
+            geo = False
+
+        return topo, geo
+
+    def isCollapseOk(self, d: Dart) -> (bool,bool):
+
+        topo = True
+        geo = True
+
+        if d.get_beta(2) is None:
+            topo = False
+            return topo, geo
+
+        _, d1, d11, d21, d211, n1, n2, _, _ = self.mesh.active_triangles(d)
+
+        d112 = d11.get_beta(2)
+        d12 = d1.get_beta(2)
+
+        d212 = d21.get_beta(2)
+        d2112 = d211.get_beta(2)
+
+        n1_analysis = NodeAnalysis(n1)
+        n2_analysis = NodeAnalysis(n2)
+
+        if n1_analysis.on_boundary() or n2_analysis.on_boundary():
+            topo = False
+        elif not n1_analysis.test_degree():
+            topo = False
+        elif d112 is None or d12 is None or d2112 is None or d212 is None:
+            topo = False
+
+        if d.get_quality() not in [0,1,2]:  # if the face around is crossed or flat, or half flat
+            geo = False
+        elif not d.is_starred():
+            geo = False
         return topo, geo
 
     def isTruncated(self, darts_list) -> bool:

@@ -111,6 +111,25 @@ class Dart:
             raise ValueError("No quality dimension")
         return dart_quality
 
+    def is_starred(self) -> int:
+        """
+        Get the geometric quality around a given dart.
+
+        :return: the geometric quality around the dart.
+        :raises ValueError: if there is no quality dimension
+        """
+        is_starred_dart = self.mesh.dart_info[self.id, 6]
+        if is_starred_dart == -99:
+            raise ValueError("No starred dimension")
+        elif is_starred_dart == -1:
+            return False
+        elif is_starred_dart == 0:
+            return False
+        elif is_starred_dart == 1:
+            return True
+        else:
+            raise ValueError("Not defined starred value")
+
     def set_quality(self, quality: int) -> None:
         """
         Set the geometric quality around a given dart. Automatically set the same quality for the twin dart
@@ -129,6 +148,17 @@ class Dart:
         self.mesh.dart_info[self.id, 5] = quality
         if d2_id >=0: # inner dart
             self.mesh.dart_info[d2_id, 5] = quality
+
+    def set_starred(self, is_starred: int) -> None:
+        """
+        Set if the surrounding nodes form a "star-shaped" polygon. Automatically set the same quality for the twin dart
+        The starred  is a parameter used to determine whether applying an operation to the dart would flip a face.
+        :param is_starred: 1 if it forms a "star-shaped" polygon, 0 otherwise
+        """
+        d2_id = self.mesh.dart_info[self.id, 2]
+        self.mesh.dart_info[self.id, 6] = is_starred
+        if d2_id >=0: # inner dart
+            self.mesh.dart_info[d2_id, 6] = is_starred
 
 class Node:
     _mesh_type: type = None

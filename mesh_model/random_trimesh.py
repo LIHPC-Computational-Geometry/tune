@@ -53,7 +53,7 @@ def regular_mesh(num_nodes_max: int) -> Mesh:
     m_analysis.set_adjacency()
     m_analysis.set_scores()
     m_analysis.set_geometric_quality()
-
+    m_analysis.set_is_starred()
     return mesh
 
 

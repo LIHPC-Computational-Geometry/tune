@@ -208,12 +208,12 @@ if __name__ == '__main__':
     torch.backends.cudnn.deterministic = True
 
     # WANDB
-    run = wandb.init(
-        project="Trimesh-learning",
-        name=experiment_name,
-        sync_tensorboard=True,  # auto-upload sb3's tensorboard metrics
-        save_code=True,  # optional
-    )
+    # run = wandb.init(
+    #     project="Trimesh-learning",
+    #     name=experiment_name,
+    #     sync_tensorboard=True,  # auto-upload sb3's tensorboard metrics
+    #     save_code=True,  # optional
+    # )
 
     # Create tensorboard log dir
     log_dir = config["paths"]["log_dir"]
@@ -261,4 +261,4 @@ if __name__ == '__main__':
     print("-----------Learning ended------------")
     print(f"Temps d'apprentissage : {end_time - start_time:.4} s")
     model.save(config["paths"]["policy_saving_dir"] + config["experiment_name"])
-    run.finish()
+    # run.finish()

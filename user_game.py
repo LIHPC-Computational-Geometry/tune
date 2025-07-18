@@ -1,3 +1,4 @@
+from mesh_model.reader import read_gmsh
 from view.window import Game
 
 import mesh_model.random_trimesh as TM
@@ -18,7 +19,8 @@ def user_game(mesh_size):
         g = Game(cmap, mesh_disp)
         g.run()
     """
-    cmap = TM.regular_mesh(mesh_size)
+    #cmap = TM.random_mesh(mesh_size)
+    cmap = read_gmsh("mesh_files/tri-delaunay.msh")
     mesh_disp = MeshDisplay(cmap)
     g = Game(cmap, mesh_disp)
     g.run()

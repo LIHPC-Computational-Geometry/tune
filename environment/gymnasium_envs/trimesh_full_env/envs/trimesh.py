@@ -18,7 +18,7 @@ from pygame.locals import *
 from mesh_model.random_trimesh import random_mesh
 from mesh_model.mesh_struct.mesh import Mesh
 from mesh_model.mesh_struct.mesh_elements import Dart
-from mesh_model.mesh_analysis.trimesh_analysis import TriMeshQualityAnalysis, TriMeshOldAnalysis
+from mesh_model.mesh_analysis.trimesh_analysis import TriMeshQualityAnalysis, TriMeshOldAnalysis, TriMeshNewAnalysis
 from environment.gymnasium_envs.trimesh_full_env.envs.mesh_conv import get_x
 from environment.actions.triangular_actions import flip_edge, split_edge, collapse_edge, check_mesh
 from view.mesh_plotter.mesh_plots import plot_mesh
@@ -68,21 +68,31 @@ class TriMeshEnvFull(gym.Env):
             self.mesh_size = 0
 
         self.analysis_type = analysis_type
-        self.m_analysis = TriMeshQualityAnalysis(self.mesh) if self.analysis_type == "quality" else TriMeshOldAnalysis(self.mesh)
+        self.n_darts_selected = n_darts_selected
+        self.darts_selected = []
+        self.deep = deep
+
+        if analysis_type == "quality":
+            self.m_analysis = TriMeshQualityAnalysis(self.mesh)
+            obs_shape = (self.n_darts_selected, self.deep+2)
+        elif analysis_type == "old":
+            self.m_analysis = TriMeshOldAnalysis(self.mesh)
+            obs_shape = (self.n_darts_selected, self.deep)
+        elif analysis_type == "new":
+            self.m_analysis = TriMeshNewAnalysis(self.mesh)
+            obs_shape = (self.n_darts_selected, self.deep+2)
+
         self._nodes_scores, self._mesh_score, self._ideal_score, self._nodes_adjacency = self.m_analysis.global_score()
         self._ideal_rewards = (self._mesh_score - self._ideal_score)*10
         self.next_mesh_score = 0
-        self.deep = deep
-        self.n_darts_selected = n_darts_selected
         self.restricted = action_restriction
         self.quality_observation = with_quality_obs
         self.window_size = 512  # The size of the PyGame window
         self.g = None
         self.nb_invalid_actions = 0
-        self.darts_selected = [] # darts id observed
         self.episode_count = 0
         self.ep_len = 0
-        self.darts_selected = []
+
         self.max_steps = max_episode_steps
 
         self.actions_info = {
@@ -94,7 +104,7 @@ class TriMeshEnvFull(gym.Env):
         self.observation_space = spaces.Box(
             low=-15,  # nodes min degree : 15
             high=15,  # nodes max degree : 15
-            shape=(self.n_darts_selected, self.deep * 2 if self.quality_observation else self.deep),
+            shape=obs_shape, # (self.n_darts_selected, self.deep * 2 if self.quality_observation else self.deep)
             dtype=np.int64
         )
 
@@ -136,7 +146,12 @@ class TriMeshEnvFull(gym.Env):
         else:
             self.mesh = random_mesh(self.mesh_size)
 
-        self.m_analysis = TriMeshQualityAnalysis(self.mesh) if self.analysis_type=="quality" else TriMeshOldAnalysis(self.mesh)
+        if self.analysis_type == "quality":
+            self.m_analysis = TriMeshQualityAnalysis(self.mesh)
+        elif self.analysis_type == "old":
+            self.m_analysis = TriMeshOldAnalysis(self.mesh)
+        elif self.analysis_type == "new":
+            self.m_analysis = TriMeshNewAnalysis(self.mesh)
         self._nodes_scores, self._mesh_score, self._ideal_score, self._nodes_adjacency = self.m_analysis.global_score()
         self._ideal_rewards = (self._mesh_score - self._ideal_score) * 10
         self.nb_invalid_actions = 0

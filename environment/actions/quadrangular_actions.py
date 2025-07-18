@@ -66,6 +66,10 @@ def flip_edge_cntcw(mesh_analysis, n1: Node, n2: Node) -> (True, True, True):
     n3.set_score(n3.get_score() - 1)
     n5.set_score(n5.get_score() - 1)
 
+    darts_to_update = [d, d1, d11, d111, d21, d211, d2111]
+    for _d in darts_to_update:
+        _d.set_quality(mesh_analysis.get_dart_geometric_quality(_d))
+        _d.set_is_starred(mesh_analysis.get_dart_kernel(_d)[0])
     return True, topo, geo
 
 def flip_edge_cw_ids(mesh_analysis, id1: int, id2: int) -> (True, True, True):
@@ -118,6 +122,11 @@ def flip_edge_cw(mesh_analysis, n1: Node, n2: Node) -> (True, True, True):
     n4.set_score(n3.get_score() - 1)
     n6.set_score(n5.get_score() - 1)
 
+    darts_to_update = [d, d1, d11, d111, d21, d211, d2111]
+    for _d in darts_to_update:
+        _d.set_quality(mesh_analysis.get_dart_geometric_quality(_d))
+        _d.set_is_starred(mesh_analysis.get_dart_kernel(_d)[0])
+
     return True, topo, geo
 
 def split_edge_ids(mesh_analysis, id1: int, id2: int) -> (True, True, True):
@@ -157,6 +166,11 @@ def split_edge(mesh_analysis, n1: Node, n2: Node) -> (True, True, True):
     n4.set_score(n4.get_score() - 1)
     N10.set_score(1)  # new nodes have an adjacency of 3, wich means a score of 1
     N10.set_ideal_adjacency(4)  # the inner vertices of quadrangular meshes have an ideal adjacency of 4
+
+    darts_to_update = [d, d1, d11, d111, d21, d211, d2111, d1112, d212]
+    for _d in darts_to_update:
+        _d.set_quality(mesh_analysis.get_dart_geometric_quality(_d))
+        _d.set_is_starred(mesh_analysis.get_dart_kernel(_d)[0])
 
     return True, topo, geo
 
@@ -239,6 +253,29 @@ def collapse_edge(mesh_analysis, n1: Node, n2: Node) -> (True, True, True):
     n2.set_score(n1.get_score() + 1)
     n4.set_score(n2.get_score() + 1)
     n3.set_score(n3.get_score() + n1_score - 2)
+
+    # update geometrical quality and kernel existence
+    d21 = d2.get_beta(1)
+    d211 = d21.get_beta(1)
+    d2111 = d211.get_beta(1)
+
+    d11121 = d1112.get_beta(1)
+    d111211 = d11121.get_beta(1)
+    d1112111 = d111211.get_beta(1)
+
+    d121 = d12.get_beta(1)
+    d1211 = d121.get_beta(1)
+    d12111 = d1211.get_beta(1)
+
+    d1121 = d112.get_beta(1)
+    d11211 = d1121.get_beta(1)
+    d112111 = d11211.get_beta(1)
+
+    darts_to_update = [d2, d21, d211, d2111, d121, d1211, d12111, d112, d1121, d11211, d112111, d11121, d111211, d1112111]
+    for _d in darts_to_update:
+        _d.set_quality(mesh_analysis.get_dart_geometric_quality(_d))
+
+    mesh_analysis.update_starred()
 
     return mesh_analysis.mesh_check(), topo, geo
 

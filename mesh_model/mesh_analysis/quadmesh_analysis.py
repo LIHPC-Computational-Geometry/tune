@@ -4,6 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from shapely.geometry import Polygon, Point, LineString
 from shapely import affinity
+import warnings
 
 from mesh_model.mesh_struct.mesh_elements import Dart, Node, Face
 from mesh_model.mesh_struct.mesh import Mesh
@@ -55,6 +56,68 @@ class QuadMeshAnalysis(GlobalMeshAnalysis):
                 s = na.score_calculation()
                 n.set_score(s)
             i += 1
+
+    def set_geometric_quality(self) -> None:
+        for d_info in self.mesh.active_darts():
+            d_id = d_info[0]
+            d = Dart(self.mesh, d_id)
+            quality = self.get_dart_geometric_quality(d)
+            if isinstance(quality, int):
+                d.set_quality(quality)
+            else:
+                warnings.warn("not valid instance for dart quality")
+                # plot_mesh(self.mesh)
+                # quality = self.get_dart_geometric_quality(d)
+                print(quality)
+
+    def set_is_starred(self) -> None:
+        for d_info in self.mesh.active_darts():
+            d_id = d_info[0]
+            d = Dart(self.mesh, d_id)
+            found, x, y = self.get_dart_kernel(d)
+            if isinstance(found, int):
+                d.set_starred(is_starred=found)
+            else:
+                # plot_mesh(self.mesh)
+                found, x, y = self.get_dart_kernel(d)
+                print(found)
+
+    def update_starred(self) -> None:
+        d_updated = []
+        for d_info in self.mesh.active_darts():
+            d_id = d_info[0]
+            d2_id = d_info[2]
+            if d_id not in d_updated and d2_id not in d_updated:
+                d_updated.append(d_id)
+                d = Dart(self.mesh, d_id)
+                found, x, y = self.get_dart_kernel(d)
+                if isinstance(found, int):
+                    d.set_starred(is_starred=found)
+                else:
+                    # plot_mesh(self.mesh)
+                    found, x, y = self.get_dart_kernel(d)
+                    print(found)
+
+    def get_dart_geometric_quality(self, d: Dart, m=None) -> int:
+        """
+        Calculate the geometric quality of the surrounding of a dart and his twin dart.
+            * quality = -1: boundary dart
+            * quality = 0: convex polygon
+            * quality = 1: degenerate polygon
+        :param d: dart
+        :return: geometric quality
+        """
+        if d.get_beta(2) is None:
+            return -1  # boundary dart
+
+        d2, d1, d11, d111, d21, d211, d2111, n1, n2, n3, n4, n5, n6 = self.mesh.active_quadrangles(d)
+        nodes_coord = [[n1.x(), n1.y()], [n5.x(), n5.y()], [n6.x(), n6.y()], [n2.x(), n2.y()], [n3.x(), n3.y()],
+                       [n4.x(), n4.y()]]
+
+        if self.isConvexPolygon(nodes_coord):
+            return 1
+        else:
+            return 0
 
 class QuadMeshOldAnalysis(QuadMeshAnalysis):
     """
@@ -271,6 +334,226 @@ class QuadMeshOldAnalysis(QuadMeshAnalysis):
                     return topo, geo
 
         self.mesh.del_node(n10)
+        return topo, geo
+
+
+    def isCleanupOk(self, d: Dart) -> (bool, bool):
+        topo = True
+        geo = True
+        if d.get_beta(2) is None:
+            topo = False
+        mesh = d.mesh
+        parallel_darts = mesh.find_parallel_darts(d)
+        for d in parallel_darts:
+            d111 = ((d.get_beta(1)).get_beta(1)).get_beta(1)
+            if d111.get_beta(2) is None:
+                topo = False
+                return topo, geo
+        return topo, geo
+
+
+    def isTruncated(self, darts_list)-> bool:
+        for d_id in darts_list:
+            if self.isValidAction(d_id, 4)[0]:
+                return False
+        return True
+
+    def isValidQuad(self, A: Node, B: Node, C: Node, D: Node):
+        u1 = np.array([B.x() - A.x(), B.y() - A.y()]) # vect(AB)
+        u2 = np.array([C.x() - B.x(), C.y() - B.y()]) # vect(BC)
+        u3 = np.array([D.x() - C.x(), D.y() - C.y()]) # vect(CD)
+        u4 = np.array([A.x() - D.x(), A.y() - D.y()]) # vect(DA)
+
+        # Checking for near-zero vectors (close to (0,0))
+        if (np.linalg.norm(u1) < 1e-5 or
+                np.linalg.norm(u2) < 1e-5 or
+                np.linalg.norm(u3) < 1e-5 or
+                np.linalg.norm(u4) < 1e-5):
+            return False  # Quad invalid because one side is almost zero
+
+        cp_A = self.cross_product(-1*u4, u1)
+        cp_B = self.cross_product(-1*u1, u2)
+        cp_C = self.cross_product(-1*u2, u3)
+        cp_D = self.cross_product(-1*u3, u4)
+
+        zero_count = sum(-1e-5<cp<1e-5 for cp in [cp_A, cp_B, cp_C, cp_D])
+        if zero_count>=2:
+            return False
+        elif 0<= self.signe(cp_A)+ self.signe(cp_B)+ self.signe(cp_C)+ self.signe(cp_D) <2 :
+            return True
+        else:
+            return False
+
+    def signe(self, a: int):
+        if a <= 0: # Before it was 1e-8
+            return 0
+        else:
+            return 1
+
+class QuadMeshNewAnalysis(QuadMeshAnalysis):
+    """
+    Quadmesh old analysis
+    """
+
+    def __init__(self, mesh: Mesh):
+        super().__init__(mesh=mesh)
+
+    def isValidAction(self, dart_id: int, action: int) -> (bool, bool):
+        """
+        Test if an action is valid. You can select the ype of action between {flip clockwise, flip counterclockwise, split, collapse, cleanup, all action, one action no matter wich one}.
+        :param dart_id: a dart on which to test the action
+        :param action: an action type
+        :return:
+        """
+        d = Dart(self.mesh, dart_id)
+        if d.get_beta(2) is None:
+            return False, True
+        elif action == FLIP_CW:
+            return self.isFlipCWOk(d)
+        elif action == FLIP_CCW:
+            return self.isFlipCCWOk(d)
+        elif action == SPLIT:
+            return self.isSplitOk(d)
+        elif action == COLLAPSE:
+            return self.isCollapseOk(d)
+        elif action == CLEANUP:
+            return self.isCleanupOk(d)
+        elif action == TEST_ALL:
+            topo, geo = self.isFlipCCWOk(d)
+            if not (topo and geo):
+                return False, False
+            topo, geo = self.isFlipCWOk(d)
+            if not (topo and geo):
+                return False, False
+            topo, geo = self.isSplitOk(d)
+            if not (topo and geo):
+                return False, False
+            topo, geo = self.isCollapseOk(d)
+            if not (topo and geo):
+                return False, False
+            elif topo and geo:
+                return True, True
+        elif action == ONE_VALID:
+            topo_flip, geo_flip = self.isFlipCCWOk(d)
+            if (topo_flip and geo_flip):
+                return True, True
+            topo_flip, geo_flip = self.isFlipCWOk(d)
+            if (topo_flip and geo_flip):
+                return True, True
+            topo_split, geo_split = self.isSplitOk(d)
+            if (topo_split and geo_split):
+                return True, True
+            topo_collapse, geo_collapse = self.isCollapseOk(d)
+            if (topo_collapse and geo_collapse):
+                return True, True
+            return False, False
+        else:
+            raise ValueError("No valid action")
+
+
+    def isFlipCCWOk(self, d: Dart) -> (bool, bool):
+        topo = True
+        geo = True
+
+        # if d is on boundary, flip is not possible
+        if d.get_beta(2) is None:
+            topo = False
+            return topo, geo
+        else:
+            d2, d1, d11, d111, d21, d211, d2111, n1, n2, n3, n4, n5, n6 = self.mesh.active_quadrangles(d)
+
+        n5_analysis = NodeAnalysis(n5)
+        n3_analysis = NodeAnalysis(n3)
+        # if degree will not too high
+        if not n5_analysis.test_degree() or not n3_analysis.test_degree():
+            topo = False
+            return topo, geo
+
+        # if two faces share two edges
+        if d211.get_node() == d111.get_node() or d11.get_node() == d2111.get_node():
+            topo = False
+            return topo, geo
+
+        if d.get_quality() != 0:
+            geo = False
+
+        return topo, geo
+
+    def isFlipCWOk(self, d: Dart) -> (bool, bool):
+        topo = True
+        geo = True
+        # if d is on boundary, flip is not possible
+        if d.get_beta(2) is None:
+            topo = False
+            return topo, geo
+        else:
+            d2, d1, d11, d111, d21, d211, d2111, n1, n2, n3, n4, n5, n6 = self.mesh.active_quadrangles(d)
+
+        n4_analysis = NodeAnalysis(n4)
+        n6_analysis = NodeAnalysis(n6)
+        if not n4_analysis.test_degree() or not n6_analysis.test_degree():
+            topo = False
+            return topo, geo
+
+        if d211.get_node() == d111.get_node() or d11.get_node() == d2111.get_node():
+            topo = False
+            return topo, geo
+
+        if d.get_quality() != 0:
+            geo = False
+        return topo, geo
+
+
+    def isSplitOk(self, d: Dart) -> (bool, bool):
+        topo = True
+        geo = True
+        if d.get_beta(2) is None:
+            topo = False
+            return topo, geo
+        else:
+            d2, d1, d11, d111, d21, d211, d2111, n1, n2, n3, n4, n5, n6 = self.mesh.active_quadrangles(d)
+
+        n4_analysis = NodeAnalysis(n4)
+        n2_analysis = NodeAnalysis(n2)
+        if not n4_analysis.test_degree() or not n2_analysis.test_degree():
+            topo = False
+            return topo, geo
+
+        if d211.get_node() == d111.get_node() or d11.get_node() == d2111.get_node():
+            topo = False
+            return topo, geo
+
+        n10 = self.mesh.add_node((n1.x() + n2.x()) / 2, (n1.y() + n2.y()) / 2)
+        geo = self.isValidQuad(n4, n1, n5, n10) and self.isValidQuad(n4, n10, n2, n3) and self.isValidQuad(n10, n5, n6, n2)
+        if not geo:
+            warnings.warn("need geometrical restriction to split")
+        self.mesh.del_node(n10)
+        return topo, geo
+
+
+    def isCollapseOk(self, d: Dart) -> (bool, bool):
+        topo = True
+        geo = True
+        if d.get_beta(2) is None:
+            topo = False
+            return topo, geo
+        else:
+            d2, d1, d11, d111, d21, d211, d2111, n1, n2, n3, n4, n5, n6 = self.mesh.active_quadrangles(d)
+
+        n1_analysis = NodeAnalysis(n1)
+        n3_analysis = NodeAnalysis(n3)
+
+        if n1_analysis.on_boundary():
+            topo = False
+            return topo, geo
+
+        if (n3_analysis.degree() +n1_analysis.degree()-2) > 10:
+            topo = False
+            return topo, geo
+
+        if not d.is_starred():
+            geo = False
+
         return topo, geo
 
 

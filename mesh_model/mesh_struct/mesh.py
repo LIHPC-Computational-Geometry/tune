@@ -15,12 +15,12 @@ class Mesh:
         """
         Vertices are stored in a numpy array containing coordinates (x,y, dart id, ideal adjacency, vertex score)
         Faces are stored in a numpy array of simple (dart ids)
-        Darts are stored in a numpy array, where each dart is a 5-tuple (dart id, beta_1, beta_2, vertex_id, face_id, geo_quality)
+        Darts are stored in a numpy array, where each dart is a 5-tuple (dart id, beta_1, beta_2, vertex_id, face_id, geo_quality, is_starred )
         Ideal adjacency, vertex scores and geometric quality are not defined here. You must use Mesh analysis class to define them
         """
         self.nodes = numpy.empty((0, 5), dtype=float)
         self.faces = numpy.empty(0, dtype=int)
-        self.dart_info = numpy.empty((0, 6), dtype=int)
+        self.dart_info = numpy.empty((0, 7), dtype=int)
         self.first_free_dart = 0
         self.first_free_node = 0
         self.first_free_face = 0
@@ -274,7 +274,7 @@ class Mesh:
             df_current = df_current.get_beta(1)
             end = (df_current.id == f.get_dart().id)
 
-    def add_dart(self, a1: int = -1, a2: int = -1, v: int = -1, f: int = -1, q: int = -99) -> Dart:
+    def add_dart(self, a1: int = -1, a2: int = -1, v: int = -1, f: int = -1, q: int = -99, s: int = -99) -> Dart:
         """
         This function add a dart in the mesh. It must not be used directly
         :param a1: dart index to connect by alpha1
@@ -282,10 +282,11 @@ class Mesh:
         :param v:  vertex index this dart point to
         :param f: face to connect
         :param q: geometric quality around the dart
+        :param s: 1 if the dart is starred in its surrounding, 0 otherwise
         :return: the created dart
         """
         if len(self.dart_info) <= self.first_free_dart:
-            self.dart_info = numpy.append(self.dart_info, [[len(self.dart_info), a1, a2, v, f, q]], axis=0)
+            self.dart_info = numpy.append(self.dart_info, [[len(self.dart_info), a1, a2, v, f, q, s]], axis=0)
             self.first_free_dart += 1
             return Dart(self, len(self.dart_info) - 1)
         elif len(self.dart_info) > self.first_free_dart:

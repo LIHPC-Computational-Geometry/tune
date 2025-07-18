@@ -6,7 +6,7 @@ from mesh_model.mesh_struct.mesh import Mesh
 def get_x(m_analysis, n_darts_selected: int, deep :int, quality: bool, restricted:bool, nodes_scores: list[int], nodes_adjacency: list[int]):
     mesh = m_analysis.mesh
     if quality:
-        template, darts_id = get_template_with_quality(m_analysis, deep)
+        template, darts_id = get_template_new(m_analysis, deep)
     else:
         template, darts_id = get_template(m_analysis, deep, nodes_scores)
 
@@ -208,6 +208,105 @@ def get_template_with_quality(m_analysis, deep: int):
                     n = Node(m_analysis.mesh, n_id)
                     template[n_darts - 1, 3] = n.get_score()
                     template[n_darts - 1, deep+11] = d11211.get_quality()
+
+    template = template[:n_darts, :]
+    return template, dart_ids
+
+
+def get_template_new(m_analysis, deep: int):
+    """
+    Create a template matrix representing the entire mesh, composed of:
+
+    * Node scores: i.e. the difference between ideal adjacency and actual adjacency.
+    * Dart surrounding quality: a measure of the geometric quality around each dart.
+    * Dart surrounding kernel: if the polygon formed by the dart surrounding is starred.
+
+    Each column in the matrix corresponds to the local surrounding of a dart,
+    including the scores of its surrounding nodes and it associated quality and if it is starred.
+
+    :param m_analysis: mesh to analyze
+    :param deep: observation deep (how many nodes observed on each dart surrounding)
+    :return: template matrix
+    """
+    size = len(m_analysis.mesh.dart_info)
+    template = np.zeros((size, deep+2), dtype=np.int64)
+    dart_ids = []
+    n_darts = 0
+
+    for d_info in m_analysis.mesh.active_darts():
+        n_darts += 1
+        d_id = d_info[0]
+        dart_ids.append(d_id)
+        d = Dart(m_analysis.mesh, d_id)
+        A = d.get_node()
+        d1 = d.get_beta(1)
+        B = d1.get_node()
+        d11 = d1.get_beta(1)
+        C = d11.get_node()
+
+        # Geometrical observation at the end of the matrix
+        template[n_darts - 1, deep] = d.get_quality()
+        template[n_darts - 1, deep+1] = d.is_starred()
+
+        # Template niveau 1
+        template[n_darts - 1, 0] = C.get_score()
+        template[n_darts - 1, 1] = A.get_score()
+        template[n_darts - 1, 2] = B.get_score()
+
+        if deep>3:
+            # template niveau 2
+            n_id = m_analysis.find_template_opposite_node(d)
+            if n_id is not None:
+                n = Node(m_analysis.mesh, n_id)
+                template[n_darts - 1, 3] = n.get_score()
+            n_id = m_analysis.find_template_opposite_node(d1)
+            if n_id is not None:
+                n = Node(m_analysis.mesh, n_id)
+                template[n_darts - 1, 3] = n.get_score()
+            n_id = m_analysis.find_template_opposite_node(d11)
+            if n_id is not None:
+                n = Node(m_analysis.mesh, n_id)
+                template[n_darts - 1, 3] = n.get_score()
+
+        if deep>6:
+            # template niveau 3 - deep = 12
+            if d.get_beta(2) is not None:
+                d2, d1, d11, d21, d211, n1, n2, n3, n4 = m_analysis.mesh.active_triangles(d)
+                #Triangle F2
+                n_id = m_analysis.find_template_opposite_node(d21)
+                if n_id is not None:
+                    n = Node(m_analysis.mesh, n_id)
+                    template[n_darts - 1, 3] = n.get_score()
+                n_id = m_analysis.find_template_opposite_node(d211)
+                if n_id is not None:
+                    n = Node(m_analysis.mesh, n_id)
+                    template[n_darts - 1, 3] = n.get_score()
+            # Triangle T3
+            d12 = d1.get_beta(2)
+            if d12 is not None:
+                d121 = d12.get_beta(1)
+                d1211 = d121.get_beta(1)
+                n_id = m_analysis.find_template_opposite_node(d121)
+                if n_id is not None:
+                    n = Node(m_analysis.mesh, n_id)
+                    template[n_darts - 1, 3] = n.get_score()
+                n_id = m_analysis.find_template_opposite_node(d1211)
+                if n_id is not None:
+                    n = Node(m_analysis.mesh, n_id)
+                    template[n_darts - 1, 3] = n.get_score()
+            # Triangle T4
+            d112 = d11.get_beta(2)
+            if d112 is not None:
+                d1121 = d112.get_beta(1)
+                d11211 = d1121.get_beta(1)
+                n_id = m_analysis.find_template_opposite_node(d1121)
+                if n_id is not None:
+                    n = Node(m_analysis.mesh, n_id)
+                    template[n_darts - 1, 3] = n.get_score()
+                n_id = m_analysis.find_template_opposite_node(d11211)
+                if n_id is not None:
+                    n = Node(m_analysis.mesh, n_id)
+                    template[n_darts - 1, 3] = n.get_score()
 
     template = template[:n_darts, :]
     return template, dart_ids

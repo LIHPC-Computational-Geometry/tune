@@ -1,6 +1,10 @@
 import numpy as np
+import matplotlib.pyplot as plt
+import math
 from math import sqrt, degrees, acos, atan2
 from abc import ABC, abstractmethod
+from shapely import affinity
+from shapely.geometry import Polygon, Point, LineString
 
 from mesh_model.mesh_struct.mesh_elements import Dart, Node, Face
 from mesh_model.mesh_struct.mesh import Mesh
@@ -168,6 +172,198 @@ class GlobalMeshAnalysis(ABC):
     def get_dart_geometric_quality(self, d: Dart) -> int:
         pass
 
+    def get_dart_kernel(self, d: Dart, plot=False) -> (int, float, float):
+        """
+        Calculate the kernel of geometry around the dart. Return if the kernel exists, if so, return the coordinates of the kernel.
+        :param d: the dart we want to calculate the kernel for
+        :return: 1 if it has a kernel, -1 if next to boundary, 0 otherwise, x-coordinate, y-coordinate
+        """
+        d_init = d
+        d1 = d.get_beta(1)
+        d1_init=d1
+        n1 = d.get_node()
+        n2 = d1_init.get_node()
+        na1 = NodeAnalysis(n1)
+        na2 = NodeAnalysis(n2)
+
+
+        if d.get_beta(2) is None:
+            return -1, 0, 0
+        elif na1.on_boundary() or na2.on_boundary():
+            return -1, 0, 0
+
+        d11 = d1.get_beta(1)
+        d_to = d11
+        adj_nodes = []
+        nodes_coord = []
+
+        d = d1.get_beta(2)
+        #d12 = d1.get_beta(2)
+        #d = d12.get_beta(1)
+        n = d.get_node()
+
+        while n != n1:
+            adj_nodes.append(n)
+            nodes_coord.append([n.x(), n.y()])
+            d1 = d.get_beta(1)
+            d = d1.get_beta(2)
+            if d is None:
+                raise ValueError("Error on getting kernel")
+            n = d.get_node()
+
+        d2 = d.get_beta(2)
+        d212 = (d2.get_beta(1)).get_beta(2)
+        d = (d212.get_beta(1)).get_beta(2)
+        n = d.get_node()
+        while d != d_to:
+            adj_nodes.append(n)
+            nodes_coord.append([n.x(), n.y()])
+            d1 = d.get_beta(1)
+            d = d1.get_beta(2)
+            n = d.get_node()
+
+        nodes_coord_tuple = []
+        for coord in nodes_coord:
+            tuple_coord = tuple(coord)
+            nodes_coord_tuple.append(tuple_coord)
+        if len(nodes_coord_tuple) != len(set(nodes_coord_tuple)):
+            return 0, 0, 0
+
+        nodes_coord.append(nodes_coord[0]) # We add the first point to close the ring
+        nodes_coord = np.array(nodes_coord)
+
+        if len(nodes_coord) <4:
+            plot_mesh(d.mesh, debug=True)
+            raise ValueError("oui")
+        # Create a Polygon with shapely package
+        poly = Polygon(nodes_coord)
+
+        # If polygon is convexe
+        if poly.is_valid and poly.is_simple and poly.convex_hull.equals(poly):
+            centroid = poly.centroid
+            return 1, centroid.x, centroid.y
+
+        found, x, y = self.find_star_vertex_from_poly(poly, nodes_coord, plot=plot)
+
+        if not found:
+            return 0, 0, 0
+        else:
+            return 1, x, y
+
+    def find_star_vertex_from_poly(self, poly: Polygon, nodes_coord, plot=False)-> (bool, float, float):
+        #Else if polygon is concav, we're looking if there is a "star area"
+        p_before = None
+        p_first = None
+        star_poly = poly
+        for p in poly.exterior.coords[:-1]:
+            if p_before is not None:
+                # one side of the polygon
+                seg = LineString([p, p_before])
+
+                # we create a big quad box
+                box =  Polygon([(-5, 0), (5, 0), (5, 5), (-5, 5), (-5, 0)])
+
+                # segment angle
+                dx = seg.coords[1][0] - seg.coords[0][0]
+                dy = seg.coords[1][1] - seg.coords[0][1]
+                angle = math.degrees(math.atan2(dy, dx))
+
+                # moving box
+                box_rot = affinity.rotate(box, angle, origin=(0, 0))
+                origin_pt = Point(seg.coords[0])
+                box_final = affinity.translate(box_rot, origin_pt.x, origin_pt.y)
+
+                star_poly = star_poly.intersection(box_final)
+                if star_poly.is_empty or not isinstance(star_poly, Polygon):
+                    return False, 0, 0
+                if plot:
+                    plt.figure(figsize=(6, 6))
+                    # Polygone
+                    x, y = poly.exterior.xy
+                    plt.fill(x, y, alpha=0.3, edgecolor='blue',
+                             label='Polygon formed par by neighbours vertices')
+
+                    # Voisins
+                    plt.scatter(nodes_coord[:, 0], nodes_coord[:, 1], color='blue', zorder=5, label='Neighbours')
+
+                    # Polygone
+                    x_s, y_s = box_final.exterior.xy
+                    plt.fill(x_s, y_s, alpha=0.3, facecolor='lightcoral',
+                             label='Star area')
+
+                    plt.legend()
+                    plt.gca().set_aspect('equal')
+                    plt.show()
+            elif p_before is None:
+                p_first = p
+            p_before = p
+
+        #We do the same for the last segment
+        seg = LineString([p_first, p_before])
+        box = Polygon([(-5, 0), (5, 0), (5, 15), (-5, 5)])
+        dx = seg.coords[1][0] - seg.coords[0][0]
+        dy = seg.coords[1][1] - seg.coords[0][1]
+        angle = math.degrees(math.atan2(dy, dx))
+        box_rot = affinity.rotate(box, angle, origin=(0, 0))
+        origin_pt = Point(seg.coords[0])
+        box_final = affinity.translate(box_rot, origin_pt.x, origin_pt.y)
+
+        star_poly = star_poly.intersection(box_final)
+        if star_poly.is_empty or not isinstance(star_poly, Polygon):
+            return False, 0, 0
+        if plot:
+            plt.figure(figsize=(6, 6))
+            # Polygone
+            x, y = poly.exterior.xy
+            plt.fill(x, y, alpha=0.3, edgecolor='blue',
+                     label='Polygon formed par by neighbours vertices')
+
+            # Voisins
+            plt.scatter(nodes_coord[:, 0], nodes_coord[:, 1], color='blue', zorder=5, label='Neighbours')
+
+            # Polygone
+            x_s, y_s = box_final.exterior.xy
+            plt.fill(x_s, y_s, alpha=0.3, facecolor='lightcoral',
+                     label='Star area')
+
+            plt.legend()
+            plt.gca().set_aspect('equal')
+            plt.show()
+        centroid = star_poly.centroid
+
+        if plot:
+            plt.figure(figsize=(6, 6))
+            # Polygone
+            x, y = poly.exterior.xy
+            plt.fill(x, y, alpha=0.3, edgecolor='blue',
+                     label='Polygon formed par by neighbours vertices')
+
+            # Voisins
+            plt.scatter(nodes_coord[:, 0], nodes_coord[:, 1], color='blue', zorder=5, label='Neighbours')
+
+            # Polygone
+            x_s, y_s = star_poly.exterior.xy
+            plt.fill(x_s, y_s, alpha=0.3, facecolor='lightcoral',
+                     label='Star area')
+            plt.scatter(centroid.x, centroid.y, color='red', marker='x', s=100, zorder=10, label='New point')
+            plt.legend()
+            plt.gca().set_aspect('equal')
+            plt.show()
+
+        return True, centroid.x ,centroid.y
+
+    def isConvexPolygon(self, nodes_coord) -> int:
+
+        nodes_coord = np.array(nodes_coord)
+
+        # Create a Polygon with shapely package
+        poly = Polygon(nodes_coord)
+
+        # If polygon is convex
+        if poly.is_valid and poly.is_simple and poly.convex_hull.equals(poly):
+            return 1
+        else:
+            return 0
     def global_score(self):
         """
         Calculate the overall mesh score. The mesh cannot achieve a better score than the ideal one.

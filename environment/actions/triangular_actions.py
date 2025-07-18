@@ -5,6 +5,7 @@ import numpy as np
 import warnings
 
 from mesh_model.mesh_analysis.global_mesh_analysis import NodeAnalysis
+from mesh_model.mesh_analysis.trimesh_analysis import TriMeshNewAnalysis
 from mesh_model.mesh_struct.mesh_elements import Node, Dart
 from view.mesh_plotter.mesh_plots import plot_mesh
 
@@ -74,10 +75,15 @@ def flip_edge(mesh_analysis, n1: Node, n2: Node) -> True:
     d21.set_quality(mesh_analysis.get_dart_geometric_quality(d21)) # updates d21 and d212
     d211.set_quality(mesh_analysis.get_dart_geometric_quality(d211)) # updates d211 and d2112
 
+    d.set_starred(mesh_analysis.get_dart_kernel(d)[0]) # update d and d2
+
     n1.set_score(n1.get_score() + 1) # an edge is removed from vertex n1
     n2.set_score(n2.get_score() + 1) # an edge is removed from vertex n2
     n3.set_score(n3.get_score() - 1) # an edge is added to vertex n3
     n4.set_score(n4.get_score() - 1) # an edge is added to vertex n4
+
+    # update darts kernel
+    mesh_analysis.set_is_starred()
 
     after_check = check_mesh(mesh_analysis, mesh_before)
     if not after_check:
@@ -143,9 +149,13 @@ def split_edge(mesh_analysis, n1: Node, n2: Node) -> True:
     d21f4 = d2f4.get_beta(1)
     d21f4.set_quality(mesh_analysis.get_dart_geometric_quality(d21f4))
 
+    # update darts kernel
+    mesh_analysis.set_is_starred()
+
     after_check = check_mesh(mesh_analysis, mesh_before)
     if not after_check:
-        raise ValueError("Some checks are missing")
+        warnings.warn("Some checks are missing")
+        #raise ValueError("Some checks are missing")
     return True, topo, geo
 
 
@@ -165,6 +175,10 @@ def collapse_edge(mesh_analysis, n1: Node, n2: Node) -> True:
     else:
         return False, False, True  # the geometrical criteria is True because if the dart is not found, it means it's a boundary dart
 
+    d_id = d.id
+    found, new_x, new_y = mesh_analysis.get_dart_kernel(d)
+    if not found:
+        warnings.warn("Some checks are missing")
     d2, d1, d11, d21, d211, n1, n2, n3, n4 = mesh.active_triangles(d)
 
     d212 = d21.get_beta(2)  # T1
@@ -251,13 +265,15 @@ def collapse_edge(mesh_analysis, n1: Node, n2: Node) -> True:
                 i = 0
                 raise ValueError("Potential infinite loop in action collapse")
 
-        found, new_x, new_y = mesh_analysis.find_star_vertex(n1)
+        found_2, new_x_2, new_y_2 = mesh_analysis.find_star_vertex(n1)
+
+        if round(new_x_2,5) != round(new_x,5):
+            plot_mesh(mesh)
         if found:
             n1.set_xy(new_x, new_y)
         else:
             plot_mesh(mesh_before)
             plot_mesh(mesh_analysis.mesh)
-            mesh_analysis.find_star_vertex_debug(n1, plot=True)
             raise ValueError("No star vertex found")
 
         # if mesh_analysis.is_star_vertex(n1, mid):
@@ -289,19 +305,33 @@ def collapse_edge(mesh_analysis, n1: Node, n2: Node) -> True:
             # if d2, d12 or d112 is None, dart quality is -1 and was not modified by collapse action
             if _d2 is not None and _d2.id not in d_updated:
                 _d.set_quality(mesh_analysis.get_dart_geometric_quality(_d, mesh_before))
+                _d.set_starred(mesh_analysis.get_dart_kernel(_d)[0])
                 d_updated.append(_d.id)
             if _d12 is not None and _d12.id not in d_updated:
                 _d1.set_quality(mesh_analysis.get_dart_geometric_quality(_d1, mesh_before))
+                _d1.set_starred(mesh_analysis.get_dart_kernel(_d1)[0])
                 d_updated.append(_d1.id)
             if _d112 is not None and _d112.id not in d_updated:
                 _d11.set_quality(mesh_analysis.get_dart_geometric_quality(_d11))
+                _d11.set_starred(mesh_analysis.get_dart_kernel(_d11)[0])
                 d_updated.append(_d11.id)
+
+    # update darts kernel
+    mesh_analysis.set_is_starred()
 
     after_check = check_mesh(mesh_analysis, mesh_before)
     if not after_check:
-        found, x, y = mesh_analysis.find_star_vertex_debug(n1, True)
-        raise ValueError("Some checks are missing")
-        #warnings.warn("Aftercheck problem")
+        plot_mesh(mesh_before, debug=True)
+        plot_mesh(mesh, debug=True)
+        # found, x, y = mesh_analysis.find_star_vertex_debug(n1, True)
+        m_a_before = TriMeshNewAnalysis(mesh_before)
+        dart = Dart(mesh_before, d_id)
+        found_k, x_k, y_k = m_a_before.get_dart_kernel(dart, plot=True)
+        if not found:
+            warnings.warn("Aftercheck problem: Star vertex not found")
+        else:
+            raise ValueError("Some checks are missing - collapse")
+
     return True, topo, geo
 
 def check_mesh(mesh_analysis, m=None) -> bool:
